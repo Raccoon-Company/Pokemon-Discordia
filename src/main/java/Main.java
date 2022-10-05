@@ -1,3 +1,4 @@
+import listeners.CommandListener;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -8,7 +9,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.annotation.Nonnull;
 
-public class Main extends ListenerAdapter {
+public class Main {
     public static void main(String[] args){
         JDABuilder builder = JDABuilder.createDefault(args[0]);
 
@@ -16,13 +17,13 @@ public class Main extends ListenerAdapter {
         builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
         // Enable the bulk delete event
         builder.setBulkDeleteSplittingEnabled(false);
-        // Disable compression (not recommended)
-        builder.setCompression(Compression.NONE);
         // Set activity (like "playing Something")
         builder.setActivity(Activity.playing("!help"));
 
-        builder.addEventListeners(new Main());
+        //listeners
+        builder.addEventListeners(new CommandListener());
 
+        //Intents
         builder.enableIntents(
                 GatewayIntent.GUILD_MESSAGES,
                 GatewayIntent.MESSAGE_CONTENT,
@@ -32,12 +33,5 @@ public class Main extends ListenerAdapter {
         builder.build();
     }
 
-    @Override
-    public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if(event.getAuthor().isBot()){
-            return;
-        }
-        System.out.println("Message reçu : "+event.getAuthor().getName()+", il dit : "+event.getMessage().getContentDisplay());
-        event.getMessage().getChannel().sendMessage("ca march next verison, et meme apres un push depuis chez ouam!").complete();
-    }
+
 }

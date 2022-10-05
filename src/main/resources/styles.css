@@ -24,9 +24,10 @@
 /*===============================================================================================*/
 
 /* Header */
-/*DIVTOP*/ .top { background: #ef5350; height: 180px; border-top: 20px solid #a53f3f; }
-/*DIV1*/.container-new2 { background-color: #cf4f4f;}
+/*DIVTOP*/ .top { background: #df4def; height: 180px; border-top: 20px solid #6a366f; }
+/*DIV1*/.container-new2 { background-color: #cf4fc2;}
 /*DIV1*/.py-6 { padding-top: 40px !important; padding-bottom: 40px !important; }
+/*DIV1*/.py-2 { padding-top: 12px !important; padding-bottom: 12px !important; }
 /*DIV1*/.px-3 { padding-right: 16px !important; padding-left: 16px !important; }
 /*DIV1*/.text-center { text-align: center !important; }
 

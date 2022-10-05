@@ -1,4 +1,4 @@
-package model.api;
+package game.model.api;
 
 public class PokemonAPI {
 }
