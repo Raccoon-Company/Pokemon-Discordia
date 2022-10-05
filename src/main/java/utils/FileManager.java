@@ -8,10 +8,10 @@ import game.Save;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,8 +20,30 @@ public class FileManager {
 
     public static final String SAVE_REPO = PropertiesManager.getInstance().getProp("saves-path");
 
+    volatile static FileManager instance;
+
+    /**
+     * Constructeur.
+     */
+    FileManager() {
+    }
+
+    /**
+     * Retourne l'instance de FileManager.
+     */
+    public static FileManager getInstance() {
+        if (instance == null) {
+            synchronized (FileManager.class) {
+                if (instance == null) {
+                    instance = new FileManager();
+                }
+            }
+        }
+        return instance;
+    }
+
     //Créer le répoertoire des saves pour ce joueur
-    private static void createSavesDirectoryIfNotExists(String idDiscord) {
+    private void createSavesDirectoryIfNotExists(String idDiscord) {
         try {
             Files.createDirectories(Paths.get(getPersonalSaveRepo(idDiscord)));
         } catch (IOException ioException) {
@@ -29,7 +51,7 @@ public class FileManager {
         }
     }
 
-    public static Save writeSave(Save save){
+    public Save writeSave(Save save) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         createSavesDirectoryIfNotExists(save.getIdUser());
@@ -43,7 +65,7 @@ public class FileManager {
         return save;
     }
 
-    public static Save getSave(File file){
+    public Save getSave(File file) {
 
         Save save = null;
 
@@ -69,16 +91,11 @@ public class FileManager {
 //TODO log error
             System.err.println(e.getMessage());
         }
-//        try {
-//            Files.delete(path);
-//        } catch (IOException ioException) {
-//            ioException.printStackTrace();
-//        }
         return save;
     }
 
 
-    public static List<Save> getSaves(String idDiscord) {
+    public List<Save> getSaves(String idDiscord) {
 
         //On créé le fichier et le répertoire de save des campagnes s'il n'existe pas
         createSavesDirectoryIfNotExists(idDiscord);
@@ -88,18 +105,31 @@ public class FileManager {
         File f = new File(getPersonalSaveRepo(idDiscord));
 
         //conversion des fichiers en leur save
-        return Arrays.stream(f.listFiles()).map(FileManager::getSave).collect(Collectors.toList());
+        return Arrays.stream(f.listFiles()).map(this::getSave).collect(Collectors.toList());
     }
 
-    public static String getPersonalSaveRepo(String idDiscord){
+    public String getPersonalSaveRepo(String idDiscord) {
         return SAVE_REPO + System.getProperty("file.separator") + idDiscord;
     }
 
-    public static String getSavePath(Save save){
+    public String getSavePath(Save save) {
         return getPersonalSaveRepo(save.getIdUser()) + System.getProperty("file.separator") + save.getId() + ".json";
     }
 
-//    public static String getSavePath(String fileName){
-//        return getPersonalSaveRepo(save.getIdUser()) + System.getProperty("file.separator") + save.getId() + ".json";
-//    }
+    public String getFullPathToIcon(String nom) {
+        URL is = getClass().getClassLoader().getResource("images/pnj/" + nom);
+        if (is == null) {
+            return null;
+        }
+        return is.getPath();
+
+    }
+
+    public String getFullPathToImage(String nom) {
+        URL is = getClass().getClassLoader().getResource("images/background/" + nom);
+        if (is == null) {
+            return null;
+        }
+        return is.getPath();
+    }
 }
