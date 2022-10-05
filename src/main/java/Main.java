@@ -38,6 +38,6 @@ public class Main extends ListenerAdapter {
             return;
         }
         System.out.println("Message reçu : "+event.getAuthor().getName()+", il dit : "+event.getMessage().getContentDisplay());
-        event.getMessage().getChannel().sendMessage("ca march next verison, et meme apres un push depuis mdpa !").complete();
+        event.getMessage().getChannel().sendMessage("ca march next verison, et meme apres un push depuis chez ouam!").complete();
     }
 }
