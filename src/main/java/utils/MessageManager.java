@@ -1,12 +1,13 @@
 package utils;
 
+import executable.MyBot;
+import game.Save;
+import game.model.PNJ;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Component;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
@@ -18,78 +19,67 @@ import java.util.List;
 
 public class MessageManager {
 
-    volatile static MessageManager instance;
+    private MyBot bot;
+    private FileManager fileManager;
 
     /**
      * Constructeur.
      */
-    MessageManager() {
-    }
-
-    /**
-     * Retourne l'instance de MessageManager.
-     */
-    public static MessageManager getInstance() {
-        if (instance == null) {
-            synchronized (MessageManager.class) {
-                if (instance == null) {
-                    instance = new MessageManager();
-                }
-            }
-        }
-        return instance;
+    public MessageManager(MyBot bot) {
+        this.bot = bot;
+        this.fileManager = new FileManager(bot);
     }
 
     public Message send(MessageChannelUnion channel, String content) {
         return channel.sendMessage(content).complete();
     }
-    public Message sendMessageEmbedThumbnail(MessageChannelUnion channel, String content, String thumbnail, String authorName, int color) {
-        return sendMessageEmbed(channel, content,  thumbnail, null, authorName, color, null);
-    }
-    public Message sendMessageEmbedThumbnail(MessageChannelUnion channel, String content, String thumbnail, String authorName, int color, List<Button> buttons) {
-        return sendMessageEmbed(channel, content,  thumbnail, null, authorName, color, buttons);
+
+    public boolean createPredicate(MessageReceivedEvent e, Save save) {
+        if (e.getChannel().getIdLong() != save.getPrivilegedChannelId()) // Check that channel is the same
+        {
+            return false;
+        }
+
+        return e.getAuthor().getIdLong() == save.getUserId(); // Check for same author
     }
 
-    public Message sendMessageEmbedImage(MessageChannelUnion channel, String content,  String image, String authorName, int color, List<Button> buttons) {
-        return sendMessageEmbed(channel, content,  null, image, authorName, color, buttons);
+    public Runnable timeout(MessageChannelUnion channel) {
+        return () -> channel.sendMessage("Délai de réponse dépassé ! ").queue();
     }
 
-    public Message sendMessageEmbed(MessageChannelUnion channel, String content, String thumbnail, String image, String authorName, int color, List<Button> buttons) {
+    public MessageCreateData createMessageThumbnail(PNJ pnj, String content, LayoutComponent lc) {
+        return createMessageThumbnailAndImage(pnj, content, lc, null);
+    }
 
+    public MessageCreateData createMessageThumbnailAndImage(PNJ pnj, String content, LayoutComponent lc, String image) {
         EmbedBuilder embedBuilder = new EmbedBuilder()
-                .setColor(color)
-                .setAuthor(authorName, null, "attachment://thumbnail.png")
+                .setColor(0x054896)
+                .setAuthor(pnj.getNom(), null, "attachment://" + pnj.getIconPath())
                 .setDescription(content);
 
         List<FileUpload> files = new ArrayList<>();
 
-        if (StringUtils.isNotEmpty(image)) {
-            String imageURL = FileManager.getInstance().getFullPathToImage(image);
-            embedBuilder.setImage("attachment://image.png");
-            File imgFile = new File(imageURL);
-            files.add(FileUpload.fromData(imgFile, "image.png"));
-        } else if (StringUtils.isNotEmpty(thumbnail)) {
-            String thumbnailURL = FileManager.getInstance().getFullPathToIcon(thumbnail);
-            embedBuilder.setThumbnail("attachment://thumbnail.jpg");
-            File thumbnailFile = new File(thumbnailURL);
-            files.add(FileUpload.fromData(thumbnailFile, "thumbnail.jpg"));
-        }
+        String thumbnailURL = fileManager.getFullPathToIcon(pnj.getIconPath());
+        embedBuilder.setThumbnail("attachment://" + pnj.getIconPath());
+        File thumbnailFile = new File(thumbnailURL);
+        files.add(FileUpload.fromData(thumbnailFile, pnj.getIconPath()));
 
         if (StringUtils.isNotEmpty(image)) {
-            String imageURL = FileManager.getInstance().getFullPathToImage(image);
-            embedBuilder.setImage("attachment://image.png");
+            String imageURL = fileManager.getFullPathToImage(image);
+            embedBuilder.setImage("attachment://" + image);
             File imgFile = new File(imageURL);
-            files.add(FileUpload.fromData(imgFile, "image.png"));
+            files.add(FileUpload.fromData(imgFile, image));
         }
 
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         mcb.addFiles(files);
-        if(buttons != null){
-            LayoutComponent lc = ActionRow.of(buttons);
+
+        if (lc != null) {
             mcb.addComponents(lc);
         }
 
         mcb.addEmbeds(embedBuilder.build());
-        return channel.sendMessage(mcb.build()).complete();
+
+        return mcb.build();
     }
-}//TODO on n'a plus l'icone
+}

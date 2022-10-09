@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import executable.MyBot;
 import game.Save;
+import net.dv8tion.jda.api.entities.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,30 +22,17 @@ public class FileManager {
 
     public static final String SAVE_REPO = PropertiesManager.getInstance().getProp("saves-path");
 
-    volatile static FileManager instance;
+    private final MyBot bot;
 
     /**
      * Constructeur.
      */
-    FileManager() {
-    }
-
-    /**
-     * Retourne l'instance de FileManager.
-     */
-    public static FileManager getInstance() {
-        if (instance == null) {
-            synchronized (FileManager.class) {
-                if (instance == null) {
-                    instance = new FileManager();
-                }
-            }
-        }
-        return instance;
+    public FileManager(MyBot bot) {
+        this.bot = bot;
     }
 
     //Créer le répoertoire des saves pour ce joueur
-    private void createSavesDirectoryIfNotExists(String idDiscord) {
+    private void createSavesDirectoryIfNotExists(long idDiscord) {
         try {
             Files.createDirectories(Paths.get(getPersonalSaveRepo(idDiscord)));
         } catch (IOException ioException) {
@@ -52,9 +41,11 @@ public class FileManager {
     }
 
     public Save writeSave(Save save) {
+        DiscordManager discordManager = new DiscordManager(bot);
+        User user = discordManager.getUserById(save.getUserId());
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-        createSavesDirectoryIfNotExists(save.getIdUser());
+        createSavesDirectoryIfNotExists(user.getIdLong());
         File file = new File(getSavePath(save));
         try {
             objectMapper.writeValue(file, save);
@@ -95,7 +86,7 @@ public class FileManager {
     }
 
 
-    public List<Save> getSaves(String idDiscord) {
+    public List<Save> getSaves(long idDiscord) {
 
         //On créé le fichier et le répertoire de save des campagnes s'il n'existe pas
         createSavesDirectoryIfNotExists(idDiscord);
@@ -108,12 +99,12 @@ public class FileManager {
         return Arrays.stream(f.listFiles()).map(this::getSave).collect(Collectors.toList());
     }
 
-    public String getPersonalSaveRepo(String idDiscord) {
+    public String getPersonalSaveRepo(long idDiscord) {
         return SAVE_REPO + System.getProperty("file.separator") + idDiscord;
     }
 
     public String getSavePath(Save save) {
-        return getPersonalSaveRepo(save.getIdUser()) + System.getProperty("file.separator") + save.getId() + ".json";
+        return getPersonalSaveRepo(save.getUserId()) + System.getProperty("file.separator") + save.getId() + ".json";
     }
 
     public String getFullPathToIcon(String nom) {

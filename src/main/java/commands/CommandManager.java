@@ -1,5 +1,6 @@
 package commands;
 
+import executable.MyBot;
 import game.Launcher;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -15,34 +16,22 @@ import java.util.stream.Collectors;
  */
 public class CommandManager {
 
-    volatile static CommandManager instance;
 
     public static final String PREFIX = PropertiesManager.getInstance().getProp("prefix");
 
     private final List<String> validCommands;
+    private final MyBot bot;
 
     /**
      * Constructeur.
+     * @param bot
      */
-    CommandManager() {
+    public CommandManager(MyBot bot) {
+        this.bot = bot;
         validCommands = Arrays.stream(Commands.values()).map(Commands::getTexte).collect(Collectors.toList());
     }
 
-    /**
-     * Retourne l'instance de CommandManager.
-     */
-    public static CommandManager getInstance() {
-        if (instance == null) {
-            synchronized (CommandManager.class) {
-                if (instance == null) {
-                    instance = new CommandManager();
-                }
-            }
-        }
-        return instance;
-    }
-
-    public void process(MessageReceivedEvent event) {
+    public void process(MessageReceivedEvent event, MyBot bot) {
         Message message = event.getMessage();
         //on décompose le message pour extraire la commande et les arguments
         String fullCommand = message.getContentDisplay().substring(1);
@@ -65,7 +54,8 @@ switch (discordiaCommand){
 
         break;
     case START:
-        Launcher.getInstance().start(message);
+        Launcher launcher = new Launcher(bot);
+        launcher.start(message);
         break;
 }
     }

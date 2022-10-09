@@ -1,6 +1,8 @@
 package game;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import game.model.Campaign;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 
@@ -9,33 +11,46 @@ import java.util.Date;
 
 public class Save implements Serializable {
     private long id;
-    private String idUser;
+    private long userId;
+
     private Date lastPlayed;
 
+    private Campaign campaign;
+
     @JsonIgnore
-    private MessageChannelUnion privilegedChannel;
+    private long privilegedChannelId;
 
     public Save() {
     }
 
-    public Save(long id, String idUser, Date lastPlayed) {
+    public Save(long id, long user, Date lastPlayed, Campaign campaign) {
         this.id = id;
-        this.idUser = idUser;
+        this.userId = user;
         this.lastPlayed = lastPlayed;
+        this.campaign = campaign;
     }
 
-    public Save(String idUser) {
+    public Save(long user) {
         this.lastPlayed = new Date();
         this.id = lastPlayed.getTime();
-        this.idUser = idUser;
+        this.userId = user;
+        this.campaign = new Campaign();
     }
 
-    public MessageChannelUnion getPrivilegedChannel() {
-        return privilegedChannel;
+    public Campaign getCampaign() {
+        return campaign;
     }
 
-    public void setPrivilegedChannel(MessageChannelUnion privilegedChannel) {
-        this.privilegedChannel = privilegedChannel;
+    public void setCampaign(Campaign campaign) {
+        this.campaign = campaign;
+    }
+
+    public long getPrivilegedChannelId() {
+        return privilegedChannelId;
+    }
+
+    public void setPrivilegedChannelId(long privilegedChannelId) {
+        this.privilegedChannelId = privilegedChannelId;
     }
 
     public long getId() {
@@ -46,12 +61,12 @@ public class Save implements Serializable {
         this.id = id;
     }
 
-    public String getIdUser() {
-        return idUser;
+    public long getUserId() {
+        return userId;
     }
 
-    public void setIdUser(String idUser) {
-        this.idUser = idUser;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 
     public Date getLastPlayed() {
