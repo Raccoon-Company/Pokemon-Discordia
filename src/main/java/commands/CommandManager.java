@@ -4,6 +4,7 @@ import executable.MyBot;
 import game.Launcher;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import utils.MessageManager;
 import utils.PropertiesManager;
 
 import java.util.ArrayList;
@@ -21,12 +22,15 @@ public class CommandManager {
 
     private final List<String> validCommands;
     private final MyBot bot;
+    private final MessageManager messageManager;
 
     /**
      * Constructeur.
+     *
      * @param bot
      */
     public CommandManager(MyBot bot) {
+        this.messageManager = new MessageManager(bot);
         this.bot = bot;
         validCommands = Arrays.stream(Commands.values()).map(Commands::getTexte).collect(Collectors.toList());
     }
@@ -42,6 +46,10 @@ public class CommandManager {
             message.getChannel().sendMessage("La commande !" + command + " n'existe pas. Utiliser " + PREFIX + "help pour une liste de commandes valides !").complete();
             return;
         }
+        if(bot.getLockedUsers().contains(event.getAuthor().getIdLong())){
+            messageManager.send(event.getChannel(), "Les commandes du bot vous sont inacessibles tant qu'il attend une réponse de votre part.");
+            return;
+        }
         //vérif du nb d'arguments
         Commands discordiaCommand = Commands.getByTexte(command);
         if (discordiaCommand.getMinArgs() > args.size()) {
@@ -49,14 +57,14 @@ public class CommandManager {
             return;
         }
 
-switch (discordiaCommand){
-    case HELP:
+        switch (discordiaCommand) {
+            case HELP:
 
-        break;
-    case START:
-        Launcher launcher = new Launcher(bot);
-        launcher.start(message);
-        break;
-}
+                break;
+            case START:
+                Launcher launcher = new Launcher(bot);
+                launcher.start(message);
+                break;
+        }
     }
 }

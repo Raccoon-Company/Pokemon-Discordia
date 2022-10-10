@@ -1,10 +1,12 @@
 package utils;
 
+import commands.CommandManager;
 import executable.MyBot;
 import game.Save;
 import game.model.PNJ;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
@@ -40,11 +42,18 @@ public class MessageManager {
             return false;
         }
 
+        if(e.getAuthor().isBot() || e.getMessage().getContentDisplay().startsWith(CommandManager.PREFIX)){
+            return false;
+        }
+
         return e.getAuthor().getIdLong() == save.getUserId(); // Check for same author
     }
 
-    public Runnable timeout(MessageChannelUnion channel) {
-        return () -> channel.sendMessage("Délai de réponse dépassé ! ").queue();
+    public Runnable timeout(MessageChannelUnion channel, User user) {
+        return () -> {
+            bot.unlock(user);
+            channel.sendMessage("Délai de réponse dépassé ! ").queue();
+        };
     }
 
     public MessageCreateData createMessageThumbnail(PNJ pnj, String content, LayoutComponent lc) {
@@ -53,7 +62,7 @@ public class MessageManager {
 
     public MessageCreateData createMessageThumbnailAndImage(PNJ pnj, String content, LayoutComponent lc, String image) {
         EmbedBuilder embedBuilder = new EmbedBuilder()
-                .setColor(0x054896)
+                .setColor(0x5663F7)
                 .setAuthor(pnj.getNom(), null, "attachment://" + pnj.getIconPath())
                 .setDescription(content);
 

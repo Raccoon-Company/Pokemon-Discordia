@@ -117,7 +117,7 @@ public class FileManager {
     }
 
     public String getFullPathToImage(String nom) {
-        URL is = getClass().getClassLoader().getResource("images/background/" + nom);
+        URL is = getClass().getClassLoader().getResource("images/" + nom);
         if (is == null) {
             return null;
         }

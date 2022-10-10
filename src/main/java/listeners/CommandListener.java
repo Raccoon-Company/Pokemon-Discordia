@@ -4,15 +4,18 @@ import commands.CommandManager;
 import executable.MyBot;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import utils.MessageManager;
 
 import javax.annotation.Nonnull;
 
 public class CommandListener extends ListenerAdapter {
     private final MyBot bot;
     private final CommandManager commandManager;
+    private final MessageManager messageManager;
 
     public CommandListener(MyBot bot) {
         this.bot = bot;
+        this.messageManager = new MessageManager(bot);
         this.commandManager = new CommandManager(bot);
     }
 
@@ -27,6 +30,7 @@ public class CommandListener extends ListenerAdapter {
         if (event.getAuthor().isBot() || !event.getMessage().getContentDisplay().startsWith(CommandManager.PREFIX) || event.getMessage().getContentDisplay().length() < 2) {
             return;
         }
+
         commandManager.process(event, bot);
     }
 }

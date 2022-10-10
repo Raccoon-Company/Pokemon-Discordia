@@ -3,6 +3,7 @@ package utils;
 import executable.MyBot;
 import game.Save;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionComponent;
@@ -40,7 +41,10 @@ public class ButtonManager {
         return !e.isAcknowledged();
     }
 
-    public Runnable timeout(MessageChannelUnion channel) {
-        return () -> channel.sendMessage("Délai de réponse dépassé ! ").queue();
+    public Runnable timeout(MessageChannelUnion channel, User user) {
+        return () -> {
+            bot.unlock(user);
+            channel.sendMessage("Délai de réponse dépassé ! ").queue();
+        };
     }
 }

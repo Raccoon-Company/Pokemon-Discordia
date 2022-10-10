@@ -8,14 +8,20 @@ import listeners.MainListener;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class MyBot {
 
     private final EventWaiter eventWaiter = new EventWaiter();
 
     private JDA jda;
+    private List<Long> lockedUsers;
 
     public static void main(String[] args) throws InterruptedException {
         try {
@@ -53,6 +59,7 @@ public class MyBot {
 
 
         this.jda = builder.build();
+        this.lockedUsers = Collections.synchronizedList(new ArrayList<>());
         jda.awaitReady();
     }
 
@@ -62,5 +69,21 @@ public class MyBot {
 
     public JDA getJda() {
         return jda;
+    }
+
+    public void setLockedUsers(List<Long> lockedUsers) {
+        this.lockedUsers = lockedUsers;
+    }
+
+    public List<Long> getLockedUsers() {
+        return lockedUsers;
+    }
+
+    public void lock(User user){
+        lockedUsers.add(user.getIdLong());
+    }
+
+    public void unlock(User user){
+        lockedUsers.removeIf(u -> u == user.getIdLong());
     }
 }
