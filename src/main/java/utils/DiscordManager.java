@@ -17,6 +17,6 @@ public class DiscordManager {
     }
 
     public User getUserById(long id) {
-        return bot.getJda().getUserById(id);
+        return bot.getJda().retrieveUserById(id).complete();
     }
 }

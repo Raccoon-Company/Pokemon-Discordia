@@ -22,6 +22,7 @@ import java.util.List;
 public class MessageManager {
 
     private MyBot bot;
+    private DiscordManager discordManager;
     private FileManager fileManager;
 
     /**
@@ -29,7 +30,13 @@ public class MessageManager {
      */
     public MessageManager(MyBot bot) {
         this.bot = bot;
+        this.discordManager = new DiscordManager(bot);
         this.fileManager = new FileManager(bot);
+    }
+
+    public Message send(long id, String content) {
+        MessageChannelUnion mcu = discordManager.getChannelById(id);
+        return send(mcu, content);
     }
 
     public Message send(MessageChannelUnion channel, String content) {
@@ -37,16 +44,20 @@ public class MessageManager {
     }
 
     public boolean createPredicate(MessageReceivedEvent e, Save save) {
-        if (e.getChannel().getIdLong() != save.getPrivilegedChannelId()) // Check that channel is the same
+        return createPredicate(e, save.getPrivilegedChannelId(), save.getUserId());
+    }
+
+    public boolean createPredicate(MessageReceivedEvent e, long channelId, long userId) {
+        if (e.getChannel().getIdLong() != channelId) // Check that channel is the same
         {
             return false;
         }
 
-        if(e.getAuthor().isBot() || e.getMessage().getContentDisplay().startsWith(CommandManager.PREFIX)){
+        if (e.getAuthor().isBot() || e.getMessage().getContentDisplay().startsWith(CommandManager.PREFIX)) {
             return false;
         }
 
-        return e.getAuthor().getIdLong() == save.getUserId(); // Check for same author
+        return e.getAuthor().getIdLong() == userId; // Check for same author
     }
 
     public Runnable timeout(MessageChannelUnion channel, User user) {
@@ -89,6 +100,10 @@ public class MessageManager {
 
         mcb.addEmbeds(embedBuilder.build());
 
+        return mcb.build();
+    }
+
+    public MessageCreateData createMessageData(MessageCreateBuilder mcb) {
         return mcb.build();
     }
 }

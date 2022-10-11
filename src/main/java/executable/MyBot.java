@@ -11,6 +11,10 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.PropertyConfigurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +23,7 @@ import java.util.List;
 public class MyBot {
 
     private final EventWaiter eventWaiter = new EventWaiter();
-
+    private final Logger logger = LoggerFactory.getLogger(MyBot.class);
     private JDA jda;
     private List<Long> lockedUsers;
 
@@ -34,6 +38,9 @@ public class MyBot {
     }
 
     public void start(String token) throws InterruptedException {
+        String log4jConfPath = "src/main/resources/log4j.properties";
+        PropertyConfigurator.configure(log4jConfPath);
+
         JDABuilder builder = JDABuilder.createDefault(token)
                 // Disable parts of the cache
                 .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)

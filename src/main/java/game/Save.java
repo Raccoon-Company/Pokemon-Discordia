@@ -2,9 +2,7 @@ package game;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import game.model.Campaign;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.Channel;
-import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
+import utils.Utils;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -41,6 +39,14 @@ public class Save implements Serializable {
         return campaign;
     }
 
+    @JsonIgnore
+    public String getDescription() {
+        String res = "";
+        res += "Dernière session de jeu : " + Utils.formatDateDDMMYY(lastPlayed);
+        return res;
+    }
+
+
     public void setCampaign(Campaign campaign) {
         this.campaign = campaign;
     }
@@ -75,5 +81,8 @@ public class Save implements Serializable {
 
     public void setLastPlayed(Date lastPlayed) {
         this.lastPlayed = lastPlayed;
+    }
+
+    public void gameMenu() {
     }
 }

@@ -2,6 +2,7 @@ package game;
 
 import executable.MyBot;
 import game.model.PNJ;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
@@ -13,11 +14,12 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import utils.ButtonManager;
-import utils.DiscordManager;
-import utils.FileManager;
-import utils.MessageManager;
+import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import utils.*;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +29,10 @@ public class Launcher extends ListenerAdapter {
     private final MyBot bot;
     private final DiscordManager discordManager;
     private final MessageManager messageManager;
+    private final FileManager fileManager;
     private final ButtonManager buttonManager;
+    private List<String> associatedMessagesIds;
+    private long channelId;
     private int choice = -1;
 
     /**
@@ -37,9 +42,11 @@ public class Launcher extends ListenerAdapter {
      */
     public Launcher(MyBot myBot) {
         this.bot = myBot;
+        this.fileManager = new FileManager(bot);
         this.messageManager = new MessageManager(bot);
         this.discordManager = new DiscordManager(bot);
         this.buttonManager = new ButtonManager(bot);
+        this.associatedMessagesIds = new ArrayList<>();
     }
 
     public MyBot getBot() {
@@ -67,7 +74,8 @@ public class Launcher extends ListenerAdapter {
     }
 
     public void start(Message message) {
-
+        channelId = message.getChannel().getIdLong();
+        associatedMessagesIds.add(message.getId());
         long idUser = message.getAuthor().getIdLong();
         FileManager fileManager = new FileManager(bot);
 
@@ -76,21 +84,68 @@ public class Launcher extends ListenerAdapter {
         //sinon lancement auto d'une game
         List<Save> saves = fileManager.getSaves(idUser);
 
-        Save save = new Save(message.getAuthor().getIdLong());
-        save.setPrivilegedChannelId(message.getChannel().getIdLong());
-        startGame(save);
+        if (saves.isEmpty()) {
+            Save save = new Save(message.getAuthor().getIdLong());
+            save.setPrivilegedChannelId(message.getChannel().getIdLong());
+            startGame(save);
+        } else {
+            Message sent = message.getChannel().sendMessage("Choix de la sauvegarde").complete();
+            associatedMessagesIds.add(sent.getId());
+            chooseSave(message.getChannel(), saves, idUser);
+        }
+    }
 
+    private void chooseSave(MessageChannelUnion channel, List<Save> saves, long idUser) {
+        User user = discordManager.getUserById(idUser);
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
 
-//        if(saves.isEmpty()){
-//            Save save = new Save(idUser);
-//
-//            startGame(save);
-//
-//            FileManager.getInstance().writeSave(save);
-//        }else{
-//            message.getChannel().sendMessage(saves.size()+" saves ont été retrouvées !").complete();
-//
-//        }
+        List<Button> buttons = new ArrayList<>();
+        for (int i = 0; i < saves.size(); i++) {
+            buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(saves.get(i).getId()), saves.get(i).getCampaign().getNom()));
+        }
+        buttons.add(Button.of(ButtonStyle.SECONDARY, "exit", "", Emoji.fromFormatted("❌")));
+
+        LayoutComponent lc = ActionRow.of(buttons);
+
+        String thumbnailURL = fileManager.getFullPathToIcon(PNJ.SYSTEM.getIconPath());
+        File thumbnailFile = new File(thumbnailURL);
+        mcb.addFiles(FileUpload.fromData(thumbnailFile, PNJ.SYSTEM.getIconPath()));
+
+        for (Save save : saves) {
+            EmbedBuilder embedBuilder = new EmbedBuilder()
+                    .setColor(0x5663F7)
+                    .setAuthor(save.getCampaign().getNom(), null, "attachment://" + PNJ.SYSTEM.getIconPath())
+                    .setDescription(save.getDescription());
+
+            mcb.addEmbeds(embedBuilder.build());
+        }
+        mcb.addComponents(lc);
+        bot.lock(user);
+        channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
+                ButtonInteractionEvent.class,
+                e -> buttonManager.createPredicate(e, message, idUser, lc),
+                //action quand réponse détectée
+                e -> {
+                    e.deferEdit().queue();
+                    bot.unlock(user);
+                    associatedMessagesIds.add(message.getId());
+                    if(!e.getComponentId().equals("exit")){
+                        Save selected = saves.stream().filter(s -> e.getComponentId().equals(String.valueOf(s.getId()))).findAny().orElseThrow(IllegalStateException::new);
+                        selected.setPrivilegedChannelId(channelId);
+                        loadSave(selected);
+                    }else{
+                        clearMessagesAssociated();
+                    }
+                },
+                1, TimeUnit.MINUTES,
+                buttonManager.timeout(channel, user)
+                )
+        );
+    }
+
+    private void loadSave(Save save) {
+        Game game = new Game(bot, save);
+        game.launch();
     }
 
     private void startGame(Save save) {
@@ -136,7 +191,7 @@ public class Launcher extends ListenerAdapter {
     }
 
     private void choixPrenom(MessageChannelUnion channel, User user, Save save) {
-        String image = save.getCampaign().isGender() ? "raoult1.jpg" : "raoult0.jpg";
+        String image = save.getCampaign().isGender() ? PropertiesManager.getInstance().getImage("lab-boy") : PropertiesManager.getInstance().getImage("lab-girl");
 
         bot.lock(user);
         //demande d'entrée du prénom
@@ -196,7 +251,7 @@ public class Launcher extends ListenerAdapter {
     }
 
     private void choixPrenomRival(MessageChannelUnion channel, User user, Save save) {
-        String image = save.getCampaign().isGender() ? "raoult1rival.jpg" : "raoult0rival.jpg";
+        String image = save.getCampaign().isGender() ? PropertiesManager.getInstance().getImage("lab-boy-rival") : PropertiesManager.getInstance().getImage("lab-girl-rival");
 
         bot.lock(user);
         //demande d'entrée du prénom
@@ -262,7 +317,7 @@ public class Launcher extends ListenerAdapter {
 
         bot.lock(user);
 
-        channel.sendMessage(messageManager.createMessageThumbnailAndImage(PNJ.RAOULT, "Bon, pas le temps de niaiser " + save.getCampaign().getNom() + ", prends ce pokédex, choisis le pokémon que tu veux et casse-toi !\nAh oui, on a pas de pikachus, c'est pour les victimes. Au pire t'en trouveras dans la forêt à côté.", lc, "starters.png"))
+        channel.sendMessage(messageManager.createMessageThumbnailAndImage(PNJ.RAOULT, "Bon, pas le temps de niaiser " + save.getCampaign().getNom() + ", prends ce pokédex, choisis le pokémon que tu veux et casse-toi !\nAh oui, on a pas de pikachus, c'est pour les victimes. Au pire t'en trouveras dans la forêt à côté.", lc, PropertiesManager.getInstance().getImage("starters")))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,
@@ -273,7 +328,7 @@ public class Launcher extends ListenerAdapter {
                                 e -> {
                                     bot.unlock(user);
                                     e.deferEdit().queue();
-                                    confirmationStarter(channel, user, save,e.getComponentId());
+                                    confirmationStarter(channel, user, save, e.getComponentId());
                                 },
                                 1,
                                 TimeUnit.MINUTES,
@@ -294,13 +349,13 @@ public class Launcher extends ListenerAdapter {
 
         String content = "";
         int id;
-        if(componentId.equals("1")){
+        if (componentId.equals("1")) {
             id = 1;
             content = "Bulbizarre est un pokémon de type plante et poison. Tu es sûr de ton choix ?";
-        }else if(componentId.equals("4")){
+        } else if (componentId.equals("4")) {
             id = 4;
             content = "Salamèche est un pokémon de type feu. Tu es sûr de ton choix ?";
-        }else{
+        } else {
             id = 7;
             content = "Carapuce est un pokémon de type eau. Tu es sûr de ton choix ?";
 
@@ -320,7 +375,7 @@ public class Launcher extends ListenerAdapter {
                                     e.deferEdit().queue();
                                     if (e.getComponentId().equals("true")) {
                                         save.getCampaign().setIdStarter(id);
-                                        validationSave(channel,user,save);
+                                        validationSave(channel, user, save);
                                     } else {
                                         choixStarter(channel, user, save);
                                     }
@@ -337,6 +392,12 @@ public class Launcher extends ListenerAdapter {
 
     private void validationSave(MessageChannelUnion channel, User user, Save save) {
         System.out.println(save.getCampaign().getNom());
+        fileManager.writeSave(save);
+        save.gameMenu();
+    }
+
+    private void clearMessagesAssociated(){
+        discordManager.getChannelById(channelId).purgeMessagesById(associatedMessagesIds);
     }
 }
 

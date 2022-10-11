@@ -1,9 +1,7 @@
 package game.model;
 
-import java.util.List;
-
 public enum PNJ {
-
+    SYSTEM("System", "system.png"),
     RAOULT("Prof. Didier Raoult", "raoult.jpg");
 
     //nom du pnj

@@ -16,9 +16,9 @@ public class PropertiesManager {
      */
     PropertiesManager() {
         properties = new Properties();
-        try{
+        try {
             properties.load(new FileInputStream(PROPERTIES_PATH));
-        }catch (Exception e){
+        } catch (Exception e) {
             //TODO log
         }
     }
@@ -37,8 +37,11 @@ public class PropertiesManager {
         return instance;
     }
 
-    public String getProp(String id){
+    public String getProp(String id) {
         return properties.getProperty(id);
     }
 
+    public String getImage(String id) {
+        return getProp("images." + id);
+    }
 }

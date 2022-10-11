@@ -26,10 +26,14 @@ public class ButtonManager {
     }
 
     public boolean createPredicate(ButtonInteractionEvent e, Message message, Save save, LayoutComponent lc) {
+       return createPredicate(e, message, save.getUserId(), lc);
+    }
+
+    public boolean createPredicate(ButtonInteractionEvent e, Message message, long idUser, LayoutComponent lc) {
         if (e.getMessageIdLong() != message.getIdLong()) {
             return false;
         }
-        if (e.getUser().getIdLong() != save.getUserId()) {
+        if (e.getUser().getIdLong() != idUser) {
             return false;
         }
         //retourne false si l'id du bouton d'interaction ne correspond à aucun de ceux proposés à la base
