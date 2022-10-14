@@ -1,7 +1,9 @@
 package executable;
 
+import com.github.oscar0812.pokeapi.utils.Client;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import game.Launcher;
+import game.model.api.PokemonAPI;
 import listeners.ButtonListener;
 import listeners.CommandListener;
 import listeners.MainListener;
