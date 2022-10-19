@@ -1,7 +1,9 @@
 package game;
 
 import executable.MyBot;
+import game.model.Campaign;
 import game.model.PNJ;
+import game.model.Pokemon;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -103,6 +105,9 @@ public class Launcher extends ListenerAdapter {
         for (int i = 0; i < saves.size(); i++) {
             buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(saves.get(i).getId()), saves.get(i).getCampaign().getNom()));
         }
+        if(saves.size() < 3){
+            buttons.add(Button.of(ButtonStyle.SUCCESS, "new", "Nouvelle partie", Emoji.fromFormatted("\uD83C\uDD95")));
+        }
         buttons.add(Button.of(ButtonStyle.SECONDARY, "exit", "", Emoji.fromFormatted("❌")));
 
         LayoutComponent lc = ActionRow.of(buttons);
@@ -129,12 +134,16 @@ public class Launcher extends ListenerAdapter {
                     e.deferEdit().queue();
                     bot.unlock(user);
                     associatedMessagesIds.add(message.getId());
-                    if(!e.getComponentId().equals("exit")){
+                    if(e.getComponentId().equals("exit")){
+                        clearMessagesAssociated();
+                    }else if(e.getComponentId().equals("new")){
+                        Save save = new Save(user.getIdLong());
+                        save.setPrivilegedChannelId(message.getChannel().getIdLong());
+                        startGame(save);
+                    }else{
                         Save selected = saves.stream().filter(s -> e.getComponentId().equals(String.valueOf(s.getId()))).findAny().orElseThrow(IllegalStateException::new);
                         selected.setPrivilegedChannelId(channelId);
                         loadSave(selected);
-                    }else{
-                        clearMessagesAssociated();
                     }
                 },
                 1, TimeUnit.MINUTES,
@@ -145,7 +154,7 @@ public class Launcher extends ListenerAdapter {
 
     private void loadSave(Save save) {
         Game game = new Game(bot, save);
-        game.launch();
+        game.gameMenu();
     }
 
     private void startGame(Save save) {
@@ -391,9 +400,13 @@ public class Launcher extends ListenerAdapter {
     }
 
     private void validationSave(MessageChannelUnion channel, User user, Save save) {
-        System.out.println(save.getCampaign().getNom());
+        Pokemon starter = new Pokemon(save.getCampaign().getIdStarter(), 5, false);
+        Campaign campaign = new Campaign(save.getCampaign().getNom(), save.getCampaign().isGender(), save.getCampaign().getNomRival(), save.getCampaign().getIdStarter());
+        save.setCampaign(campaign);
+        save.getCampaign().getEquipe().add(starter);
         fileManager.writeSave(save);
-        save.gameMenu();
+        Game game = new Game(bot, save);
+        game.gameMenu();
     }
 
     private void clearMessagesAssociated(){

@@ -1,11 +1,16 @@
 package game;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import executable.MyBot;
 import game.model.Campaign;
+import game.model.PNJ;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import utils.DiscordManager;
 import utils.Utils;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class Save implements Serializable {
     private long id;
@@ -29,10 +34,7 @@ public class Save implements Serializable {
     }
 
     public Save(long user) {
-        this.lastPlayed = new Date();
-        this.id = lastPlayed.getTime();
-        this.userId = user;
-        this.campaign = new Campaign();
+        this(new Date().getTime(), user, new Date(), new Campaign());
     }
 
     public Campaign getCampaign() {
@@ -83,6 +85,4 @@ public class Save implements Serializable {
         this.lastPlayed = lastPlayed;
     }
 
-    public void gameMenu() {
-    }
 }

@@ -71,24 +71,30 @@ public class MessageManager {
         return createMessageThumbnailAndImage(pnj, content, lc, null);
     }
 
+    public MessageCreateData createMessageImage(String content, LayoutComponent lc, String image) {
+        return createMessageThumbnailAndImage(null, content, lc, image);
+    }
+
     public MessageCreateData createMessageThumbnailAndImage(PNJ pnj, String content, LayoutComponent lc, String image) {
         EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setColor(0x5663F7)
-                .setAuthor(pnj.getNom(), null, "attachment://" + pnj.getIconPath())
                 .setDescription(content);
 
         List<FileUpload> files = new ArrayList<>();
 
-        String thumbnailURL = fileManager.getFullPathToIcon(pnj.getIconPath());
-        embedBuilder.setThumbnail("attachment://" + pnj.getIconPath());
-        File thumbnailFile = new File(thumbnailURL);
-        files.add(FileUpload.fromData(thumbnailFile, pnj.getIconPath()));
+        if(pnj != null){
+            embedBuilder.setAuthor(pnj.getNom(), null, "attachment://" + pnj.getIconPath());
+            String thumbnailURL = fileManager.getFullPathToIcon(pnj.getIconPath());
+            embedBuilder.setThumbnail("attachment://" + pnj.getIconPath());
+            File thumbnailFile = new File(thumbnailURL);
+            files.add(FileUpload.fromData(thumbnailFile, pnj.getIconPath()));
+        }
 
         if (StringUtils.isNotEmpty(image)) {
             String imageURL = fileManager.getFullPathToImage(image);
-            embedBuilder.setImage("attachment://" + image);
             File imgFile = new File(imageURL);
-            files.add(FileUpload.fromData(imgFile, image));
+            embedBuilder.setImage("attachment://" + imgFile.getName());
+            files.add(FileUpload.fromData(imgFile, imgFile.getName()));
         }
 
         MessageCreateBuilder mcb = new MessageCreateBuilder();

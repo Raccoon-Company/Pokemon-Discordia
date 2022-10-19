@@ -1,9 +1,7 @@
 package executable;
 
-import com.github.oscar0812.pokeapi.utils.Client;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import game.Launcher;
-import game.model.api.PokemonAPI;
 import listeners.ButtonListener;
 import listeners.CommandListener;
 import listeners.MainListener;
@@ -28,43 +26,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class MyBot {
-
-//    File path = new File("src/main/resources/images"); // base path of the images
-//
-//    // load source images
-//    BufferedImage background = null;
-//    BufferedImage overlay = null;
-//    BufferedImage overlay2 = null;
-//        try {
-//        background = ImageIO.read(new File(path, "bg.jpg"));
-//        overlay = ImageIO.read(new File(path, "132.png"));
-//        overlay2 = ImageIO.read(new File(path, "25.png"));
-//    } catch (
-//    IOException e) {
-//        throw new RuntimeException(e);
-//    }
-//    // create the new image, canvas size is the max. of both image sizes
-////        int w = Math.max(background.getWidth(), overlay.getWidth());
-////        int h = Math.max(background.getHeight(), overlay.getHeight());
-//    int w = 200;
-//    int h = 120;
-//    BufferedImage combined = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-//
-//    // paint both images, preserving the alpha channels
-//    Graphics g = combined.getGraphics();
-//        g.drawImage(background, 0, 0, null);
-//        g.drawImage(overlay, 0, 60, null);
-//        g.drawImage(overlay2, 100, 0, null);
-//
-//        g.dispose();
-//
-//// Save as new image
-//        try {
-//        ImageIO.write(combined, "PNG", new File(path, "combined.png"));
-//    } catch (IOException e) {
-//        throw new RuntimeException(e);
-//    }
-//}
 
     private final EventWaiter eventWaiter = new EventWaiter();
     private final Logger logger = LoggerFactory.getLogger(MyBot.class);
