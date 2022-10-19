@@ -1,6 +1,8 @@
 package utils;
 
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class PropertiesManager {
@@ -17,7 +19,7 @@ public class PropertiesManager {
     PropertiesManager() {
         properties = new Properties();
         try {
-            properties.load(new FileInputStream(PROPERTIES_PATH));
+            properties.load(Files.newInputStream(Paths.get(PROPERTIES_PATH)));
         } catch (Exception e) {
             //TODO log
         }

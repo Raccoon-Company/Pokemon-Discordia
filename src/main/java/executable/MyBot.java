@@ -51,9 +51,9 @@ public class MyBot {
                 .disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
                 // Enable the bulk delete event
                 .setBulkDeleteSplittingEnabled(false)
-                // Set activity (like "playing Something")
+//                // Set activity (like "playing Something")
                 .setActivity(Activity.playing("!help"))
-                //listeners
+//                //listeners
                 .addEventListeners(
                         new MainListener(this),
                         new CommandListener(this),
@@ -61,7 +61,7 @@ public class MyBot {
                         eventWaiter,
                         new ButtonListener());
 
-        //Intents
+//        //Intents
         builder.enableIntents(
                 GatewayIntent.GUILD_MESSAGES,
                 GatewayIntent.DIRECT_MESSAGE_REACTIONS,

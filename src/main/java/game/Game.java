@@ -1,6 +1,8 @@
 package game;
 
 import executable.MyBot;
+import game.model.Structure;
+import game.model.Zones;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -74,22 +76,27 @@ public class Game {
 //                Button.of(ButtonStyle.SUCCESS, "battle", "Combat de dresseur", Emoji.fromFormatted("\uD83D\uDCA5")),
         ));
 
-        String background;
-        int x;
-        int y;
-        if(save.getCampaign().getCurrentStructure() != null){
-            background = save.getCampaign().getCurrentStructure().getBackground();
-            y = save.getCampaign().getCurrentStructure().getY();
-            x = save.getCampaign().getCurrentStructure().getX();
+        String background="";
+        String nom = "";
+        int x=0;
+        int y=0;
+        Structure currentStructure = save.getCampaign().getCurrentStructure();
+        Zones currentZone = save.getCampaign().getCurrentZone();
+        if(currentStructure != null){
+            background = currentStructure.getBackground();
+            y = currentStructure.getY();
+            x = currentStructure.getX();
+            nom = currentStructure.getNom();
         }else{
-            background = save.getCampaign().getCurrentZone().getBackground();
-            y = save.getCampaign().getCurrentZone().getY();
-            x = save.getCampaign().getCurrentZone().getX();
+            background = currentZone.getBackground();
+            y = currentZone.getY();
+            x = currentZone.getX();
+            nom = currentZone.name();
         }
 
-        String combined = "temp/"+ imageManager.merge( PropertiesManager.getInstance().getImage(background), getPlayerSprite(),x,y);
+        String combined = "temp/"+ imageManager.merge(PropertiesManager.getInstance().getImage(background),getPlayerSprite(),x,y);
 
-        channel.sendMessage(messageManager.createMessageImage("Que faire ?", lc, combined))
+        channel.sendMessage(messageManager.createMessageImage(nom, lc, combined))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,

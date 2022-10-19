@@ -1,6 +1,7 @@
 package game.model;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,24 +38,6 @@ public class Campaign {
         this.reserve = new ArrayList<>();
         this.equipe = new ArrayList<>();
     }
-
-    public Zones getCurrentZone() {
-        return currentZone;
-    }
-
-    public void setCurrentZone(Zones currentZone) {
-        this.currentZone = currentZone;
-    }
-
-    @Nullable
-    public Structure getCurrentStructure() {
-        return currentStructure;
-    }
-
-    public void setCurrentStructure(@Nullable Structure currentStructure) {
-        this.currentStructure = currentStructure;
-    }
-
     public String getNom() {
         return nom;
     }
@@ -101,5 +84,22 @@ public class Campaign {
 
     public void setReserve(List<Pokemon> reserve) {
         this.reserve = reserve;
+    }
+
+    public Zones getCurrentZone() {
+        return currentZone;
+    }
+
+    public void setCurrentZone(Zones currentZone) {
+        this.currentZone = currentZone;
+    }
+
+    @Nullable
+    public Structure getCurrentStructure() {
+        return currentStructure;
+    }
+
+    public void setCurrentStructure(@Nullable Structure currentStructure) {
+        this.currentStructure = currentStructure;
     }
 }

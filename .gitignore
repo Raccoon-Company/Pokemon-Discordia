@@ -9,3 +9,4 @@ saves
 **/target
 /pokelog.log
 /saves/
+/saves/*

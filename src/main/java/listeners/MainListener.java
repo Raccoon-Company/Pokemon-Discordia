@@ -1,12 +1,11 @@
 package listeners;
 
 import executable.MyBot;
-import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.StatusChangeEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 
 public class MainListener extends ListenerAdapter {
 
@@ -18,7 +17,7 @@ public class MainListener extends ListenerAdapter {
     }
 
     @Override
-    public void onReady(@Nonnull ReadyEvent event) {
+    public void onReady(ReadyEvent event) {
         super.onReady(event);
         System.out.println("Le bot est prêt !");
         LOG.info("Le bot est prêt !");

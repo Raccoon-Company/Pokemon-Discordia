@@ -1,5 +1,8 @@
 package game.model;
 
+import com.github.oscar0812.pokeapi.models.locations.Location;
+import com.github.oscar0812.pokeapi.utils.Client;
+import executable.MyBot;
 import utils.ImageManager;
 
 import java.awt.image.BufferedImage;
@@ -15,7 +18,7 @@ public enum Zones {
     BOURG_PALETTE(86, 0, Arrays.asList(MAISON_DEPART), VILLAGE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 60,100),
     ;
 
-    private long idZone;
+    private int idZone;
     private int progressNeeded;
     private List<Structure> listeBatimentsSpeciaux;
     private ZoneTypes typeZone;
@@ -28,7 +31,7 @@ public enum Zones {
     private int y;
 
 
-    Zones(long idZone, int progressNeeded, List<Structure> listeBatimentsSpeciaux, ZoneTypes typeZone, List<PNJ> pnjs, Regions region, String background, int x, int y) {
+    Zones(int idZone, int progressNeeded, List<Structure> listeBatimentsSpeciaux, ZoneTypes typeZone, List<PNJ> pnjs, Regions region, String background, int x, int y) {
         this.idZone = idZone;
         this.progressNeeded = progressNeeded;
         this.listeBatimentsSpeciaux = listeBatimentsSpeciaux;
@@ -56,11 +59,11 @@ public enum Zones {
         this.region = region;
     }
 
-    public long getIdZone() {
+    public int getIdZone() {
         return idZone;
     }
 
-    public void setIdZone(long idZone) {
+    public void setIdZone(int idZone) {
         this.idZone = idZone;
     }
 
@@ -114,5 +117,9 @@ public enum Zones {
 
     public String getBackground(ImageManager imageManager, String front){
         return imageManager.merge(background, front, x, y);
+    }
+
+    public void getPokeApiZone(){
+        Location loc = Client.getLocationById(idZone);
     }
 }
