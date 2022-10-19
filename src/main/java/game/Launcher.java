@@ -147,7 +147,7 @@ public class Launcher extends ListenerAdapter {
                     }
                 },
                 1, TimeUnit.MINUTES,
-                buttonManager.timeout(channel, user)
+                ()->buttonManager.timeout(channel, user)
                 )
         );
     }

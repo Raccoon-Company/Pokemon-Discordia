@@ -1,15 +1,22 @@
 package game.model;
 
+import executable.MyBot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.ImageManager;
 
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.List;
 
 public enum Structure {
-    CHAMBRE("Chambre", "structures.chambre", 70,40, null),
-    MAISON_DEPART("Maison", "structures.maison-depart", 120,24, Zones.BOURG_PALETTE),
+    CHAMBRE(1,"Ma chambre - 1er étage", "structures.chambre", 70,40, null, Arrays.asList()),
+    MAISON_DEPART(2,"Chez moi - Rez de chaussée", "structures.maison-depart", 120,24, Zones.BOURG_PALETTE, Arrays.asList(PNJ.MOM)),
 
     ;
+
+    private final Logger logger = LoggerFactory.getLogger(Structure.class);
+    private int id;
 
     private String nom;
     private String background;
@@ -18,14 +25,60 @@ public enum Structure {
    //position en y de l'affichage du sprite joueur
     private int y;
 
-    private Zones zone;
+    private Zones zoneAccessible;
+private List<Structure> structuresAccessibles;
+    private List<PNJ> pnjs;
 
-    Structure(String nom, String background, int x, int y, Zones zone) {
+    Structure(int id,String nom, String background, int x, int y, Zones zone, List<PNJ> pnjs) {
         this.nom = nom;
         this.x = x;
-        this.zone = zone;
+        this.id = id;
+        this.zoneAccessible = zone;
         this.y = y;
         this.background = background;
+        this.pnjs = pnjs;
+    }
+
+    static {
+        MAISON_DEPART.setStructuresAccessibles(Arrays.asList(CHAMBRE));
+        CHAMBRE.setStructuresAccessibles(Arrays.asList(MAISON_DEPART));
+
+    }
+
+    public static Structure getById(String id) {
+        return Arrays.stream(values()).filter(s -> id.equals(String.valueOf(s.getId()))).findAny().orElse(null);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public List<Structure> getStructuresAccessibles() {
+        return structuresAccessibles;
+    }
+
+    public void setStructuresAccessibles(List<Structure> structuresAccessibles) {
+        this.structuresAccessibles = structuresAccessibles;
+    }
+
+    public Zones getZoneAccessible() {
+        return zoneAccessible;
+    }
+
+    public void setZoneAccessible(Zones zoneAccessible) {
+        this.zoneAccessible = zoneAccessible;
+    }
+
+    public List<PNJ> getPnjs() {
+        return pnjs;
+    }
+
+    public void setPnjs(List<PNJ> pnjs) {
+        this.pnjs = pnjs;
     }
 
     public String getNom() {

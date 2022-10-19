@@ -61,9 +61,9 @@ public class MessageManager {
     }
 
     public Runnable timeout(MessageChannelUnion channel, User user) {
-        return () -> {
             bot.unlock(user);
-            channel.sendMessage("Délai de réponse dépassé ! ").queue();
+            channel.sendMessage("Délai de réponse dépassé ! Relancez la commande /start pour continuer").queue();
+        return () -> {
         };
     }
 

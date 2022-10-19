@@ -46,9 +46,10 @@ public class ButtonManager {
     }
 
     public Runnable timeout(MessageChannelUnion channel, User user) {
+        bot.unlock(user);
+        channel.sendMessage("Délai de réponse dépassé ! Relancez la commande /start pour continuer").queue();
         return () -> {
-            bot.unlock(user);
-            channel.sendMessage("Délai de réponse dépassé ! ").queue();
+
         };
     }
 }

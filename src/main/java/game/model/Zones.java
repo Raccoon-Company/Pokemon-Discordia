@@ -8,6 +8,7 @@ import utils.ImageManager;
 import java.awt.image.BufferedImage;
 import java.security.Key;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static game.model.Regions.*;
@@ -15,12 +16,14 @@ import static game.model.Structure.*;
 import static game.model.ZoneTypes.*;
 
 public enum Zones {
-    BOURG_PALETTE(86, 0, Arrays.asList(MAISON_DEPART), VILLAGE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 60,100),
+    BOURG_PALETTE(86, 0, Arrays.asList(MAISON_DEPART), VILLAGE, Arrays.asList(), KANTO, "zones.bourg-palette", 60,100),
     ;
 
     private int idZone;
     private int progressNeeded;
     private List<Structure> listeBatimentsSpeciaux;
+
+    private List<Zones> listeZonesAccessibles;
     private ZoneTypes typeZone;
     private List<PNJ> pnjs;
 
@@ -41,6 +44,22 @@ public enum Zones {
         this.background = background;
         this.x = x;
         this.y = y;
+    }
+
+    static {
+        BOURG_PALETTE.setListeZonesAccessibles(Collections.emptyList());
+    }
+
+    public static Zones getById(String id) {
+        return Arrays.stream(values()).filter(s -> id.equals(String.valueOf(s.getIdZone()))).findAny().orElse(null);
+    }
+
+    public List<Zones> getListeZonesAccessibles() {
+        return listeZonesAccessibles;
+    }
+
+    public void setListeZonesAccessibles(List<Zones> listeZonesAccessibles) {
+        this.listeZonesAccessibles = listeZonesAccessibles;
     }
 
     public List<PNJ> getPnjs() {

@@ -6,6 +6,7 @@ import game.model.Campaign;
 import game.model.PNJ;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import utils.DiscordManager;
+import utils.MessageManager;
 import utils.Utils;
 
 import java.io.Serializable;

@@ -1,7 +1,9 @@
 package game;
 
 import executable.MyBot;
+import game.model.PNJ;
 import game.model.Structure;
+import game.model.ZoneTypes;
 import game.model.Zones;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
@@ -13,7 +15,10 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import utils.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Game {
@@ -42,7 +47,61 @@ public class Game {
         this.imageManager = new ImageManager(bot);
     }
 
+    public MyBot getBot() {
+        return bot;
+    }
+
+    public void setBot(MyBot bot) {
+        this.bot = bot;
+    }
+
+    public Save getSave() {
+        return save;
+    }
+
+    public void setSave(Save save) {
+        this.save = save;
+    }
+
+    public DiscordManager getDiscordManager() {
+        return discordManager;
+    }
+
+    public MessageManager getMessageManager() {
+        return messageManager;
+    }
+
+    public ImageManager getImageManager() {
+        return imageManager;
+    }
+
+    public FileManager getFileManager() {
+        return fileManager;
+    }
+
+    public ButtonManager getButtonManager() {
+        return buttonManager;
+    }
+
+    public MessageChannelUnion getChannel() {
+        return channel;
+    }
+
+    public void setChannel(MessageChannelUnion channel) {
+        this.channel = channel;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public void gameMenu() {
+        Structure currentStructure = save.getCampaign().getCurrentStructure();
+        Zones currentZone = save.getCampaign().getCurrentZone();
         /**
          * Actions (5 max):
          * -Se déplacer
@@ -63,39 +122,43 @@ public class Game {
          * -PNJ
          */
 
+        List<Button> buttons = new ArrayList<>(Arrays.asList(
+                Button.of(ButtonStyle.SUCCESS, "move", "Se déplacer", Emoji.fromFormatted("\uD83E\uDDED")),
+                Button.of(ButtonStyle.SUCCESS, "bag", "Sac à dos", Emoji.fromFormatted("\uD83C\uDF92"))
+        ));
+
+        if (currentStructure == null && currentZone.getTypeZone().equals(ZoneTypes.ROUTE)) {
+            buttons.add(Button.of(ButtonStyle.SUCCESS, "grass", "Hautes herbes", Emoji.fromFormatted("\uD83C\uDF3F")));
+        }
+        if ((currentStructure != null && currentStructure.getPnjs().size() > 0) || (currentStructure == null && currentZone.getPnjs().size() > 0)) {
+            buttons.add(Button.of(ButtonStyle.SUCCESS, "pnj", "Discuter", Emoji.fromFormatted("\uD83D\uDDE3")));
+        }
+//        Button.of(ButtonStyle.SUCCESS, "battle", "Combat de dresseur", Emoji.fromFormatted("\uD83D\uDCA5"));
 
 
         //déclaration des boutons choix du genre
-        LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.SUCCESS, "move", "Se déplacer", Emoji.fromFormatted("\uD83E\uDDED")),
-                Button.of(ButtonStyle.SUCCESS, "pnj", "Discuter", Emoji.fromFormatted("\uD83D\uDDE3")),
+        LayoutComponent lc = ActionRow.of(buttons);
 
-//                Button.of(ButtonStyle.SUCCESS, "grass", "Hautes herbes", Emoji.fromFormatted("\uD83C\uDF3F")),
+        String background;
+        String nom;
+        int x;
+        int y;
 
-                Button.of(ButtonStyle.SUCCESS, "bag", "Sac à dos", Emoji.fromFormatted("\uD83C\uDF92"))
-//                Button.of(ButtonStyle.SUCCESS, "battle", "Combat de dresseur", Emoji.fromFormatted("\uD83D\uDCA5")),
-        ));
-
-        String background="";
-        String nom = "";
-        int x=0;
-        int y=0;
-        Structure currentStructure = save.getCampaign().getCurrentStructure();
-        Zones currentZone = save.getCampaign().getCurrentZone();
-        if(currentStructure != null){
+        if (currentStructure != null) {
             background = currentStructure.getBackground();
             y = currentStructure.getY();
             x = currentStructure.getX();
             nom = currentStructure.getNom();
-        }else{
+        } else {
             background = currentZone.getBackground();
             y = currentZone.getY();
             x = currentZone.getX();
             nom = currentZone.name();
         }
 
-        String combined = "temp/"+ imageManager.merge(PropertiesManager.getInstance().getImage(background),getPlayerSprite(),x,y);
+        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), getPlayerSprite(), x, y);
 
+        bot.lock(user);
         channel.sendMessage(messageManager.createMessageImage(nom, lc, combined))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
@@ -107,7 +170,11 @@ public class Game {
                                 e -> {
                                     bot.unlock(user);
                                     e.deferEdit().queue();
-                                    channel.sendMessage(e.getComponentId() + " sélectionné").queue();
+                                    if (e.getComponentId().equals("move")) {
+                                        moveMenu();
+                                    }else if(e.getComponentId().equals("pnj")){
+                                        talkMenu();
+                                    }
                                 },
                                 1,
                                 TimeUnit.MINUTES,
@@ -119,10 +186,94 @@ public class Game {
 
     }
 
+    private void talkMenu() {
+        Structure currentStructure = save.getCampaign().getCurrentStructure();
+        Zones currentZone = save.getCampaign().getCurrentZone();
+        List<PNJ> pnjs = currentStructure == null ? currentZone.getPnjs() : currentStructure.getPnjs();
+        List<Button> buttons = new ArrayList<>();
+        for (PNJ pnj : pnjs) {
+            if (pnj != null) {
+                buttons.add(Button.of(ButtonStyle.SUCCESS, String.valueOf(pnj.getId()), pnj.getNom(), Emoji.fromFormatted(pnj.getEmojiCode())));
+            }
+        }
+
+        LayoutComponent lc = ActionRow.of(buttons);
+        bot.lock(user);
+        channel.sendMessage(messageManager.createMessageImage("Avec qui ?", lc, null))
+                .queue((message) ->
+                        bot.getEventWaiter().waitForEvent(
+                                ButtonInteractionEvent.class,
+                                //vérif basique de correspondance entre message/interaction
+                                e -> buttonManager.createPredicate(e, message, save, lc),
+                                //action quand interaction détectée
+
+                                e -> {
+                                    bot.unlock(user);
+                                    e.deferEdit().queue();
+                                    //structure sélectionnée
+                                    PNJ.getPNJById(e.getComponentId()).defaultTalk(this);
+                                    gameMenu();
+                                },
+                                1,
+                                TimeUnit.MINUTES,
+                                () -> buttonManager.timeout(channel, user)
+                        )
+                );
+    }
+
+    private void moveMenu() {
+        Structure currentStructure = save.getCampaign().getCurrentStructure();
+        Zones currentZone = save.getCampaign().getCurrentZone();
+        List<Structure> structuresAccessibles = currentStructure == null ? currentZone.getListeBatimentsSpeciaux() : currentStructure.getStructuresAccessibles();
+        List<Zones> zonesAccessibles = currentStructure == null ? currentZone.getListeZonesAccessibles() : Collections.singletonList(currentStructure.getZoneAccessible());
+        List<Button> buttons = new ArrayList<>();
+        for (Structure structureAccessible : structuresAccessibles) {
+            if (structureAccessible != null) {
+                buttons.add(Button.of(ButtonStyle.SUCCESS, "s" + structureAccessible.getId(), structureAccessible.getNom(), Emoji.fromFormatted("\uD83D\uDEAA")));
+            }
+        }
+        for (Zones zoneAccessible : zonesAccessibles) {
+            if (zoneAccessible != null) {
+                buttons.add(Button.of(ButtonStyle.SUCCESS, "z" + zoneAccessible.getIdZone(), "nom zone", Emoji.fromFormatted(zoneAccessible.getTypeZone().getEmojiCode())));
+            }
+        }
+
+        LayoutComponent lc = ActionRow.of(buttons);
+        bot.lock(user);
+        channel.sendMessage(messageManager.createMessageImage("Pour aller où ?", lc, null))
+                .queue((message) ->
+                        bot.getEventWaiter().waitForEvent(
+                                ButtonInteractionEvent.class,
+                                //vérif basique de correspondance entre message/interaction
+                                e -> buttonManager.createPredicate(e, message, save, lc),
+                                //action quand interaction détectée
+
+                                e -> {
+                                    bot.unlock(user);
+                                    e.deferEdit().queue();
+                                    //structure sélectionnée
+                                    if (e.getComponentId().startsWith("s")) {
+                                        save.getCampaign().setCurrentStructure(Structure.getById(e.getComponentId().split("s")[1]));
+                                        //zone sélectionnée
+                                    } else {
+                                        save.getCampaign().setCurrentZone(Zones.getById(e.getComponentId().split("s")[1]));
+                                        save.getCampaign().setCurrentStructure(null);
+                                    }
+                                    gameMenu();
+                                },
+                                1,
+                                TimeUnit.MINUTES,
+                                () -> {
+                                    buttonManager.timeout(channel, user);
+                                }
+                        )
+                );
+    }
+
     private String getPlayerSprite() {
-        if(save.getCampaign().isGender()){
+        if (save.getCampaign().isGender()) {
             return PropertiesManager.getInstance().getImage("boy");
-        }else{
+        } else {
             return PropertiesManager.getInstance().getImage("girl");
         }
     }
