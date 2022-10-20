@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import executable.MyBot;
 import game.Save;
 import net.dv8tion.jda.api.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,10 +17,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FileManager {
+
+    private final Logger logger = LoggerFactory.getLogger(FileManager.class);
 
     public static final String SAVE_REPO = PropertiesManager.getInstance().getProp("saves-path");
 
@@ -41,6 +46,7 @@ public class FileManager {
     }
 
     public Save writeSave(Save save) {
+        save.setLastPlayed(new Date());
         DiscordManager discordManager = new DiscordManager(bot);
         User user = discordManager.getUserById(save.getUserId());
         ObjectMapper objectMapper = new ObjectMapper();
@@ -122,5 +128,19 @@ public class FileManager {
             return null;
         }
         return is.getPath();
+    }
+
+    public boolean deleteSave(long idUser, long idSave) {
+        List<Save> saves = getSaves(idUser);
+        return saves.stream().filter(s -> s.getId() == idSave).findAny().map(s -> {
+            File file = new File(getSavePath(s));
+            try {
+                Files.delete(file.toPath());
+                return true;
+            } catch (IOException ioException) {
+                logger.warn("Suppression de la sauvegarde " + idSave + " de l'user " + idUser + " impossible.");
+                return false;
+            }
+        }).orElse(false);
     }
 }

@@ -1,8 +1,10 @@
 package game.model;
 
+import com.github.oscar0812.pokeapi.utils.Client;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Campaign {
@@ -19,6 +21,9 @@ public class Campaign {
     private List<Pokemon> equipe;
 
     private List<Pokemon> reserve;
+
+    //<idSpecie,status> status : 0 for unseen, 1 for seen, 2 for captured
+    private HashMap<Integer, Integer> pokedex;
 
     private Zones currentZone;
 
@@ -37,7 +42,18 @@ public class Campaign {
         this.idStarter = idStarter;
         this.reserve = new ArrayList<>();
         this.equipe = new ArrayList<>();
+        this.pokedex = new HashMap<>();
+        setUpPokedex();
     }
+
+    private void setUpPokedex() {
+        int n = Client.getPokemonSpeciesList(151, 1).getCount();
+        for (int i = 1; i <= n; i++) {
+            this.pokedex.put(i, 0);
+        }
+        this.pokedex.replace(idStarter,2);
+    }
+
     public String getNom() {
         return nom;
     }
@@ -60,6 +76,14 @@ public class Campaign {
 
     public void setNomRival(String nomRival) {
         this.nomRival = nomRival;
+    }
+
+    public HashMap<Integer, Integer> getPokedex() {
+        return pokedex;
+    }
+
+    public void setPokedex(HashMap<Integer, Integer> pokedex) {
+        this.pokedex = pokedex;
     }
 
     public int getIdStarter() {
@@ -101,5 +125,9 @@ public class Campaign {
 
     public void setCurrentStructure(@Nullable Structure currentStructure) {
         this.currentStructure = currentStructure;
+    }
+
+    public Pokemon getTeamPokemonById(long id) {
+        return getEquipe().stream().filter(s -> s.getId() == id).findAny().orElse(null);
     }
 }

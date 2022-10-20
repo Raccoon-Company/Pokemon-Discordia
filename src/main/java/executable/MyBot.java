@@ -66,6 +66,7 @@ public class MyBot {
                 GatewayIntent.GUILD_MESSAGES,
                 GatewayIntent.DIRECT_MESSAGE_REACTIONS,
                 GatewayIntent.MESSAGE_CONTENT,
+                GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS,
                 GatewayIntent.GUILD_MEMBERS);
 

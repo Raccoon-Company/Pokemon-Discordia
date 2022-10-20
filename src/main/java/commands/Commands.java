@@ -5,7 +5,9 @@ import java.util.Arrays;
 public enum Commands {
     HELP("help","Affiche une liste de commandes valides.",0),
     CHANGES("changes","Affiche l'historique des changements", 0),
-    START("start", "Commence à jouer !",0);
+    START("start", "Commence à jouer !",0),
+    QUIT("quit", "Sauvegarde la partie en cours et quitte",0),
+    ;
 
     private String texte;
     private String description;

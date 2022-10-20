@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.commons.lang.StringUtils;
 
+import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,24 +61,22 @@ public class MessageManager {
         return e.getAuthor().getIdLong() == userId; // Check for same author
     }
 
-    public Runnable timeout(MessageChannelUnion channel, User user) {
+    public void timeout(MessageChannelUnion channel, User user) {
             bot.unlock(user);
             channel.sendMessage("Délai de réponse dépassé ! Relancez la commande /start pour continuer").queue();
-        return () -> {
-        };
     }
 
-    public MessageCreateData createMessageThumbnail(PNJ pnj, String content, LayoutComponent lc) {
-        return createMessageThumbnailAndImage(pnj, content, lc, null);
+    public MessageCreateData createMessageThumbnail(Save save, PNJ pnj, String content, LayoutComponent lc) {
+        return createMessageThumbnailAndImage(save,pnj, content, lc, null);
     }
 
-    public MessageCreateData createMessageImage(String content, LayoutComponent lc, String image) {
-        return createMessageThumbnailAndImage(null, content, lc, image);
+    public MessageCreateData createMessageImage(Save save, String content, LayoutComponent lc, String image) {
+        return createMessageThumbnailAndImage(save,null, content, lc, image);
     }
 
-    public MessageCreateData createMessageThumbnailAndImage(PNJ pnj, String content, LayoutComponent lc, String image) {
+    public MessageCreateData createMessageThumbnailAndImage(Save save, PNJ pnj, String content, LayoutComponent lc, String image) {
         EmbedBuilder embedBuilder = new EmbedBuilder()
-                .setColor(0x5663F7)
+                .setColor(new Color(save.getColorRGB()))
                 .setDescription(content);
 
         List<FileUpload> files = new ArrayList<>();

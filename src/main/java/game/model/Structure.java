@@ -1,17 +1,17 @@
 package game.model;
 
-import executable.MyBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.ImageManager;
 
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public enum Structure {
-    CHAMBRE(1,"Ma chambre - 1er étage", "structures.chambre", 70,40, null, Arrays.asList()),
-    MAISON_DEPART(2,"Chez moi - Rez de chaussée", "structures.maison-depart", 120,24, Zones.BOURG_PALETTE, Arrays.asList(PNJ.MOM)),
+    CHAMBRE(1,"Ma chambre - 1er étage", "structures.chambre", 70,40, Arrays.asList()),
+    MAISON_DEPART(2,"Chez moi - Rez de chaussée", "structures.maison-depart", 120,24, Arrays.asList(PNJ.MOM)),
+    CENTRE_POKEMON(3, "Centre Pokémon", "structures.centre-pokemon", 90,40,Arrays.asList(PNJ.INFIRMIERE)),
 
     ;
 
@@ -25,28 +25,31 @@ public enum Structure {
    //position en y de l'affichage du sprite joueur
     private int y;
 
-    private Zones zoneAccessible;
-private List<Structure> structuresAccessibles;
+    private List<Structure> structuresAccessibles;
     private List<PNJ> pnjs;
 
-    Structure(int id,String nom, String background, int x, int y, Zones zone, List<PNJ> pnjs) {
+    Structure(int id, String nom, String background, int x, int y, List<PNJ> pnjs) {
         this.nom = nom;
         this.x = x;
         this.id = id;
-        this.zoneAccessible = zone;
         this.y = y;
         this.background = background;
         this.pnjs = pnjs;
+        this.structuresAccessibles = Collections.emptyList();
     }
 
     static {
-        MAISON_DEPART.setStructuresAccessibles(Arrays.asList(CHAMBRE));
-        CHAMBRE.setStructuresAccessibles(Arrays.asList(MAISON_DEPART));
+        MAISON_DEPART.setStructuresAccessibles(Collections.singletonList(CHAMBRE));
+        CHAMBRE.setStructuresAccessibles(Collections.singletonList(MAISON_DEPART));
 
     }
 
     public static Structure getById(String id) {
         return Arrays.stream(values()).filter(s -> id.equals(String.valueOf(s.getId()))).findAny().orElse(null);
+    }
+
+    public static Structure getById(int id) {
+        return Arrays.stream(values()).filter(s -> id == s.getId()).findAny().orElse(null);
     }
 
     public int getId() {
@@ -63,14 +66,6 @@ private List<Structure> structuresAccessibles;
 
     public void setStructuresAccessibles(List<Structure> structuresAccessibles) {
         this.structuresAccessibles = structuresAccessibles;
-    }
-
-    public Zones getZoneAccessible() {
-        return zoneAccessible;
-    }
-
-    public void setZoneAccessible(Zones zoneAccessible) {
-        this.zoneAccessible = zoneAccessible;
     }
 
     public List<PNJ> getPnjs() {

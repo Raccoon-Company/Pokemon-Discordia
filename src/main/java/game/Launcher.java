@@ -20,10 +20,12 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import utils.*;
 
+import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class Launcher extends ListenerAdapter {
@@ -105,8 +107,8 @@ public class Launcher extends ListenerAdapter {
         for (int i = 0; i < saves.size(); i++) {
             buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(saves.get(i).getId()), saves.get(i).getCampaign().getNom()));
         }
-        if(saves.size() < 3){
-            buttons.add(Button.of(ButtonStyle.SUCCESS, "new", "Nouvelle partie", Emoji.fromFormatted("\uD83C\uDD95")));
+        if (saves.size() < 3) {
+            buttons.add(Button.of(ButtonStyle.PRIMARY, "new", "Nouvelle partie", Emoji.fromFormatted("\uD83C\uDD95")));
         }
         buttons.add(Button.of(ButtonStyle.SECONDARY, "exit", "", Emoji.fromFormatted("❌")));
 
@@ -118,7 +120,7 @@ public class Launcher extends ListenerAdapter {
 
         for (Save save : saves) {
             EmbedBuilder embedBuilder = new EmbedBuilder()
-                    .setColor(0x5663F7)
+                    .setColor(new Color(save.getColorRGB()))
                     .setAuthor(save.getCampaign().getNom(), null, "attachment://" + PNJ.SYSTEM.getIconPath())
                     .setDescription(save.getDescription());
 
@@ -127,27 +129,27 @@ public class Launcher extends ListenerAdapter {
         mcb.addComponents(lc);
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
-                ButtonInteractionEvent.class,
-                e -> buttonManager.createPredicate(e, message, idUser, lc),
-                //action quand réponse détectée
-                e -> {
-                    e.deferEdit().queue();
-                    bot.unlock(user);
-                    associatedMessagesIds.add(message.getId());
-                    if(e.getComponentId().equals("exit")){
-                        clearMessagesAssociated();
-                    }else if(e.getComponentId().equals("new")){
-                        Save save = new Save(user.getIdLong());
-                        save.setPrivilegedChannelId(message.getChannel().getIdLong());
-                        startGame(save);
-                    }else{
-                        Save selected = saves.stream().filter(s -> e.getComponentId().equals(String.valueOf(s.getId()))).findAny().orElseThrow(IllegalStateException::new);
-                        selected.setPrivilegedChannelId(channelId);
-                        loadSave(selected);
-                    }
-                },
-                1, TimeUnit.MINUTES,
-                ()->buttonManager.timeout(channel, user)
+                        ButtonInteractionEvent.class,
+                        e -> buttonManager.createPredicate(e, message, idUser, lc),
+                        //action quand réponse détectée
+                        e -> {
+                            e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                            bot.unlock(user);
+                            associatedMessagesIds.add(message.getId());
+                            if (e.getComponentId().equals("exit")) {
+                                clearMessagesAssociated();
+                            } else if (e.getComponentId().equals("new")) {
+                                Save save = new Save(user.getIdLong());
+                                save.setPrivilegedChannelId(message.getChannel().getIdLong());
+                                startGame(save);
+                            } else {
+                                Save selected = saves.stream().filter(s -> e.getComponentId().equals(String.valueOf(s.getId()))).findAny().orElseThrow(IllegalStateException::new);
+                                selected.setPrivilegedChannelId(channelId);
+                                loadSave(selected);
+                            }
+                        },
+                        1, TimeUnit.MINUTES,
+                        () -> buttonManager.timeout(channel, user)
                 )
         );
     }
@@ -175,7 +177,7 @@ public class Launcher extends ListenerAdapter {
 
         bot.lock(user);
         //message d'intro : choix genre
-        channel.sendMessage(messageManager.createMessageThumbnail(PNJ.RAOULT, "Bonjour et bienvenue dans le fabuleux monde des pokémons !\nEs-tu un garçon ou une fille ?", lc))
+        channel.sendMessage(messageManager.createMessageThumbnail(save, PNJ.RAOULT, "Bonjour et bienvenue dans le fabuleux monde des pokémons !\nEs-tu un garçon ou une fille ?", lc))
                 .queue(message ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,
@@ -183,7 +185,7 @@ public class Launcher extends ListenerAdapter {
                                 e -> buttonManager.createPredicate(e, message, save, lc),
                                 //action quand interaction détectée
                                 e -> {
-                                    e.deferEdit().queue();
+                                    e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     bot.unlock(user);
                                     if (e.getComponentId().equals("f")) {
                                         save.getCampaign().setGender(false);
@@ -194,7 +196,7 @@ public class Launcher extends ListenerAdapter {
                                 },
                                 1,
                                 TimeUnit.MINUTES,
-                                buttonManager.timeout(channel, user)
+                                () -> buttonManager.timeout(channel, user)
                         )
                 );
     }
@@ -204,19 +206,19 @@ public class Launcher extends ListenerAdapter {
 
         bot.lock(user);
         //demande d'entrée du prénom
-        channel.sendMessage(messageManager.createMessageThumbnailAndImage(PNJ.RAOULT, "Ah d'accord ! Et comment t'appelles-tu ?", null, image))
+        channel.sendMessage(messageManager.createMessageThumbnailAndImage(save, PNJ.RAOULT, "Ah d'accord ! Et comment t'appelles-tu ?", null, image))
                 .queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
-                        MessageReceivedEvent.class,
-                        e -> messageManager.createPredicate(e, save),
-                        //action quand réponse détectée
-                        e -> {
-                            bot.unlock(user);
-                            String reply = e.getMessage().getContentRaw();
-                            save.getCampaign().setNom(reply);
-                            confirmationNom(channel, user, save);
-                        },
-                        1, TimeUnit.MINUTES,
-                        messageManager.timeout(channel, user)
+                                MessageReceivedEvent.class,
+                                e -> messageManager.createPredicate(e, save),
+                                //action quand réponse détectée
+                                e -> {
+                                    bot.unlock(user);
+                                    String reply = e.getMessage().getContentRaw();
+                                    save.getCampaign().setNom(reply);
+                                    confirmationNom(channel, user, save);
+                                },
+                                1, TimeUnit.MINUTES,
+                                () -> messageManager.timeout(channel, user)
                         )
                 );
     }
@@ -225,12 +227,12 @@ public class Launcher extends ListenerAdapter {
     private void confirmationNom(MessageChannelUnion channel, User user, Save save) {
         //déclaration des boutons choix du genre
         LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.SUCCESS, "true", "Oui", Emoji.fromFormatted("✅")),
+                Button.of(ButtonStyle.PRIMARY, "true", "Oui", Emoji.fromFormatted("✅")),
                 Button.of(ButtonStyle.SECONDARY, "false", "Non", Emoji.fromFormatted("❌"))
         ));
 
         bot.lock(user);
-        channel.sendMessage(messageManager.createMessageThumbnail(PNJ.RAOULT, save.getCampaign().getNom() + " donc, c'est bien ça ?", lc))
+        channel.sendMessage(messageManager.createMessageThumbnail(save, PNJ.RAOULT, save.getCampaign().getNom() + " donc, c'est bien ça ?", lc))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,
@@ -240,7 +242,7 @@ public class Launcher extends ListenerAdapter {
 
                                 e -> {
                                     bot.unlock(user);
-                                    e.deferEdit().queue();
+                                    e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     if (e.getComponentId().equals("true")) {
                                         save.getCampaign().setNom(save.getCampaign().getNom());
                                         choixPrenomRival(channel, user, save);
@@ -264,19 +266,19 @@ public class Launcher extends ListenerAdapter {
 
         bot.lock(user);
         //demande d'entrée du prénom
-        channel.sendMessage(messageManager.createMessageThumbnailAndImage(PNJ.RAOULT, "Très bien.\nEt lui là-bas, c'est ton ami non ? Il va commencer son aventure dans le monde des pokémons en même temps que toi.\nComment s'appelle t'il ?", null, image))
+        channel.sendMessage(messageManager.createMessageThumbnailAndImage(save, PNJ.RAOULT, "Très bien.\nEt lui là-bas, c'est ton ami non ? Il va commencer son aventure dans le monde des pokémons en même temps que toi.\nComment s'appelle t'il ?", null, image))
                 .queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
-                        MessageReceivedEvent.class,
-                        e -> messageManager.createPredicate(e, save),
-                        //action quand réponse détectée
-                        e -> {
-                            bot.unlock(user);
-                            String reply = e.getMessage().getContentRaw();
-                            save.getCampaign().setNomRival(reply);
-                            confirmationNomRival(channel, user, save);
-                        },
-                        1, TimeUnit.MINUTES,
-                        messageManager.timeout(channel, user)
+                                MessageReceivedEvent.class,
+                                e -> messageManager.createPredicate(e, save),
+                                //action quand réponse détectée
+                                e -> {
+                                    bot.unlock(user);
+                                    String reply = e.getMessage().getContentRaw();
+                                    save.getCampaign().setNomRival(reply);
+                                    confirmationNomRival(channel, user, save);
+                                },
+                                1, TimeUnit.MINUTES,
+                                () -> messageManager.timeout(channel, user)
                         )
                 );
     }
@@ -284,12 +286,12 @@ public class Launcher extends ListenerAdapter {
     private void confirmationNomRival(MessageChannelUnion channel, User user, Save save) {
         //déclaration des boutons choix du genre
         LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.SUCCESS, "true", "Oui", Emoji.fromFormatted("✅")),
+                Button.of(ButtonStyle.PRIMARY, "true", "Oui", Emoji.fromFormatted("✅")),
                 Button.of(ButtonStyle.SECONDARY, "false", "Non", Emoji.fromFormatted("❌"))
         ));
 
         bot.lock(user);
-        channel.sendMessage(messageManager.createMessageThumbnail(PNJ.RAOULT, save.getCampaign().getNomRival() + " donc, c'est bien ça ?", lc))
+        channel.sendMessage(messageManager.createMessageThumbnail(save, PNJ.RAOULT, save.getCampaign().getNomRival() + " donc, c'est bien ça ?", lc))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,
@@ -299,7 +301,7 @@ public class Launcher extends ListenerAdapter {
 
                                 e -> {
                                     bot.unlock(user);
-                                    e.deferEdit().queue();
+                                    e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     if (e.getComponentId().equals("true")) {
                                         choixStarter(channel, user, save);
                                     } else {
@@ -319,14 +321,14 @@ public class Launcher extends ListenerAdapter {
     private void choixStarter(MessageChannelUnion channel, User user, Save save) {
         //déclaration des boutons choix du genre
         LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.SUCCESS, "1", "Bulbizarre", Emoji.fromFormatted("\uD83C\uDF3F")),
-                Button.of(ButtonStyle.SUCCESS, "4", "Salamèche", Emoji.fromFormatted("\uD83D\uDD25")),
-                Button.of(ButtonStyle.SUCCESS, "7", "Carapuce", Emoji.fromFormatted("\uD83D\uDCA7"))
+                Button.of(ButtonStyle.PRIMARY, "1", "Bulbizarre", Emoji.fromFormatted("\uD83C\uDF3F")),
+                Button.of(ButtonStyle.PRIMARY, "4", "Salamèche", Emoji.fromFormatted("\uD83D\uDD25")),
+                Button.of(ButtonStyle.PRIMARY, "7", "Carapuce", Emoji.fromFormatted("\uD83D\uDCA7"))
         ));
 
         bot.lock(user);
 
-        channel.sendMessage(messageManager.createMessageThumbnailAndImage(PNJ.RAOULT, "Bon, pas le temps de niaiser " + save.getCampaign().getNom() + ", prends ce pokédex, choisis le pokémon que tu veux et casse-toi !\nAh oui, on a pas de pikachus, c'est pour les victimes. Au pire t'en trouveras dans la forêt à côté.", lc, PropertiesManager.getInstance().getImage("starters")))
+        channel.sendMessage(messageManager.createMessageThumbnailAndImage(save, PNJ.RAOULT, "Bon, pas le temps de niaiser " + save.getCampaign().getNom() + ", prends ce pokédex, choisis le pokémon que tu veux et casse-toi !\nAh oui, on a pas de pikachus, c'est pour les victimes. Au pire t'en trouveras dans la forêt à côté.", lc, PropertiesManager.getInstance().getImage("starters")))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,
@@ -336,7 +338,7 @@ public class Launcher extends ListenerAdapter {
 
                                 e -> {
                                     bot.unlock(user);
-                                    e.deferEdit().queue();
+                                    e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     confirmationStarter(channel, user, save, e.getComponentId());
                                 },
                                 1,
@@ -352,7 +354,7 @@ public class Launcher extends ListenerAdapter {
     private void confirmationStarter(MessageChannelUnion channel, User user, Save save, String componentId) {
         //déclaration des boutons choix du genre
         LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.SUCCESS, "true", "Oui", Emoji.fromFormatted("✅")),
+                Button.of(ButtonStyle.PRIMARY, "true", "Oui", Emoji.fromFormatted("✅")),
                 Button.of(ButtonStyle.SECONDARY, "false", "Non", Emoji.fromFormatted("❌"))
         ));
 
@@ -371,7 +373,7 @@ public class Launcher extends ListenerAdapter {
         }
 
         bot.lock(user);
-        channel.sendMessage(messageManager.createMessageThumbnail(PNJ.RAOULT, content, lc))
+        channel.sendMessage(messageManager.createMessageThumbnail(save, PNJ.RAOULT, content, lc))
                 .queue((message) ->
                         bot.getEventWaiter().waitForEvent(
                                 ButtonInteractionEvent.class,
@@ -381,10 +383,10 @@ public class Launcher extends ListenerAdapter {
 
                                 e -> {
                                     bot.unlock(user);
-                                    e.deferEdit().queue();
+                                    e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     if (e.getComponentId().equals("true")) {
                                         save.getCampaign().setIdStarter(id);
-                                        validationSave(channel, user, save);
+                                        validationSave(save);
                                     } else {
                                         choixStarter(channel, user, save);
                                     }
@@ -399,17 +401,16 @@ public class Launcher extends ListenerAdapter {
                 );
     }
 
-    private void validationSave(MessageChannelUnion channel, User user, Save save) {
+    private void validationSave(Save save) {
         Pokemon starter = new Pokemon(save.getCampaign().getIdStarter(), 5, false);
         Campaign campaign = new Campaign(save.getCampaign().getNom(), save.getCampaign().isGender(), save.getCampaign().getNomRival(), save.getCampaign().getIdStarter());
         save.setCampaign(campaign);
         save.getCampaign().getEquipe().add(starter);
-        fileManager.writeSave(save);
         Game game = new Game(bot, save);
         game.gameMenu();
     }
 
-    private void clearMessagesAssociated(){
+    private void clearMessagesAssociated() {
         discordManager.getChannelById(channelId).purgeMessagesById(associatedMessagesIds);
     }
 }

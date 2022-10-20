@@ -4,6 +4,7 @@ import executable.MyBot;
 import game.Launcher;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import utils.FileManager;
 import utils.MessageManager;
 import utils.PropertiesManager;
 
@@ -23,6 +24,7 @@ public class CommandManager {
     private final List<String> validCommands;
     private final MyBot bot;
     private final MessageManager messageManager;
+    private final FileManager fileManager;
 
     /**
      * Constructeur.
@@ -31,6 +33,7 @@ public class CommandManager {
      */
     public CommandManager(MyBot bot) {
         this.messageManager = new MessageManager(bot);
+        this.fileManager = new FileManager(bot);
         this.bot = bot;
         validCommands = Arrays.stream(Commands.values()).map(Commands::getTexte).collect(Collectors.toList());
     }
@@ -47,7 +50,7 @@ public class CommandManager {
             return;
         }
         if(bot.getLockedUsers().contains(event.getAuthor().getIdLong())){
-            messageManager.send(event.getChannel(), "Les commandes du bot vous sont inacessibles tant qu'il attend une réponse de votre part.");
+            messageManager.send(event.getChannel(), "Les commandes du bot vous sont inacessibles tant qu'il attend une réponse de votre part. Utilisez "+PREFIX+Commands.QUIT.getTexte()+" pour passer outre.");
             return;
         }
         //vérif du nb d'arguments
@@ -64,6 +67,11 @@ public class CommandManager {
             case START:
                 Launcher launcher = new Launcher(bot);
                 launcher.start(message);
+//            case QUIT:
+//                bot.unlock(event.getAuthor());
+//                event.getMessage().reply("Partie terminée. Toute progression non sauvegardée est perdue.").queue();
+//                break;
+            case CHANGES:
                 break;
         }
     }

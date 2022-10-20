@@ -3,6 +3,7 @@ package game.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.oscar0812.pokeapi.models.pokemon.PokemonSpecies;
 import com.github.oscar0812.pokeapi.utils.Client;
+import utils.APIUtils;
 import utils.Utils;
 
 import java.util.Date;
@@ -93,9 +94,7 @@ public class Pokemon {
 
     public Pokemon(int idSpecie, int level, boolean canEvolve) {
 
-        PokemonSpecies species = Client.getPokemonSpeciesById(idSpecie);
-
-
+        this.idSpecie = idSpecie;
         //TODO nature et moveset
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
         this.level = level;
@@ -106,7 +105,7 @@ public class Pokemon {
         this.friendship = 0;
         //TODO gender
         //2 : genderless, 0 : female, 1 : male
-        this.idGender = species.getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > species.getGenderRate() ? 1 : 0;
+        this.idGender = getPokemonSpeciesAPI().getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 1 : 0;
         this.level = 0;
         //détermination des IVs
         this.atkSpeIV = Utils.getRandom().nextInt(32);
@@ -141,7 +140,7 @@ public class Pokemon {
 //            }
 //        }
         //on reset le bonheur apres les levels up, sinon ca fausse car rapportent du bonheur
-        this.friendship = species.getBaseHappiness();
+        this.friendship = getPokemonSpeciesAPI().getBaseHappiness();
         //talent random si disponible
 //        this.talent = species.getTalents().isEmpty() ? null : species.getTalents().get(Utils.getRandom().nextInt(species.getTalents().size()));
 //        this.currentCritChance = critChance;
@@ -153,6 +152,21 @@ public class Pokemon {
 //        this.currentSpeed = getMaxSpeed();
 //        this.currentHp = getMaxHp();
 
+    }
+
+    @JsonIgnore
+    public PokemonSpecies getPokemonSpeciesAPI(){
+        return Client.getPokemonSpeciesById(idSpecie);
+    }
+
+    @JsonIgnore
+    public com.github.oscar0812.pokeapi.models.pokemon.Pokemon getPokemonAPI(){
+        return Client.getPokemonById(idSpecie);
+    }
+
+    @JsonIgnore
+    public String getSpecieName(){
+        return APIUtils.getFrName(getPokemonSpeciesAPI().getNames());
     }
 
     public long getId() {
@@ -469,5 +483,13 @@ public class Pokemon {
 
     public void setPlayerPokemon(boolean playerPokemon) {
         isPlayerPokemon = playerPokemon;
+    }
+
+    public String getDescriptionDetaillee() {
+        String res = "";
+        res += getSpecieName();
+        res += "Niveau " + level + " "+xp+"xp\n";
+        res += currentHp + "/maxHp";
+        return res;
     }
 }

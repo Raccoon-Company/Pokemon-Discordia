@@ -8,7 +8,9 @@ import java.util.Arrays;
 public enum PNJ {
     SYSTEM(1,"System", "system.png","\uD83E\uDD16"),
     RAOULT(2,"Prof. Didier Raoult", "raoult.jpg","\uD83D\uDC68\uD83C\uDFFC\u200D\uD83D\uDD2C"),
-    MOM(3,"Maman", "mom.jpg", "👩🏼");
+    MOM(3,"Maman", "mom.jpg", "👩🏼"),
+    ECOLIER(4, "Écolier Timothée", "kid.png","\uD83E\uDDD2\uD83C\uDFFC"),
+    INFIRMIERE(5,"Infirmière Joëlle" ,"infirmiere.jpg" ,"\uD83D\uDC69\uD83C\uDFFC\u200D⚕️" );
 
     private int id;
     //nom du pnj
@@ -74,10 +76,16 @@ public enum PNJ {
             case MOM:
                 message = "Bonjour mon lapin ! Fais attention aux rattatas sur la route !";
                 break;
+            case ECOLIER:
+                message = "Ca fait 2 heures que j'essaie d'attraper un roucool... Si seulement j'avais des pokéballs...";
+                break;
+            case INFIRMIERE:
+                message = "Je vais soigner vos pokémons (quand ca sera codé)";
+break;
         }
 
         game.getChannel().sendMessage(
-                game.getMessageManager().createMessageThumbnail(this, message, lc)
+                game.getMessageManager().createMessageThumbnail(game.getSave(),this, message, lc)
         ).queue();
 
     }

@@ -9,6 +9,7 @@ import utils.DiscordManager;
 import utils.MessageManager;
 import utils.Utils;
 
+import java.awt.*;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -21,21 +22,24 @@ public class Save implements Serializable {
 
     private Campaign campaign;
 
+    private int colorRGB;
+
     @JsonIgnore
     private long privilegedChannelId;
 
     public Save() {
     }
 
-    public Save(long id, long user, Date lastPlayed, Campaign campaign) {
+    public Save(long id, long user, Date lastPlayed, Campaign campaign, int colorRGB) {
         this.id = id;
         this.userId = user;
         this.lastPlayed = lastPlayed;
         this.campaign = campaign;
+        this.colorRGB = colorRGB;
     }
 
     public Save(long user) {
-        this(new Date().getTime(), user, new Date(), new Campaign());
+        this(new Date().getTime(), user, new Date(), new Campaign(), Color.decode("0x5865F2").getRGB());
     }
 
     public Campaign getCampaign() {
@@ -49,6 +53,13 @@ public class Save implements Serializable {
         return res;
     }
 
+    public int getColorRGB() {
+        return colorRGB;
+    }
+
+    public void setColorRGB(int colorRGB) {
+        this.colorRGB = colorRGB;
+    }
 
     public void setCampaign(Campaign campaign) {
         this.campaign = campaign;

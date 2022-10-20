@@ -3,6 +3,7 @@ package game.model;
 import com.github.oscar0812.pokeapi.models.locations.Location;
 import com.github.oscar0812.pokeapi.utils.Client;
 import executable.MyBot;
+import utils.APIUtils;
 import utils.ImageManager;
 
 import java.awt.image.BufferedImage;
@@ -16,12 +17,19 @@ import static game.model.Structure.*;
 import static game.model.ZoneTypes.*;
 
 public enum Zones {
-    BOURG_PALETTE(86, 0, Arrays.asList(MAISON_DEPART), VILLAGE, Arrays.asList(), KANTO, "zones.bourg-palette", 60,100),
+    BOURG_PALETTE(86, 0, Arrays.asList(2), VILLAGE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
+    ROUTE_1(88,0, Arrays.asList(),ROUTE, Arrays.asList(PNJ.ECOLIER), KANTO, "zones.route-1-kanto", 145,80 ),
+    JADIELLE(154,0, Arrays.asList(3),VILLE, Arrays.asList(), KANTO, "zones.jadielle", 70,85),
+    ROUTE_22(102,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.route-22-kanto", 170,90),
+    ROUTE_2(99,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.route-2-kanto", 60,90),
+    FORET_DE_JADE(155,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.foret-de-jade", 30,100),
+    ARGENTA(231,0, Arrays.asList(3),VILLE, Arrays.asList(), KANTO, "zones.argenta", 15,70),
+
     ;
 
     private int idZone;
     private int progressNeeded;
-    private List<Structure> listeBatimentsSpeciaux;
+    private List<Integer> listeIdStructures;
 
     private List<Zones> listeZonesAccessibles;
     private ZoneTypes typeZone;
@@ -34,10 +42,10 @@ public enum Zones {
     private int y;
 
 
-    Zones(int idZone, int progressNeeded, List<Structure> listeBatimentsSpeciaux, ZoneTypes typeZone, List<PNJ> pnjs, Regions region, String background, int x, int y) {
+    Zones(int idZone, int progressNeeded, List<Integer> listeIdStructures, ZoneTypes typeZone, List<PNJ> pnjs, Regions region, String background, int x, int y) {
         this.idZone = idZone;
         this.progressNeeded = progressNeeded;
-        this.listeBatimentsSpeciaux = listeBatimentsSpeciaux;
+        this.listeIdStructures = listeIdStructures;
         this.pnjs = pnjs;
         this.typeZone = typeZone;
         this.region = region;
@@ -47,7 +55,13 @@ public enum Zones {
     }
 
     static {
-        BOURG_PALETTE.setListeZonesAccessibles(Collections.emptyList());
+        BOURG_PALETTE.setListeZonesAccessibles(Arrays.asList(ROUTE_1));
+        ROUTE_1.setListeZonesAccessibles(Arrays.asList(BOURG_PALETTE,JADIELLE));
+        JADIELLE.setListeZonesAccessibles(Arrays.asList(ROUTE_1, ROUTE_22,ROUTE_2));
+        ROUTE_2.setListeZonesAccessibles(Arrays.asList(FORET_DE_JADE,JADIELLE));
+        ROUTE_22.setListeZonesAccessibles(Arrays.asList(JADIELLE));
+        FORET_DE_JADE.setListeZonesAccessibles(Arrays.asList(ROUTE_22,ARGENTA));
+        ARGENTA.setListeZonesAccessibles(Arrays.asList(FORET_DE_JADE));
     }
 
     public static Zones getById(String id) {
@@ -94,12 +108,12 @@ public enum Zones {
         this.progressNeeded = progressNeeded;
     }
 
-    public List<Structure> getListeBatimentsSpeciaux() {
-        return listeBatimentsSpeciaux;
+    public List<Integer> getListeIdStructures() {
+        return listeIdStructures;
     }
 
-    public void setListeBatimentsSpeciaux(List<Structure> listeBatimentsSpeciaux) {
-        this.listeBatimentsSpeciaux = listeBatimentsSpeciaux;
+    public void setListeIdStructures(List<Integer> listeIdStructures) {
+        this.listeIdStructures = listeIdStructures;
     }
 
     public ZoneTypes getTypeZone() {
@@ -138,7 +152,11 @@ public enum Zones {
         return imageManager.merge(background, front, x, y);
     }
 
-    public void getPokeApiZone(){
-        Location loc = Client.getLocationById(idZone);
+    public Location getPokeApiZone(){
+        return Client.getLocationById(idZone);
+    }
+
+    public String getNom() {
+        return APIUtils.getFrName(getPokeApiZone().getNames());
     }
 }
