@@ -1,5 +1,7 @@
 package game.model;
 
+import game.model.enums.AlterationEtat;
+
 public class AlterationInstance {
     private AlterationEtat alterationEtat;
     private int toursRestants;

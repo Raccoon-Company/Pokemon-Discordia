@@ -1,20 +1,15 @@
-package game.model;
+package game.model.enums;
 
 import com.github.oscar0812.pokeapi.models.locations.Location;
 import com.github.oscar0812.pokeapi.utils.Client;
-import executable.MyBot;
 import utils.APIUtils;
 import utils.ImageManager;
 
-import java.awt.image.BufferedImage;
-import java.security.Key;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import static game.model.Regions.*;
-import static game.model.Structure.*;
-import static game.model.ZoneTypes.*;
+import static game.model.enums.Regions.*;
+import static game.model.enums.ZoneTypes.*;
 
 public enum Zones {
     BOURG_PALETTE(86, 0, Arrays.asList(2), VILLE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
@@ -27,19 +22,19 @@ public enum Zones {
 
     ;
 
-    private int idZone;
-    private int progressNeeded;
-    private List<Integer> listeIdStructures;
+    private final int idZone;
+    private final int progressNeeded;
+    private final List<Integer> listeIdStructures;
 
     private List<Zones> listeZonesAccessibles;
-    private ZoneTypes typeZone;
-    private List<PNJ> pnjs;
+    private final ZoneTypes typeZone;
+    private final List<PNJ> pnjs;
 
-    private Regions region;
+    private final Regions region;
 
-    private String background;
-    private int x;
-    private int y;
+    private final String background;
+    private final int x;
+    private final int y;
 
 
     Zones(int idZone, int progressNeeded, List<Integer> listeIdStructures, ZoneTypes typeZone, List<PNJ> pnjs, Regions region, String background, int x, int y) {
@@ -80,72 +75,36 @@ public enum Zones {
         return pnjs;
     }
 
-    public void setPnjs(List<PNJ> pnjs) {
-        this.pnjs = pnjs;
-    }
-
     public Regions getRegion() {
         return region;
-    }
-
-    public void setRegion(Regions region) {
-        this.region = region;
     }
 
     public int getIdZone() {
         return idZone;
     }
 
-    public void setIdZone(int idZone) {
-        this.idZone = idZone;
-    }
-
     public int getProgressNeeded() {
         return progressNeeded;
-    }
-
-    public void setProgressNeeded(int progressNeeded) {
-        this.progressNeeded = progressNeeded;
     }
 
     public List<Integer> getListeIdStructures() {
         return listeIdStructures;
     }
 
-    public void setListeIdStructures(List<Integer> listeIdStructures) {
-        this.listeIdStructures = listeIdStructures;
-    }
-
     public ZoneTypes getTypeZone() {
         return typeZone;
-    }
-
-    public void setTypeZone(ZoneTypes typeZone) {
-        this.typeZone = typeZone;
     }
 
     public String getBackground() {
         return background;
     }
 
-    public void setBackground(String background) {
-        this.background = background;
-    }
-
     public int getX() {
         return x;
     }
 
-    public void setX(int x) {
-        this.x = x;
-    }
-
     public int getY() {
         return y;
-    }
-
-    public void setY(int y) {
-        this.y = y;
     }
 
     public String getBackground(ImageManager imageManager, String front){

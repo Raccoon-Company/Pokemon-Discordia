@@ -1,4 +1,4 @@
-package game.model;
+package game.model.enums;
 
 public enum TypeAlteration {
     /**

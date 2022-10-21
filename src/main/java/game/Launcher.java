@@ -2,7 +2,7 @@ package game;
 
 import executable.MyBot;
 import game.model.Campaign;
-import game.model.PNJ;
+import game.model.enums.PNJ;
 import game.model.Pokemon;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;

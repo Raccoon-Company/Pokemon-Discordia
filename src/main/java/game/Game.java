@@ -2,7 +2,11 @@ package game;
 
 import commands.Commands;
 import executable.MyBot;
-import game.model.*;
+import game.model.Combat;
+import game.model.CombatResultat;
+import game.model.Duelliste;
+import game.model.Pokemon;
+import game.model.enums.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
@@ -10,16 +14,13 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import utils.*;
 
 import java.awt.*;
-import java.io.File;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -162,6 +163,8 @@ public class Game {
                                         talkMenu();
                                     } else if (e.getComponentId().equals("bag")) {
                                         bagMenu();
+                                    } else if (e.getComponentId().equals("grass")) {
+                                        combatPokemonSauvage();
                                     }
                                 },
                                 1,
@@ -171,6 +174,21 @@ public class Game {
                                 }
                         )
                 );
+
+    }
+
+    private void combatPokemonSauvage() {
+        //récupérer la liste des pokémons sauvages disponibles dans la zone
+        //déterminer le niveau et l'espèce
+        //créer les duellistes
+        //meteo si pas défault
+        Duelliste blanc = new Duelliste(save);
+        Duelliste noir = new Duelliste();//TODO pokemon sauvage
+        CombatResultat result = new Combat(this, blanc, noir, TypeCombat.SIMPLE, Meteo.NEUTRE, true).resolve();
+        //en fonction du résultat, appliquer le nécessaire :
+        //capture du pokémon ?
+        //fuite ?
+        //gain d'or/xp
 
     }
 
@@ -223,16 +241,16 @@ public class Game {
         List<Button> buttons2 = new ArrayList<>();
 
         for (Pokemon pokemon : save.getCampaign().getEquipe()) {
-            if(buttons.size()>=5){
+            if (buttons.size() >= 5) {
                 buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getSpecieName(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
-            }else{
+            } else {
                 buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getSpecieName(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
             }
         }
         buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
         LayoutComponent lc = ActionRow.of(buttons);
         LayoutComponent lc2 = ActionRow.of(buttons2);
-        mcb.addComponents(lc,lc2);
+        mcb.addComponents(lc, lc2);
         mcb.addContent("Inspection de l'équipe");
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
@@ -242,9 +260,9 @@ public class Game {
                         e -> {
                             e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                             bot.unlock(user);
-                            if(e.getComponentId().equals("back")){
+                            if (e.getComponentId().equals("back")) {
                                 gameMenu();
-                            }else{
+                            } else {
                                 menuPokemon(save.getCampaign().getTeamPokemonById(Long.parseLong(e.getComponentId())));
                             }
                         },
@@ -256,22 +274,22 @@ public class Game {
     }
 
     private void menuPokemon(Pokemon pokemon) {
-        if(pokemon == null){
+        if (pokemon == null) {
             pokemons();
             return;
         }
         String text = pokemon.getDescriptionDetaillee();
-        MessageCreateBuilder mcb= new MessageCreateBuilder();
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
         EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setColor(new Color(save.getColorRGB()))
                 .setDescription(text);
 
-            embedBuilder.setThumbnail(pokemon.getPokemonAPI().getSprites().getFrontDefault());
+        embedBuilder.setThumbnail(pokemon.getPokemonAPI().getSprites().getFrontDefault());
 
         mcb.addEmbeds(embedBuilder.build());
 
-       channel.sendMessage(messageManager.createMessageData(mcb)).queue();
-       pokemons();
+        channel.sendMessage(messageManager.createMessageData(mcb)).queue();
+        pokemons();
     }
 
     private void settings() {

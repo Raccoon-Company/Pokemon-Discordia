@@ -1,4 +1,4 @@
-package game.model;
+package game.model.enums;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,21 +12,21 @@ public enum Structure {
     CHAMBRE(1,"Ma chambre - 1er étage", "structures.chambre", 70,40, Arrays.asList()),
     MAISON_DEPART(2,"Chez moi - Rez de chaussée", "structures.maison-depart", 120,24, Arrays.asList(PNJ.MOM)),
     CENTRE_POKEMON(3, "Centre Pokémon", "structures.centre-pokemon", 90,40,Arrays.asList(PNJ.INFIRMIERE)),
-
+BOUTIQUE(4, "Boutique", "structures.boutique", 90,40,Arrays.asList(PNJ.VENDEUSE)),
     ;
 
     private final Logger logger = LoggerFactory.getLogger(Structure.class);
-    private int id;
+    private final int id;
 
-    private String nom;
-    private String background;
+    private final String nom;
+    private final String background;
     //position en x de l'affichage du sprite joueur
-    private int x;
+    private final int x;
    //position en y de l'affichage du sprite joueur
-    private int y;
+    private final int y;
 
     private List<Structure> structuresAccessibles;
-    private List<PNJ> pnjs;
+    private final List<PNJ> pnjs;
 
     Structure(int id, String nom, String background, int x, int y, List<PNJ> pnjs) {
         this.nom = nom;
@@ -56,10 +56,6 @@ public enum Structure {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public List<Structure> getStructuresAccessibles() {
         return structuresAccessibles;
     }
@@ -72,40 +68,20 @@ public enum Structure {
         return pnjs;
     }
 
-    public void setPnjs(List<PNJ> pnjs) {
-        this.pnjs = pnjs;
-    }
-
     public String getNom() {
         return nom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
     }
 
     public String getBackground() {
         return background;
     }
 
-    public void setBackground(String background) {
-        this.background = background;
-    }
-
     public int getX() {
         return x;
     }
 
-    public void setX(int x) {
-        this.x = x;
-    }
-
     public int getY() {
         return y;
-    }
-
-    public void setY(int y) {
-        this.y = y;
     }
 
     public String getBackground(ImageManager imageManager, String front){

@@ -1,11 +1,11 @@
-package game.model;
+package game.model.enums;
 
 public enum Regions {
     KANTO(1, "Kanto"),
     ;
 
-    private int id;
-    private String nom;
+    private final int id;
+    private final String nom;
 
     Regions(int id, String nom) {
         this.id = id;
@@ -16,15 +16,7 @@ public enum Regions {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getNom() {
         return nom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
     }
 }

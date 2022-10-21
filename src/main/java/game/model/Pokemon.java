@@ -3,6 +3,9 @@ package game.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.oscar0812.pokeapi.models.pokemon.PokemonSpecies;
 import com.github.oscar0812.pokeapi.utils.Client;
+import game.model.enums.AlterationEtat;
+import game.model.enums.Type;
+import game.model.enums.TypeAlteration;
 import utils.APIUtils;
 import utils.Utils;
 
@@ -94,9 +97,6 @@ public class Pokemon implements Serializable {
     private boolean hasMovedThisTurn;
     @JsonIgnore
     private boolean isPlayerPokemon;
-
-    public Pokemon() {
-    }
 
     public Pokemon(int idSpecie, int level, boolean canEvolve) {
 

@@ -1,11 +1,11 @@
-package game.model;
+package game.model.enums;
 
 public enum ZoneTypes {
 //    VILLAGE("\uD83C\uDFE1"),
     VILLE("\uD83C\uDFD9"),
     ROUTE("\uD83D\uDEE3");
 
-   private String emojiCode;
+   private final String emojiCode;
 
     ZoneTypes(String emojiCode) {
         this.emojiCode = emojiCode;
@@ -13,9 +13,5 @@ public enum ZoneTypes {
 
     public String getEmojiCode() {
         return emojiCode;
-    }
-
-    public void setEmojiCode(String emojiCode) {
-        this.emojiCode = emojiCode;
     }
 }

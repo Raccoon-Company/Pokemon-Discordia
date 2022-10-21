@@ -1,18 +1,12 @@
 package game;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import executable.MyBot;
 import game.model.Campaign;
-import game.model.PNJ;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import utils.DiscordManager;
-import utils.MessageManager;
 import utils.Utils;
 
 import java.awt.*;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public class Save implements Serializable {
     private long id;

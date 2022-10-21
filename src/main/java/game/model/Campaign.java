@@ -1,6 +1,8 @@
 package game.model;
 
 import com.github.oscar0812.pokeapi.utils.Client;
+import game.model.enums.Structure;
+import game.model.enums.Zones;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;

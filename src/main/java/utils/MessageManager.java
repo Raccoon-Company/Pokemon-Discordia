@@ -3,7 +3,7 @@ package utils;
 import commands.CommandManager;
 import executable.MyBot;
 import game.Save;
-import game.model.PNJ;
+import game.model.enums.PNJ;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;

@@ -1,6 +1,6 @@
-package game.model;
+package game.model.enums;
 
-import static game.model.TypeAlteration.*;
+import static game.model.enums.TypeAlteration.*;
 
 public enum AlterationEtat {
     BRULURE(NON_VOLATILE, "est brûlé !", "souffre de sa brûlure !", "images.statusIcons.brulure", 0.66f),
@@ -47,15 +47,15 @@ public enum AlterationEtat {
     TRANSFORME(VOLATILE_BATTLE, "se transforme !", "", "", 1f),
     ;
 
-    private TypeAlteration typeAlteration;
+    private final TypeAlteration typeAlteration;
 
-    private String afflictionText;
-    private String applicationText;
+    private final String afflictionText;
+    private final String applicationText;
 
-    private String icone;
+    private final String icone;
 
     //ratio de désirabilité (utilisé par l'AI)
-    private float ratio;
+    private final float ratio;
 
     AlterationEtat(TypeAlteration typeAlteration, String applicationText, String afflictionText, String icone, float ratio) {
         this.typeAlteration = typeAlteration;
@@ -69,39 +69,19 @@ public enum AlterationEtat {
         return applicationText;
     }
 
-    public void setApplicationText(String applicationText) {
-        this.applicationText = applicationText;
-    }
-
     public float getRatio() {
         return ratio;
-    }
-
-    public void setRatio(float ratio) {
-        this.ratio = ratio;
     }
 
     public TypeAlteration getTypeAlteration() {
         return typeAlteration;
     }
 
-    public void setTypeAlteration(TypeAlteration typeAlteration) {
-        this.typeAlteration = typeAlteration;
-    }
-
     public String getAfflictionText() {
         return afflictionText;
     }
 
-    public void setAfflictionText(String afflictionText) {
-        this.afflictionText = afflictionText;
-    }
-
     public String getIcone() {
         return icone;
-    }
-
-    public void setIcone(String icone) {
-        this.icone = icone;
     }
 }
