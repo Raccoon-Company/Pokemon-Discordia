@@ -6,14 +6,17 @@ import com.github.oscar0812.pokeapi.utils.Client;
 import utils.APIUtils;
 import utils.Utils;
 
-import java.util.Date;
+import java.io.Serializable;
+import java.util.*;
 
-public class Pokemon {
+public class Pokemon implements Serializable {
     private static final double BASE_CRIT_MODIFIER = 1.5;
     private static final double CRIT_MODIFIER_SNIPER = 2.25;
 
     private final static int MAX_EV_PER_STAT = 255;
     private final static int MAX_EV_TOTAL = 510;
+    private static final int MAX_FRIENDSHIP_VALUE = 255;
+    public final static int BASE_FRIENDSHIP_VALUE = 70;
 
     private long id;
 
@@ -36,9 +39,12 @@ public class Pokemon {
     //0-255
     private int friendship;
 
+    private List<AlterationInstance> alterations;
 
-//    private List<Attack> moveset;
-//    private List<Status> statuses;
+    private List<Attaque> moveset;
+
+    private Type type1;
+    private Type type2; //nullable
 
     //valeurs de combat
     private int currentHp;
@@ -124,6 +130,8 @@ public class Pokemon {
         this.hpEV = startingEV;
         this.speedEV = startingEV;
 
+        this.alterations = new ArrayList<>();
+
 //        levelXTimes(level);
 //        //si c'est un pokemon wild ou de npc, on lui donne une chance d'évoluer par lui-même même s'il a normalmeent besoin d'un item ou de bonheur
 //            if (canEvolve) {
@@ -141,6 +149,9 @@ public class Pokemon {
 //        }
         //on reset le bonheur apres les levels up, sinon ca fausse car rapportent du bonheur
         this.friendship = getPokemonSpeciesAPI().getBaseHappiness();
+        this.moveset = new ArrayList<>();
+//        fillMoveset();
+
         //talent random si disponible
 //        this.talent = species.getTalents().isEmpty() ? null : species.getTalents().get(Utils.getRandom().nextInt(species.getTalents().size()));
 //        this.currentCritChance = critChance;
@@ -167,6 +178,88 @@ public class Pokemon {
     @JsonIgnore
     public String getSpecieName(){
         return APIUtils.getFrName(getPokemonSpeciesAPI().getNames());
+    }
+    @JsonIgnore
+    public int getTotalEV() {
+        return getHpEV() + getSpeedEV() + getAtkPhyEV() + getAtkSpeEV() + getDefPhyEV() + getDefSpeEV();
+    }
+    @JsonIgnore
+    public int getMaxHp() {
+        return (((2 * getPokemonAPI().getBaseStat().getHp() + hpIV + (hpEV / 4)) * level) / 100) + level + 10;
+    }
+
+    @JsonIgnore
+    public int getMaxAtkSpe() {
+        return ((((2 * getPokemonAPI().getBaseStat().getAtkSpe() + atkSpeIV + (atkSpeEV / 4)) * level) / 100) + 5) * nature.getAtkSpe() / 100;
+    }
+
+    @JsonIgnore
+    public int getMaxAtkPhy() {
+        return ((((2 * getPokemonAPI().getBaseStat().getAtkPhy() + atkPhyIV + (atkPhyEV / 4)) * level) / 100) + 5) * nature.getAtkPhy() / 100;
+    }
+
+    @JsonIgnore
+    public int getMaxDefSpe() {
+        return ((((getPokemonAPI().getBaseStat().getDefSpe() + defSpeIV + (defSpeEV / 4)) * level) / 50) + 5) * nature.getDefSpe() / 100;
+    }
+
+    @JsonIgnore
+    public int getMaxDefPhy() {
+        return ((((2 * getPokemonAPI().getBaseStat().getDefPhy() + defPhyIV + (defPhyEV / 4)) * level) / 100) + 5) * nature.getDefPhy() / 100;
+    }
+
+    @JsonIgnore
+    public int getMaxSpeed() {
+        return ((((2 * getPokemonAPI().getBaseStat().getSpeed() + speedIV + (speedEV / 4)) * level) / 100) + 5) * nature.getSpeed() / 100;
+    }
+
+    public boolean hasType(Type type){
+        if(type == null){
+            return false;
+        }
+        return type.equals(this.type1) || type.equals(this.type2);
+    }
+
+    @JsonIgnore
+    public boolean isMaxHappiness() {
+        return MAX_FRIENDSHIP_VALUE == friendship;
+    }
+
+    @JsonIgnore
+    public boolean isGrounded() { //Field field
+//        if (HeldItem.IRON_BALL.equals(getHeldItem()) || field.getStatusList().contains(FieldStatus.INTENSE_GRAVITY)) {
+//            return true;
+//        }
+        if (hasStatut(AlterationEtat.RACINES)) {
+            return true;
+        }
+        //type vol
+        if (hasType(Type.FLYING)) {
+            return false;
+        }
+//        if (Talent.LEVITATE.equals(getTalent())) {
+//            return false;
+//        }
+//        if (HeldItem.AIR_BALLOON.equals(getHeldItem())) {
+//            return false;
+//        }
+        if (hasStatut(AlterationEtat.LEVITATION)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pokemon pokemon = (Pokemon) o;
+        return getId() == pokemon.getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
     }
 
     public long getId() {
@@ -485,6 +578,34 @@ public class Pokemon {
         isPlayerPokemon = playerPokemon;
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public List<AlterationInstance> getAlterations() {
+        return alterations;
+    }
+
+    public void setAlterations(List<AlterationInstance> alterations) {
+        this.alterations = alterations;
+    }
+
+    public Type getType1() {
+        return type1;
+    }
+
+    public void setType1(Type type1) {
+        this.type1 = type1;
+    }
+
+    public Type getType2() {
+        return type2;
+    }
+
+    public void setType2(Type type2) {
+        this.type2 = type2;
+    }
+
     public String getDescriptionDetaillee() {
         String res = "";
         res += getSpecieName();
@@ -492,4 +613,104 @@ public class Pokemon {
         res += currentHp + "/maxHp";
         return res;
     }
+
+    public void completeHeal(){
+//        this.currentHp = currentHp;//TODO faire les current par les max
+
+        this.alterations.clear();
+    }
+
+    public void postFightHeal(){
+        //        this.currentHp = currentHp;//TODO faire les current par les max
+        this.alterations.removeIf(a-> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
+    }
+
+    public void inFightHeal(){
+        this.alterations.removeIf(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.VOLATILE_BATTLE));
+    }
+
+    public boolean hasStatut(AlterationEtat alterationEtat){
+        return alterations.stream().anyMatch(a -> a.getAlterationEtat().equals(alterationEtat));
+    }
+
+    public boolean hasAnyNonVolatileStatus(){
+        return alterations.stream().anyMatch(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
+    }
+
+    public void applyStatus(AlterationEtat alterationEtat, int duree, boolean simulation) {
+
+        //altération déjà infligée
+        if (hasStatut(alterationEtat)) {
+            return;
+        }
+
+        //un seul statut non-volatile à la fois
+        if(alterationEtat.getTypeAlteration().equals(TypeAlteration.NON_VOLATILE) && hasAnyNonVolatileStatus()){
+            return;
+        }
+
+        if (alterationEtat.equals(AlterationEtat.BRULURE) && hasType(Type.FIRE)) { //TODO ability WATER BUBBLE et talent WATER_VEIL
+            return;
+        }
+
+        if (alterationEtat.equals(AlterationEtat.GEL) && hasType(Type.ICE)) { //TODO ability magma armor
+            return;
+        }
+        if (alterationEtat.equals(AlterationEtat.PARALYSIE) && hasType(Type.ELECTRIC)) { //TODO ability limber
+            return;
+        }
+        if ((alterationEtat.equals(AlterationEtat.POISON) || alterationEtat.equals(AlterationEtat.POISON_GRAVE)) && (hasType(Type.POISON) || hasType(Type.GROUND))) { //TODO ability immunity, et anti-immunité de type avec le talent corrosion
+            return;
+        }
+//        if (Talent.LEAF_GUARD.equals(talent) && fight.computeWeatherEffects() && fight.getWeather().equals(Weather.HARSH_SUNLIGHT) && status.isPersistent()) {
+//            if (!simulation) {
+//                Utils.println(Talent.LEAF_GUARD.getLibelle() + " empêche l'altération de statut par temps ensoleillé !");
+//            }
+//            return;
+//        }
+
+//        if (alterationEtat.equals(Status.FEARED) && Talent.INNER_FOCUS.equals(talent)) {
+//            if (!simulation) {
+//                Utils.println(getLibelleColorized() + " ne flanche pas grâce à " + Talent.INNER_FOCUS.getLibelle() + " !");
+//            }
+//            return;
+//        }
+//        if (alterationEtat.equals(Status.PARALYZED) && Talent.LIMBER.equals(talent)) {
+//            if (!simulation) {
+//                Utils.println(Talent.LIMBER.getLibelle() + " empêche la paralysie de " + getLibelleColorized() + " !");
+//            }
+//            return;
+//        }
+//        if (alterationEtat.equals(Status.INFATUATED) && Talent.OBLIVIOUS.equals(talent)) {
+//            if (!simulation) {
+//                Utils.println(Talent.OBLIVIOUS.getLibelle() + " empêche " + getLibelleColorized() + " d'être charmé");
+//            }
+//            return;
+//        }
+
+        alterations.add(new AlterationInstance(alterationEtat, 999));
+
+//        //DESTINY KNOT
+//        if (alterationEtat.equals(Status.INFATUATED) && HeldItem.DESTINY_KNOT.equals(getHeldItem())) {
+//            Pokemon otherPokemon = fight.getCurrentPokemonSecondTrainer().equals(this) ? fight.getCurrentPlayerKemon() : fight.getCurrentPokemonSecondTrainer();
+//            if (!otherPokemon.getStatuses().contains(status)) {
+//                if (!simulation) {
+//                    Utils.println(HeldItem.DESTINY_KNOT.getLibelle() + " transmet l'effet " + status.getLibelle() + " à " + otherPokemon.getLibelleColorized());
+//                }
+//                otherPokemon.applyStatus(alterationEtat, duree, fight, simulation);
+//            }
+//        }
+//
+//        //SYNCHRONIZE
+//        if ((alterationEtat.equals(Status.TOXIC) || alterationEtat.equals(Status.POISONED) || alterationEtat.equals(Status.PARALYZED) || alterationEtat.equals(Status.BURNT)) && Talent.SYNCHRONIZE.equals(talent)) {
+//            Pokemon otherPokemon = fight.getCurrentPokemonSecondTrainer().equals(this) ? fight.getCurrentPlayerKemon() : fight.getCurrentPokemonSecondTrainer();
+//            if (!otherPokemon.getStatuses().contains(alterationEtat)) {
+//                if (!simulation) {
+//                    Utils.println(Talent.SYNCHRONIZE.getLibelle() + " transmet l'effet " + status.getLibelle() + " à " + otherPokemon.getLibelleColorized());
+//                }
+//                otherPokemon.applyStatus(alterationEtat, duree, fight, simulation);
+//            }
+//        }
+    }
+
 }

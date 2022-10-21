@@ -1,10 +1,9 @@
 package game.model;
 
 public enum ZoneTypes {
-    VILLAGE("\uD83C\uDFE1"),
+//    VILLAGE("\uD83C\uDFE1"),
     VILLE("\uD83C\uDFD9"),
-    ROUTE("\uD83D\uDEE3"),
-    ARENE("\uD83C\uDFDF");
+    ROUTE("\uD83D\uDEE3");
 
    private String emojiCode;
 

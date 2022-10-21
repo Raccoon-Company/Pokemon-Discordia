@@ -17,7 +17,7 @@ import static game.model.Structure.*;
 import static game.model.ZoneTypes.*;
 
 public enum Zones {
-    BOURG_PALETTE(86, 0, Arrays.asList(2), VILLAGE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
+    BOURG_PALETTE(86, 0, Arrays.asList(2), VILLE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
     ROUTE_1(88,0, Arrays.asList(),ROUTE, Arrays.asList(PNJ.ECOLIER), KANTO, "zones.route-1-kanto", 145,80 ),
     JADIELLE(154,0, Arrays.asList(3),VILLE, Arrays.asList(), KANTO, "zones.jadielle", 70,85),
     ROUTE_22(102,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.route-22-kanto", 170,90),

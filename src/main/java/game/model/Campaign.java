@@ -3,11 +3,12 @@ package game.model;
 import com.github.oscar0812.pokeapi.utils.Client;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class Campaign {
+public class Campaign implements Serializable {
 
     private String nom; //set à la création de la save
     //déso pas déso y a que 2 genres (true pour gars, false pour fille)
