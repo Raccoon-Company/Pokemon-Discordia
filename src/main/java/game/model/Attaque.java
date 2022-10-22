@@ -1,10 +1,13 @@
 package game.model;
 
+import com.github.oscar0812.pokeapi.models.moves.Move;
+import com.github.oscar0812.pokeapi.utils.Client;
+
 import java.io.Serializable;
 
 public class Attaque implements Serializable {
 
-    private long idMoveAPI;
+    private int idMoveAPI;
 
     private int bonusPp;
     private int ppLeft;
@@ -12,7 +15,7 @@ public class Attaque implements Serializable {
     public Attaque() {
     }
 
-    public Attaque(long idMoveAPI, int bonusPp, int ppLeft) {
+    public Attaque(int idMoveAPI, int bonusPp, int ppLeft) {
         this.idMoveAPI = idMoveAPI;
         this.bonusPp = bonusPp;
         this.ppLeft = ppLeft;
@@ -24,11 +27,11 @@ public class Attaque implements Serializable {
         this.ppLeft = move.getPp();
     }
 
-    public long getIdMoveAPI() {
+    public int getIdMoveAPI() {
         return idMoveAPI;
     }
 
-    public void setIdMoveAPI(long idMoveAPI) {
+    public void setIdMoveAPI(int idMoveAPI) {
         this.idMoveAPI = idMoveAPI;
     }
 

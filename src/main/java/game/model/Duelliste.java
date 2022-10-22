@@ -7,6 +7,7 @@ import game.model.enums.TypeDuelliste;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Duelliste implements Serializable {
@@ -54,6 +55,15 @@ public class Duelliste implements Serializable {
             Pokemon pokemon = new Pokemon(k.getKey(),k.getValue(), false);
             this.equipe.add(pokemon);
         });
+    }
+
+    public Duelliste(Pokemon pokemon) {
+        this.id = pokemon.getId();
+        this.nom = pokemon.getSpecieName();
+        this.typeDuelliste = TypeDuelliste.POKEMON_SAUVAGE;
+        this.niveauIA = NiveauIA.RANDOM;
+        this.potionsRestantes = 0;
+        this.equipe = new ArrayList<>(Collections.singleton(pokemon));
     }
 
     public long getId() {

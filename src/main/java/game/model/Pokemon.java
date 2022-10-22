@@ -2,10 +2,9 @@ package game.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.oscar0812.pokeapi.models.pokemon.PokemonSpecies;
+import com.github.oscar0812.pokeapi.models.pokemon.PokemonStat;
 import com.github.oscar0812.pokeapi.utils.Client;
-import game.model.enums.AlterationEtat;
-import game.model.enums.Type;
-import game.model.enums.TypeAlteration;
+import game.model.enums.*;
 import utils.APIUtils;
 import utils.Utils;
 
@@ -48,6 +47,8 @@ public class Pokemon implements Serializable {
 
     private Type type1;
     private Type type2; //nullable
+
+    private Nature nature;
 
     //valeurs de combat
     private int currentHp;
@@ -101,6 +102,7 @@ public class Pokemon implements Serializable {
     public Pokemon(int idSpecie, int level, boolean canEvolve) {
 
         this.idSpecie = idSpecie;
+        this.nature = Nature.random();
         //TODO nature et moveset
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
         this.level = level;
@@ -112,7 +114,6 @@ public class Pokemon implements Serializable {
         //TODO gender
         //2 : genderless, 0 : female, 1 : male
         this.idGender = getPokemonSpeciesAPI().getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 1 : 0;
-        this.level = 0;
         //détermination des IVs
         this.atkSpeIV = Utils.getRandom().nextInt(32);
         this.atkPhyIV = Utils.getRandom().nextInt(32);
@@ -165,6 +166,58 @@ public class Pokemon implements Serializable {
 
     }
 
+    //default constructors
+    public Pokemon() {
+    }
+
+    public Pokemon(long id, int idGender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int currentCritChance, double critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean lostHealthThisTurn, boolean hasMovedThisTurn, boolean isPlayerPokemon) {
+        this.id = id;
+        this.idGender = idGender;
+        this.idSpecie = idSpecie;
+        this.idAbility = idAbility;
+        this.shiny = shiny;
+        this.idItemTenu = idItemTenu;
+        this.surnom = surnom;
+        this.level = level;
+        this.xp = xp;
+        this.friendship = friendship;
+        this.alterations = alterations;
+        this.moveset = moveset;
+        this.type1 = type1;
+        this.type2 = type2;
+        this.nature = nature;
+        this.currentHp = currentHp;
+        this.currentCritChance = currentCritChance;
+        this.critChanceStage = critChanceStage;
+        this.hpIV = hpIV;
+        this.hpEV = hpEV;
+        this.currentAtkSpe = currentAtkSpe;
+        this.atkSpeIV = atkSpeIV;
+        this.atkSpeEV = atkSpeEV;
+        this.atkSpeStage = atkSpeStage;
+        this.currentAtkPhy = currentAtkPhy;
+        this.atkPhyIV = atkPhyIV;
+        this.atkPhyEV = atkPhyEV;
+        this.atkPhyStage = atkPhyStage;
+        this.currentDefSpe = currentDefSpe;
+        this.defSpeIV = defSpeIV;
+        this.defSpeEV = defSpeEV;
+        this.defSpeStage = defSpeStage;
+        this.currentDefPhy = currentDefPhy;
+        this.defPhyIV = defPhyIV;
+        this.defPhyEV = defPhyEV;
+        this.defPhyStage = defPhyStage;
+        this.currentSpeed = currentSpeed;
+        this.speedIV = speedIV;
+        this.speedEV = speedEV;
+        this.speedStage = speedStage;
+        this.accuracyStage = accuracyStage;
+        this.evasivenessStage = evasivenessStage;
+        this.lostHealthThisTurn = lostHealthThisTurn;
+        this.hasMovedThisTurn = hasMovedThisTurn;
+        this.isPlayerPokemon = isPlayerPokemon;
+    }
+
     @JsonIgnore
     public PokemonSpecies getPokemonSpeciesAPI(){
         return Client.getPokemonSpeciesById(idSpecie);
@@ -185,32 +238,39 @@ public class Pokemon implements Serializable {
     }
     @JsonIgnore
     public int getMaxHp() {
-        return (((2 * getPokemonAPI().getBaseStat().getHp() + hpIV + (hpEV / 4)) * level) / 100) + level + 10;
+        int baseHp = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.HP.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
+        return (((2 * baseHp + hpIV + (hpEV / 4)) * level) / 100) + level + 10;
     }
 
     @JsonIgnore
     public int getMaxAtkSpe() {
-        return ((((2 * getPokemonAPI().getBaseStat().getAtkSpe() + atkSpeIV + (atkSpeEV / 4)) * level) / 100) + 5) * nature.getAtkSpe() / 100;
+        int baseAtkSpe = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.SPECIAL_ATTACK.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
+
+        return ((((2 * baseAtkSpe+ atkSpeIV + (atkSpeEV / 4)) * level) / 100) + 5) * nature.getAtkSpe() / 100;
     }
 
     @JsonIgnore
     public int getMaxAtkPhy() {
-        return ((((2 * getPokemonAPI().getBaseStat().getAtkPhy() + atkPhyIV + (atkPhyEV / 4)) * level) / 100) + 5) * nature.getAtkPhy() / 100;
+        int baseAtkPhy = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.ATTACK.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
+        return ((((2 * baseAtkPhy + atkPhyIV + (atkPhyEV / 4)) * level) / 100) + 5) * nature.getAtkPhy() / 100;
     }
 
     @JsonIgnore
     public int getMaxDefSpe() {
-        return ((((getPokemonAPI().getBaseStat().getDefSpe() + defSpeIV + (defSpeEV / 4)) * level) / 50) + 5) * nature.getDefSpe() / 100;
+        int baseDefSpe = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.SPECIAL_DEFENSE.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
+        return ((((2 * baseDefSpe + defSpeIV + (defSpeEV / 4)) * level) / 50) + 5) * nature.getDefSpe() / 100;
     }
 
     @JsonIgnore
     public int getMaxDefPhy() {
-        return ((((2 * getPokemonAPI().getBaseStat().getDefPhy() + defPhyIV + (defPhyEV / 4)) * level) / 100) + 5) * nature.getDefPhy() / 100;
+        int baseDefPhy = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.DEFENSE.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
+        return ((((2 * baseDefPhy + defPhyIV + (defPhyEV / 4)) * level) / 100) + 5) * nature.getDefPhy() / 100;
     }
 
     @JsonIgnore
     public int getMaxSpeed() {
-        return ((((2 * getPokemonAPI().getBaseStat().getSpeed() + speedIV + (speedEV / 4)) * level) / 100) + 5) * nature.getSpeed() / 100;
+        int baseSpeed = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.SPEED.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
+        return ((((2 * baseSpeed + speedIV + (speedEV / 4)) * level) / 100) + 5) * nature.getSpeed() / 100;
     }
 
     public boolean hasType(Type type){
@@ -280,6 +340,22 @@ public class Pokemon implements Serializable {
 
     public void setIdSpecie(int idSpecie) {
         this.idSpecie = idSpecie;
+    }
+
+    public List<Attaque> getMoveset() {
+        return moveset;
+    }
+
+    public void setMoveset(List<Attaque> moveset) {
+        this.moveset = moveset;
+    }
+
+    public Nature getNature() {
+        return nature;
+    }
+
+    public void setNature(Nature nature) {
+        this.nature = nature;
     }
 
     public int getIdAbility() {
@@ -606,6 +682,7 @@ public class Pokemon implements Serializable {
         this.type2 = type2;
     }
 
+    @JsonIgnore
     public String getDescriptionDetaillee() {
         String res = "";
         res += getSpecieName();

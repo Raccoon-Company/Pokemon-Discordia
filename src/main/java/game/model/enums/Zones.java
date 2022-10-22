@@ -14,11 +14,11 @@ import static game.model.enums.ZoneTypes.*;
 public enum Zones {
     BOURG_PALETTE(86, 0, Arrays.asList(2), VILLE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
     ROUTE_1(88,0, Arrays.asList(),ROUTE, Arrays.asList(PNJ.ECOLIER), KANTO, "zones.route-1-kanto", 145,80 ),
-    JADIELLE(154,0, Arrays.asList(3),VILLE, Arrays.asList(), KANTO, "zones.jadielle", 70,85),
+    JADIELLE(154,0, Arrays.asList(3,4),VILLE, Arrays.asList(), KANTO, "zones.jadielle", 70,85),
     ROUTE_22(102,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.route-22-kanto", 170,90),
     ROUTE_2(99,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.route-2-kanto", 60,90),
     FORET_DE_JADE(155,0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.foret-de-jade", 30,100),
-    ARGENTA(231,0, Arrays.asList(3),VILLE, Arrays.asList(), KANTO, "zones.argenta", 15,70),
+    ARGENTA(231,0, Arrays.asList(3,4),VILLE, Arrays.asList(), KANTO, "zones.argenta", 15,70),
 
     ;
 

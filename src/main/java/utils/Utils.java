@@ -16,6 +16,10 @@ public class Utils {
         return formater.format(date);
     }
 
+    public static int getRandomNumber(int min, int max) {
+        return (int) ((Math.random() * (max - min)) + min);
+    }
+
     public static Random getRandom() {
         return random;
     }

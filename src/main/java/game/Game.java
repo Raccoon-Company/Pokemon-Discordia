@@ -1,5 +1,10 @@
 package game;
 
+import com.github.oscar0812.pokeapi.models.locations.LocationArea;
+import com.github.oscar0812.pokeapi.models.locations.PokemonEncounter;
+import com.github.oscar0812.pokeapi.models.utility.Encounter;
+import com.github.oscar0812.pokeapi.models.utility.VersionEncounterDetail;
+import com.github.oscar0812.pokeapi.utils.Client;
 import commands.Commands;
 import executable.MyBot;
 import game.model.Combat;
@@ -178,17 +183,74 @@ public class Game {
     }
 
     private void combatPokemonSauvage() {
+
+        List<String> locationsAreasNames = Client.getLocationById(save.getCampaign().getCurrentZone().getIdZone()).getAreas().stream().map(LocationArea::getName).collect(Collectors.toList());
+
+        List<LocationArea> locationAreas = locationsAreasNames.stream().map(Client::getLocationAreaByName).collect(Collectors.toList());
+
         //récupérer la liste des pokémons sauvages disponibles dans la zone
+        List<PokemonEncounter> encounters = locationAreas.stream()
+                .map(LocationArea::getPokemonEncounters)
+                .flatMap(Collection::stream).collect(Collectors.toList())
+                .stream().filter(e ->
+                        e.getVersionDetails().stream()
+                                .map(v -> v.getVersion().getId())
+                                .collect(Collectors.toList())
+                                .stream().anyMatch(v -> Objects.equals(save.getCampaign().getCurrentZone().getRegion().getVersionGroupId(), v)))
+                .collect(Collectors.toList());
+        int ran = Utils.getRandomNumber(1, 100);
+        int num = 0;
+        PokemonEncounter selected = null;
+        for (PokemonEncounter e : encounters) {
+            VersionEncounterDetail ved = e.getVersionDetails().stream().filter(f -> f.getVersion().getId() == save.getCampaign().getCurrentZone().getRegion().getVersionGroupId()).findAny().get();
+            num += ved.getMaxChance();
+            if (num >= ran) {
+                selected = e;
+                break;
+            }
+        }
+
+        if (selected == null) {
+            gameMenu();
+            return;
+        }
+
+        VersionEncounterDetail ved = selected.getVersionDetails().stream().filter(f -> f.getVersion().getId() == save.getCampaign().getCurrentZone().getRegion().getVersionGroupId()).findAny().get();
+        List<Encounter> rencontres = ved.getEncounterDetails().stream().filter(e -> e.getMethod().getId() == 1).collect(Collectors.toList());
+
+        int max = rencontres.stream().map(Encounter::getChance).reduce(0,Integer::sum);
+
+        ran = Utils.getRandomNumber(1, max);
+        num = 0;
+        Encounter rencontre = null;
+        for (Encounter en : rencontres) {
+            num += en.getChance();
+            if (num >= ran) {
+                rencontre = en;
+                break;
+            }
+        }
+
+        if (rencontre == null) {
+            gameMenu();
+            return;
+        }
+
+        int level = Utils.getRandomNumber(rencontre.getMinLevel(), rencontre.getMaxLevel());
+
+        Pokemon pokemon = new Pokemon(Client.getPokemonByName(selected.getPokemon().getName()).getId(), level, true);
+
         //déterminer le niveau et l'espèce
         //créer les duellistes
         //meteo si pas défault
         Duelliste blanc = new Duelliste(save);
-        Duelliste noir = new Duelliste();//TODO pokemon sauvage
-        CombatResultat result = new Combat(this, blanc, noir, TypeCombat.SIMPLE, Meteo.NEUTRE, true).resolve();
+        Duelliste noir = new Duelliste(pokemon);//TODO pokemon sauvage
+        CombatResultat resultat = new Combat(this, blanc, noir, TypeCombat.SIMPLE, Meteo.NEUTRE, true).resolve();
         //en fonction du résultat, appliquer le nécessaire :
         //capture du pokémon ?
         //fuite ?
         //gain d'or/xp
+        gameMenu();
 
     }
 
@@ -496,7 +558,7 @@ public class Game {
         Structure currentStructure = save.getCampaign().getCurrentStructure();
         Zones currentZone = save.getCampaign().getCurrentZone();
         List<Structure> structuresAccessibles = currentStructure == null ? currentZone.getListeIdStructures().stream().map(Structure::getById).collect(Collectors.toList()) : currentStructure.getStructuresAccessibles();
-        List<Zones> zonesAccessibles = currentStructure == null ? currentZone.getListeZonesAccessibles() : Collections.singletonList(save.getCampaign().getCurrentZone());
+        List<Zones> zonesAccessibles = currentStructure == null ? currentZone.getListeZonesAccessibles() : currentStructure.isZoneAccessible() ? Collections.singletonList(save.getCampaign().getCurrentZone()) : Collections.emptyList();
         List<Button> buttons = new ArrayList<>();
         for (Structure structureAccessible : structuresAccessibles) {
             if (structureAccessible != null) {

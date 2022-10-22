@@ -9,32 +9,35 @@ import java.util.Collections;
 import java.util.List;
 
 public enum Structure {
-    CHAMBRE(1,"Ma chambre - 1er étage", "structures.chambre", 70,40, Arrays.asList()),
-    MAISON_DEPART(2,"Chez moi - Rez de chaussée", "structures.maison-depart", 120,24, Arrays.asList(PNJ.MOM)),
-    CENTRE_POKEMON(3, "Centre Pokémon", "structures.centre-pokemon", 90,40,Arrays.asList(PNJ.INFIRMIERE)),
-BOUTIQUE(4, "Boutique", "structures.boutique", 90,40,Arrays.asList(PNJ.VENDEUSE)),
+    CHAMBRE(1, "Ma chambre - 1er étage", "structures.chambre", 70, 40, Arrays.asList(), false),
+    MAISON_DEPART(2, "Chez moi - Rez de chaussée", "structures.maison-depart", 120, 24, Arrays.asList(PNJ.MOM), true),
+    CENTRE_POKEMON(3, "Centre Pokémon", "structures.centre-pokemon", 90, 40, Arrays.asList(PNJ.INFIRMIERE), true),
+    BOUTIQUE(4, "Boutique", "structures.boutique", 90, 40, Arrays.asList(PNJ.VENDEUSE), true),
     ;
 
     private final Logger logger = LoggerFactory.getLogger(Structure.class);
     private final int id;
 
+    private final boolean zoneAccessible;
+
     private final String nom;
     private final String background;
     //position en x de l'affichage du sprite joueur
     private final int x;
-   //position en y de l'affichage du sprite joueur
+    //position en y de l'affichage du sprite joueur
     private final int y;
 
     private List<Structure> structuresAccessibles;
     private final List<PNJ> pnjs;
 
-    Structure(int id, String nom, String background, int x, int y, List<PNJ> pnjs) {
+    Structure(int id, String nom, String background, int x, int y, List<PNJ> pnjs, boolean zoneAccessible) {
         this.nom = nom;
         this.x = x;
         this.id = id;
         this.y = y;
         this.background = background;
         this.pnjs = pnjs;
+        this.zoneAccessible = zoneAccessible;
         this.structuresAccessibles = Collections.emptyList();
     }
 
@@ -76,6 +79,10 @@ BOUTIQUE(4, "Boutique", "structures.boutique", 90,40,Arrays.asList(PNJ.VENDEUSE)
         return background;
     }
 
+    public boolean isZoneAccessible() {
+        return zoneAccessible;
+    }
+
     public int getX() {
         return x;
     }
@@ -84,7 +91,7 @@ BOUTIQUE(4, "Boutique", "structures.boutique", 90,40,Arrays.asList(PNJ.VENDEUSE)
         return y;
     }
 
-    public String getBackground(ImageManager imageManager, String front){
+    public String getBackground(ImageManager imageManager, String front) {
         return imageManager.merge(background, front, x, y);
     }
 }
