@@ -7,6 +7,7 @@ import game.model.enums.Meteo;
 import game.model.enums.PNJ;
 import game.model.enums.Type;
 import game.model.enums.TypeCombat;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
@@ -131,7 +132,11 @@ public class Combat {
             mcb.addComponents(lc, lc2);
             mcb.addContent("Un " + noir.getNom() + " sauvage apparaît !");
 
+            EmbedBuilder embedBuilder = new EmbedBuilder()
+                    .setColor(new Color(game.getSave().getColorRGB()))
+                    .setDescription("Un " + noir.getNom() + " sauvage apparaît !");
 
+            mcb.addEmbeds(embedBuilder.build());
             game.getChannel().sendMessage(mcb.build()).queue();
 //            game.getChannel().sendMessage(game.getMessageManager().createMessageImage(game.getSave(),"Un " + noir.getNom() + " sauvage apparaît !" , lc, "temp/" + imageCombat)).queue();
 
