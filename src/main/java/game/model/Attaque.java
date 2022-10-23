@@ -1,5 +1,6 @@
 package game.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.utils.Client;
 
@@ -35,6 +36,7 @@ public class Attaque implements Serializable {
         this.idMoveAPI = idMoveAPI;
     }
 
+    @JsonIgnore
     public Move getMoveAPI(){
         return Client.getMoveById(idMoveAPI);
     }

@@ -20,9 +20,13 @@ public class Pokemon implements Serializable {
     private static final int MAX_FRIENDSHIP_VALUE = 255;
     public final static int BASE_FRIENDSHIP_VALUE = 70;
 
+    //%
+    @JsonIgnore
+    private final int critChance = 5;
+
     private long id;
 
-    private int idGender;
+    private Gender gender;
 
     private int idSpecie;
 
@@ -103,17 +107,15 @@ public class Pokemon implements Serializable {
 
         this.idSpecie = idSpecie;
         this.nature = Nature.random();
-        //TODO nature et moveset
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
         this.level = level;
         this.xp = 0;
-        this.shiny = Utils.getRandom().nextInt(4096) == 1;
+        this.shiny = Utils.getRandom().nextInt(2) == 1;
         this.lostHealthThisTurn = false;
         this.hasMovedThisTurn = false;
         this.friendship = 0;
-        //TODO gender
-        //2 : genderless, 0 : female, 1 : male
-        this.idGender = getPokemonSpeciesAPI().getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 1 : 0;
+
+        this.gender = Gender.getById(getPokemonSpeciesAPI().getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 1 : 0);
         //détermination des IVs
         this.atkSpeIV = Utils.getRandom().nextInt(32);
         this.atkPhyIV = Utils.getRandom().nextInt(32);
@@ -151,18 +153,25 @@ public class Pokemon implements Serializable {
         //on reset le bonheur apres les levels up, sinon ca fausse car rapportent du bonheur
         this.friendship = getPokemonSpeciesAPI().getBaseHappiness();
         this.moveset = new ArrayList<>();
-//        fillMoveset();
+        fillMoveset();
 
         //talent random si disponible
 //        this.talent = species.getTalents().isEmpty() ? null : species.getTalents().get(Utils.getRandom().nextInt(species.getTalents().size()));
-//        this.currentCritChance = critChance;
-//        this.statuses = new ArrayList<>();
-//        this.currentAtkPhy = getMaxAtkPhy();
-//        this.currentDefPhy = getMaxDefPhy();
-//        this.currentAtkSpe = getMaxAtkSpe();
-//        this.currentDefSpe = getMaxDefSpe();
-//        this.currentSpeed = getMaxSpeed();
-//        this.currentHp = getMaxHp();
+        this.currentCritChance = critChance;
+        this.currentAtkPhy = getMaxAtkPhy();
+        this.currentDefPhy = getMaxDefPhy();
+        this.currentAtkSpe = getMaxAtkSpe();
+        this.currentDefSpe = getMaxDefSpe();
+        this.currentSpeed = getMaxSpeed();
+        this.currentHp = getMaxHp();
+
+    }
+
+    private void fillMoveset() {
+        moveset.add(new Attaque(Client.getMoveById(4)));
+        moveset.add(new Attaque(Client.getMoveById(44)));
+        moveset.add(new Attaque(Client.getMoveById(78)));
+        moveset.add(new Attaque(Client.getMoveById(575)));
 
     }
 
@@ -170,9 +179,9 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(long id, int idGender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int currentCritChance, double critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean lostHealthThisTurn, boolean hasMovedThisTurn, boolean isPlayerPokemon) {
+    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int currentCritChance, double critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean lostHealthThisTurn, boolean hasMovedThisTurn, boolean isPlayerPokemon) {
         this.id = id;
-        this.idGender = idGender;
+        this.gender = gender;
         this.idSpecie = idSpecie;
         this.idAbility = idAbility;
         this.shiny = shiny;
@@ -226,6 +235,43 @@ public class Pokemon implements Serializable {
     @JsonIgnore
     public com.github.oscar0812.pokeapi.models.pokemon.Pokemon getPokemonAPI(){
         return Client.getPokemonById(idSpecie);
+    }
+    @JsonIgnore
+    public String getBackSprite(){
+        if(isShiny()){
+            if(gender.equals(Gender.FEMALE)){
+                String shinyFemale = getPokemonAPI().getSprites().getBackShinyFemale();
+                return shinyFemale != null ? shinyFemale : getPokemonAPI().getSprites().getBackShiny();
+            }else{
+                return getPokemonAPI().getSprites().getBackShiny();
+            }
+        }else{
+            if(gender.equals(Gender.FEMALE)){
+                String female = getPokemonAPI().getSprites().getBackFemale();
+                return female != null ? female : getPokemonAPI().getSprites().getBackDefault();
+            }else{
+                return getPokemonAPI().getSprites().getBackDefault();
+            }
+        }
+    }
+
+    @JsonIgnore
+    public String getFrontSprite(){
+        if(isShiny()){
+            if(gender.equals(Gender.FEMALE)){
+                String shinyFemale = getPokemonAPI().getSprites().getFrontShinyFemale();
+                return shinyFemale != null ? shinyFemale : getPokemonAPI().getSprites().getFrontShiny();
+            }else{
+                return getPokemonAPI().getSprites().getFrontShiny();
+            }
+        }else{
+            if(gender.equals(Gender.FEMALE)){
+                String female = getPokemonAPI().getSprites().getFrontFemale();
+                return female != null ? female : getPokemonAPI().getSprites().getFrontDefault();
+            }else{
+                return getPokemonAPI().getSprites().getFrontDefault();
+            }
+        }
     }
 
     @JsonIgnore
@@ -326,12 +372,12 @@ public class Pokemon implements Serializable {
         return id;
     }
 
-    public int getIdGender() {
-        return idGender;
+    public Gender getGender() {
+        return gender;
     }
 
-    public void setIdGender(int idGender) {
-        this.idGender = idGender;
+    public void setGender(Gender gender) {
+        this.gender = gender;
     }
 
     public int getIdSpecie() {
@@ -364,6 +410,10 @@ public class Pokemon implements Serializable {
 
     public void setIdAbility(int idAbility) {
         this.idAbility = idAbility;
+    }
+
+    public int getCritChance() {
+        return critChance;
     }
 
     public boolean isShiny() {

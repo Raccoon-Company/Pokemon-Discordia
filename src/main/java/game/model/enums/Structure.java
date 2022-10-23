@@ -1,5 +1,6 @@
 package game.model.enums;
 
+import game.Game;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.ImageManager;
@@ -92,6 +93,6 @@ public enum Structure {
     }
 
     public String getBackground(ImageManager imageManager, String front) {
-        return imageManager.merge(background, front, x, y);
+        return imageManager.merge(background, front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
     }
 }

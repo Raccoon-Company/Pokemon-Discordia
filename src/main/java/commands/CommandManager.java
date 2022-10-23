@@ -49,7 +49,7 @@ public class CommandManager {
             message.getChannel().sendMessage("La commande !" + command + " n'existe pas. Utiliser " + PREFIX + "help pour une liste de commandes valides !").complete();
             return;
         }
-        if(bot.getLockedUsers().contains(event.getAuthor().getIdLong())){
+        if(bot.getLockedUsers().contains(event.getAuthor().getIdLong()) || command.equals(Commands.QUIT.getTexte())){
             messageManager.send(event.getChannel(), "Les commandes du bot vous sont inacessibles tant qu'il attend une réponse de votre part. Utilisez "+PREFIX+Commands.QUIT.getTexte()+" pour passer outre.");
             return;
         }

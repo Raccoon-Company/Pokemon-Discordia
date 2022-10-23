@@ -1,6 +1,7 @@
 package game.model.enums;
 
 public enum Regions {
+    //on prend firered pour base pour kanto
     KANTO(1, "Kanto", 10),
     ;
 

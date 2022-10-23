@@ -43,6 +43,9 @@ public class Game {
 
     private MessageChannelUnion channel;
 
+    public final static int HAUTEUR_FOND = 120;
+    public final static int LARGEUR_FOND = 200;
+
     private User user;
 
     public Game(MyBot bot, Save save) {
@@ -148,7 +151,7 @@ public class Game {
             nom = currentZone.getNom();
         }
 
-        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), getPlayerSprite(), x, y);
+        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), getPlayerSprite(), x, y,LARGEUR_FOND,HAUTEUR_FOND);
 
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageImage(save, nom, lc, combined))
@@ -542,7 +545,11 @@ public class Game {
                                         case "options":
                                             settings();
                                             break;
+                                        case "back":
+                                            gameMenu();
+                                            break;
                                         default:
+                                            gameMenu();
                                     }
                                 },
                                 1,
@@ -603,7 +610,7 @@ public class Game {
                 );
     }
 
-    private String getPlayerSprite() {
+    public String getPlayerSprite() {
         if (save.getCampaign().isGender()) {
             return PropertiesManager.getInstance().getImage("boy");
         } else {

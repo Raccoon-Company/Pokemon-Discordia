@@ -2,8 +2,10 @@ package game.model.enums;
 
 import com.github.oscar0812.pokeapi.models.locations.Location;
 import com.github.oscar0812.pokeapi.utils.Client;
+import game.Game;
 import utils.APIUtils;
 import utils.ImageManager;
+import utils.PropertiesManager;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +57,7 @@ public enum Zones {
         JADIELLE.setListeZonesAccessibles(Arrays.asList(ROUTE_1, ROUTE_22,ROUTE_2));
         ROUTE_2.setListeZonesAccessibles(Arrays.asList(FORET_DE_JADE,JADIELLE));
         ROUTE_22.setListeZonesAccessibles(Arrays.asList(JADIELLE));
-        FORET_DE_JADE.setListeZonesAccessibles(Arrays.asList(ROUTE_22,ARGENTA));
+        FORET_DE_JADE.setListeZonesAccessibles(Arrays.asList(ROUTE_2,ARGENTA));
         ARGENTA.setListeZonesAccessibles(Arrays.asList(FORET_DE_JADE));
     }
 
@@ -108,7 +110,11 @@ public enum Zones {
     }
 
     public String getBackground(ImageManager imageManager, String front){
-        return imageManager.merge(background, front, x, y);
+        return imageManager.merge(background, front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
+    }
+
+    public String getCombatBackground(){
+        return "zones.combat." + background.split("\\.")[1];
     }
 
     public Location getPokeApiZone(){
