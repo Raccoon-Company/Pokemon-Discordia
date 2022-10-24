@@ -1,10 +1,12 @@
 package game.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.github.oscar0812.pokeapi.models.pokemon.GrowthRateExperienceLevel;
 import com.github.oscar0812.pokeapi.models.pokemon.PokemonSpecies;
 import com.github.oscar0812.pokeapi.models.pokemon.PokemonStat;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.model.enums.*;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import utils.APIUtils;
 import utils.Utils;
 
@@ -244,11 +246,11 @@ public class Pokemon implements Serializable {
 
     public void levelXTimes(int times, boolean allowEvolution) {
         for (int i = 0; i < times; i++) {
-            levelUp(false, false, allowEvolution);
+            levelUp(null, false, allowEvolution);
         }
     }
 
-    private void levelUp(boolean affichage, boolean choixManuel, boolean evolution) {
+    private void levelUp(MessageChannelUnion channel, boolean choixManuel, boolean evolution) {
         //on ne peut pas aller au dessus du lv100
         if (level >= 100) {
             return;
@@ -258,13 +260,13 @@ public class Pokemon implements Serializable {
 
         if (choixManuel) {
 //            movesetManuel();
-        } else {
+//        } else {
             moveSetAuto();
         }
 
         xp = 0;
-        if (affichage) {
-            //TODO notif level up
+        if (channel != null) {
+            channel.sendMessage(getSpecieName() + " passe au niveau " + level + " !").queue();
         }
 //todo soigner
 
@@ -300,23 +302,22 @@ public class Pokemon implements Serializable {
 //        }
     }
 
-    public void gainXp(int amount, boolean manual) {
+    public void gainXp(int amount, boolean manual, MessageChannelUnion channel) {
         int xpNeededToLvlUp = getXpNeededToLevelUp();
         if (amount > xpNeededToLvlUp) {
-            levelUp(true, manual, true);
+            levelUp(channel, manual, true);
             changeLevel(level);
             amount -= xpNeededToLvlUp;
-            gainXp(amount, manual);
+            gainXp(amount, manual, channel);
         } else {
             xp += amount;
-            //TODO afficher la notif
-//            Utils.println(xp + "/" + (xpNeededToLvlUp + xp) + " (" + ((xp * 100) / (xpNeededToLvlUp + xp)) + "% du niveau " + (level + 1) + ")");
+            channel.sendMessage(xp + "/" + (xpNeededToLvlUp + xp) + " (" + ((xp * 100) / (xpNeededToLvlUp + xp)) + "% du niveau " + (level + 1) + ")").queue();
         }
     }
 
     @JsonIgnore
     private int getXpNeededToLevelUp() {
-        return getPokemonAPI().getGrowthRate().getLevels().filter(this.level).findAny();
+        return getPokemonAPI().getSpecies().getGrowthRate().getLevels().stream().map(GrowthRateExperienceLevel::getLevel).filter(sLevel -> sLevel == level + 1).findAny().orElse(0);
     }
 
     public void changeLevel(int newLevel) {

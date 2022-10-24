@@ -8,6 +8,7 @@ import game.model.enums.TypeCombat;
 import game.model.enums.TypeCombatResultat;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Combat {
 
@@ -124,30 +126,69 @@ public class Combat {
             throw new IllegalStateException("Erreur mise à jour de l'image");
         }
 
+        String text = "";
+
+        if (num == 1) {
+            text += "Un " + noir.getNom() + " sauvage apparaît !";
+        } else {
+            text += "Tour " + num;
+        }
+
         //on créé le message à partir de la nouvelle image et des infos combat
-        MessageCreateBuilder mcb = getMcb(imageCombat);
+        MessageCreateBuilder mcb = getMcb(imageCombat, text);
         //envoi du message
         //game.getChannel().sendMessage(game.getMessageManager().createMessageImage(game.getSave(),"Un " + noir.getNom() + " sauvage apparaît !" , lc, "temp/" + imageCombat)).queue();
-        game.getChannel().sendMessage(mcb.build()).queue();
+        game.getChannel().sendMessage(mcb.build()).queue((message) ->
+                game.getBot().getEventWaiter().waitForEvent(
+                        ButtonInteractionEvent.class,
+                        //vérif basique de correspondance entre message/interaction
+                        e -> game.getButtonManager().createPredicate(e, message, game.getSave(), mcb.getComponents()),
+                        //action quand interaction détectée
 
-        //todo AI choisit son coup
-
-        roundPhase2(num);
+                        e -> {
+                            game.getBot().unlock(game.getUser());
+                            e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                            if (e.getComponentId().equals("change")) {
+                                //changer de pokes
+                                roundPhase2(num);
+                            } else if (e.getComponentId().equals("ball")) {
+                                //pokeball
+                                roundPhase2(num);
+                            } else if (e.getComponentId().equals("item")) {
+                                //bag//
+                                roundPhase2(num);
+                            } else if (e.getComponentId().equals("escape")) {
+                                typeCombatResultat = TypeCombatResultat.FUITE_JOUEUR;
+                                game.apresCombat(this);
+                            } else {
+                                //choix de l'attaque
+                                roundPhase2(num);
+                            }
+                        },
+                        1,
+                        TimeUnit.MINUTES,
+                        () -> {
+                            game.getButtonManager().timeout(game.getChannel(), game.getUser());
+                        }
+                ));
     }
+
     public void roundPhase2(int num) {
         //TODO resolution des attaques choisies
 
         //TODO effets de fin de tour
 
         //si le combat est terminé
+        if (currentPokemonBlanc.getCurrentHp() >= 0 && currentPokemonNoir.getCurrentHp() >= 0) {
+            roundPhase1(num + 1);
 
-        game.apresCombat(this);
-        //sinon
-        roundPhase1(num+1);
+        } else {
+            game.apresCombat(this);
+        }
     }
 
     @NotNull
-    private MessageCreateBuilder getMcb(String imageCombat) {
+    private MessageCreateBuilder getMcb(String imageCombat, String text) {
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         List<Button> buttons = new ArrayList<>();
         List<Button> buttons2 = new ArrayList<>();
@@ -159,7 +200,7 @@ public class Combat {
         }
 
         buttons2 = new ArrayList<>(Arrays.asList(
-                Button.of(ButtonStyle.SECONDARY, "change", "Pokémon", Emoji.fromFormatted("\uD83E\uDDF4")),
+                Button.of(ButtonStyle.SECONDARY, "change", "Pokémon", Emoji.fromFormatted("\uD83D\uDD03")),
                 Button.of(ButtonStyle.SECONDARY, "ball", "Pokéball", Emoji.fromCustom("pokeball", 1032561600701399110L, false)),
                 Button.of(ButtonStyle.SECONDARY, "item", "Potion", Emoji.fromFormatted("\uD83E\uDDF4")),
                 Button.of(ButtonStyle.SECONDARY, "escape", "Fuite", Emoji.fromFormatted("\uD83C\uDFC3\uD83C\uDFFC"))
@@ -172,11 +213,12 @@ public class Combat {
         LayoutComponent lc = ActionRow.of(buttons);
         LayoutComponent lc2 = ActionRow.of(buttons2);
         mcb.addComponents(lc, lc2);
-        mcb.addContent("Un " + noir.getNom() + " sauvage apparaît !");
 
         EmbedBuilder embedBuilder = new EmbedBuilder()
                 .setColor(new Color(game.getSave().getColorRGB()))
-                .setDescription("Un " + noir.getNom() + " sauvage apparaît !");
+                .setDescription(text)
+                .setImage("attachment://" + combat.getName());
+
 
         mcb.addEmbeds(embedBuilder.build());
         return mcb;

@@ -130,7 +130,7 @@ public class Launcher extends ListenerAdapter {
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
                         ButtonInteractionEvent.class,
-                        e -> buttonManager.createPredicate(e, message, idUser, lc),
+                        e -> buttonManager.createPredicate(e, message, idUser, lc.getButtons()),
                         //action quand réponse détectée
                         e -> {
                             e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
