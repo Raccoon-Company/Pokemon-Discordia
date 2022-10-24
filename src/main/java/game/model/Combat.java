@@ -1,12 +1,11 @@
 package game.model;
 
-import com.github.oscar0812.pokeapi.models.locations.PokemonEncounter;
 import com.github.oscar0812.pokeapi.models.moves.Move;
 import game.Game;
 import game.model.enums.Meteo;
-import game.model.enums.PNJ;
 import game.model.enums.Type;
 import game.model.enums.TypeCombat;
+import game.model.enums.TypeCombatResultat;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -15,6 +14,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.APIUtils;
@@ -30,8 +30,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 public class Combat {
 
@@ -71,6 +71,8 @@ public class Combat {
 
     private Meteo meteo;
 
+    private TypeCombatResultat typeCombatResultat;
+
     private String background;
 
     //règles
@@ -102,49 +104,82 @@ public class Combat {
 
     }
 
-    public CombatResultat resolve() {
-        CombatResultat combatResultat = new CombatResultat();
+    public void resolve() {
+        this.typeCombatResultat = TypeCombatResultat.EN_COURS;
+        blanc.getEquipe().forEach(p -> p.setItemAutorise(true));
+        noir.getEquipe().forEach(p -> p.setItemAutorise(true));
+
+        //todo effets d'entree sur le champ de bataille
+
+        roundPhase1(1);
+    }
+
+    public void roundPhase1(int num) {
+
+        String imageCombat;
         try {
-            String imageCombat = updateImageCombat();
-
-            MessageCreateBuilder mcb = new MessageCreateBuilder();
-            List<Button> buttons = new ArrayList<>();
-            List<Button> buttons2 = new ArrayList<>();
-
-            for (Attaque attaque : currentPokemonBlanc.getMoveset()) {
-                Move move = attaque.getMoveAPI();
-                Type type = Type.getById(move.getType().getId());
-                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp()+attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
-            }
-
-            buttons2 = new ArrayList<>(Arrays.asList(
-                    Button.of(ButtonStyle.SECONDARY, "ball", "Pokéball", Emoji.fromCustom("pokeball", 1032561600701399110L, false)),
-                    Button.of(ButtonStyle.SECONDARY, "item", "Potion",  Emoji.fromFormatted("\uD83E\uDDF4")),
-                    Button.of(ButtonStyle.SECONDARY, "escape", "Fuite", Emoji.fromFormatted("\uD83C\uDFC3\uD83C\uDFFC"))
-            ));
-
-
-            File combat = new File(getClass().getClassLoader().getResource("images/temp/").getPath()+imageCombat);
-            mcb.addFiles(FileUpload.fromData(combat, combat.getName()));
-
-            LayoutComponent lc = ActionRow.of(buttons);
-            LayoutComponent lc2 = ActionRow.of(buttons2);
-            mcb.addComponents(lc, lc2);
-            mcb.addContent("Un " + noir.getNom() + " sauvage apparaît !");
-
-            EmbedBuilder embedBuilder = new EmbedBuilder()
-                    .setColor(new Color(game.getSave().getColorRGB()))
-                    .setDescription("Un " + noir.getNom() + " sauvage apparaît !");
-
-            mcb.addEmbeds(embedBuilder.build());
-            game.getChannel().sendMessage(mcb.build()).queue();
-//            game.getChannel().sendMessage(game.getMessageManager().createMessageImage(game.getSave(),"Un " + noir.getNom() + " sauvage apparaît !" , lc, "temp/" + imageCombat)).queue();
-
+            imageCombat = updateImageCombat();
         } catch (IOException ioe) {
             logger.error("Erreur update image", ioe);
+            throw new IllegalStateException("Erreur mise à jour de l'image");
         }
 
-        return combatResultat;
+        //on créé le message à partir de la nouvelle image et des infos combat
+        MessageCreateBuilder mcb = getMcb(imageCombat);
+        //envoi du message
+        //game.getChannel().sendMessage(game.getMessageManager().createMessageImage(game.getSave(),"Un " + noir.getNom() + " sauvage apparaît !" , lc, "temp/" + imageCombat)).queue();
+        game.getChannel().sendMessage(mcb.build()).queue();
+
+        //todo AI choisit son coup
+
+        roundPhase2(num);
+    }
+    public void roundPhase2(int num) {
+        //TODO resolution des attaques choisies
+
+        //TODO effets de fin de tour
+
+        //si le combat est terminé
+
+        game.apresCombat(this);
+        //sinon
+        roundPhase1(num+1);
+    }
+
+    @NotNull
+    private MessageCreateBuilder getMcb(String imageCombat) {
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
+        List<Button> buttons = new ArrayList<>();
+        List<Button> buttons2 = new ArrayList<>();
+
+        for (Attaque attaque : currentPokemonBlanc.getMoveset()) {
+            Move move = attaque.getMoveAPI();
+            Type type = Type.getById(move.getType().getId());
+            buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
+        }
+
+        buttons2 = new ArrayList<>(Arrays.asList(
+                Button.of(ButtonStyle.SECONDARY, "change", "Pokémon", Emoji.fromFormatted("\uD83E\uDDF4")),
+                Button.of(ButtonStyle.SECONDARY, "ball", "Pokéball", Emoji.fromCustom("pokeball", 1032561600701399110L, false)),
+                Button.of(ButtonStyle.SECONDARY, "item", "Potion", Emoji.fromFormatted("\uD83E\uDDF4")),
+                Button.of(ButtonStyle.SECONDARY, "escape", "Fuite", Emoji.fromFormatted("\uD83C\uDFC3\uD83C\uDFFC"))
+        ));
+
+
+        File combat = new File(getClass().getClassLoader().getResource("images/temp/").getPath() + imageCombat);
+        mcb.addFiles(FileUpload.fromData(combat, combat.getName()));
+
+        LayoutComponent lc = ActionRow.of(buttons);
+        LayoutComponent lc2 = ActionRow.of(buttons2);
+        mcb.addComponents(lc, lc2);
+        mcb.addContent("Un " + noir.getNom() + " sauvage apparaît !");
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(new Color(game.getSave().getColorRGB()))
+                .setDescription("Un " + noir.getNom() + " sauvage apparaît !");
+
+        mcb.addEmbeds(embedBuilder.build());
+        return mcb;
     }
 
     private String updateImageCombat() throws IOException {
@@ -189,13 +224,13 @@ public class Combat {
         elementUIS.add(xpBar);
 
         int pokeY = 110;
-        for(Pokemon pokemon : blanc.getEquipe()){
-            if(pokemon.getCurrentHp() <= 0){
+        for (Pokemon pokemon : blanc.getEquipe()) {
+            if (pokemon.getCurrentHp() <= 0) {
                 elementUIS.add(new ImageUI(3, pokeY, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("empty"))))));
-            }else{
+            } else {
                 elementUIS.add(new ImageUI(3, pokeY, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("pokeball"))))));
             }
-        pokeY -=12;
+            pokeY -= 12;
         }
 
         if (currentPokemonBlanc.isShiny()) {
@@ -232,6 +267,118 @@ public class Combat {
 
     public void changerMeteo(Meteo meteo, int compteurToursMeteo) {
         this.meteo = meteo;
+        this.compteurToursMeteo = compteurToursMeteo;
+    }
+
+    public Game getGame() {
+        return game;
+    }
+
+    public void setGame(Game game) {
+        this.game = game;
+    }
+
+    public Duelliste getBlanc() {
+        return blanc;
+    }
+
+    public void setBlanc(Duelliste blanc) {
+        this.blanc = blanc;
+    }
+
+    public Duelliste getNoir() {
+        return noir;
+    }
+
+    public void setNoir(Duelliste noir) {
+        this.noir = noir;
+    }
+
+    public Terrain getTerrainBlanc() {
+        return terrainBlanc;
+    }
+
+    public void setTerrainBlanc(Terrain terrainBlanc) {
+        this.terrainBlanc = terrainBlanc;
+    }
+
+    public Terrain getTerrainNoir() {
+        return terrainNoir;
+    }
+
+    public void setTerrainNoir(Terrain terrainNoir) {
+        this.terrainNoir = terrainNoir;
+    }
+
+    public Pokemon getCurrentPokemonBlanc() {
+        return currentPokemonBlanc;
+    }
+
+    public void setCurrentPokemonBlanc(Pokemon currentPokemonBlanc) {
+        this.currentPokemonBlanc = currentPokemonBlanc;
+    }
+
+    public Pokemon getCurrentPokemonNoir() {
+        return currentPokemonNoir;
+    }
+
+    public void setCurrentPokemonNoir(Pokemon currentPokemonNoir) {
+        this.currentPokemonNoir = currentPokemonNoir;
+    }
+
+    public Meteo getMeteo() {
+        return meteo;
+    }
+
+    public void setMeteo(Meteo meteo) {
+        this.meteo = meteo;
+    }
+
+    public String getBackground() {
+        return background;
+    }
+
+    public void setBackground(String background) {
+        this.background = background;
+    }
+
+    public TypeCombat getTypeCombat() {
+        return typeCombat;
+    }
+
+    public void setTypeCombat(TypeCombat typeCombat) {
+        this.typeCombat = typeCombat;
+    }
+
+    public boolean isObjetsAutorises() {
+        return objetsAutorises;
+    }
+
+    public void setObjetsAutorises(boolean objetsAutorises) {
+        this.objetsAutorises = objetsAutorises;
+    }
+
+    public int getTentativesDeFuite() {
+        return tentativesDeFuite;
+    }
+
+    public void setTentativesDeFuite(int tentativesDeFuite) {
+        this.tentativesDeFuite = tentativesDeFuite;
+    }
+
+    public int getPiecesEparpillees() {
+        return piecesEparpillees;
+    }
+
+    public void setPiecesEparpillees(int piecesEparpillees) {
+        this.piecesEparpillees = piecesEparpillees;
+    }
+
+    public int getCompteurToursMeteo() {
+        return compteurToursMeteo;
+    }
+
+    public void setCompteurToursMeteo(int compteurToursMeteo) {
         this.compteurToursMeteo = compteurToursMeteo;
     }
 }

@@ -8,7 +8,6 @@ import com.github.oscar0812.pokeapi.utils.Client;
 import commands.Commands;
 import executable.MyBot;
 import game.model.Combat;
-import game.model.CombatResultat;
 import game.model.Duelliste;
 import game.model.Pokemon;
 import game.model.enums.*;
@@ -248,13 +247,27 @@ public class Game {
         //meteo si pas défault
         Duelliste blanc = new Duelliste(save);
         Duelliste noir = new Duelliste(pokemon);//TODO pokemon sauvage
-        CombatResultat resultat = new Combat(this, blanc, noir, TypeCombat.SIMPLE, Meteo.NEUTRE, true).resolve();
+
+        //le combat emmène à la méthode apresCombat(combat);
+        new Combat(this, blanc, noir, TypeCombat.SIMPLE, Meteo.NEUTRE, true).resolve();
+    }
+
+    public void apresCombat(Combat combat){
+        combat.getBlanc().soinsLeger();
+        combat.getNoir().soinsLeger();
+        switch(combat.getNoir().getTypeDuelliste()){
+            case PNJ:
+                break;
+            case POKEMON_SAUVAGE:
+                break;
+            case JOUEUR:
+                break;
+        }
         //en fonction du résultat, appliquer le nécessaire :
         //capture du pokémon ?
         //fuite ?
         //gain d'or/xp
         gameMenu();
-
     }
 
     private void talkMenu() {

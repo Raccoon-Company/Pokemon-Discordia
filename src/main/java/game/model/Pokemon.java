@@ -9,7 +9,10 @@ import utils.APIUtils;
 import utils.Utils;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 public class Pokemon implements Serializable {
     private static final double BASE_CRIT_MODIFIER = 1.5;
@@ -96,12 +99,14 @@ public class Pokemon implements Serializable {
     private double accuracyStage = 0;
     @JsonIgnore
     private double evasivenessStage = 0;
+
     @JsonIgnore
-    private boolean lostHealthThisTurn;
+    private boolean aPerduDeLaVieCeTour;
     @JsonIgnore
-    private boolean hasMovedThisTurn;
+    private boolean aDejaAttaque;
+
     @JsonIgnore
-    private boolean isPlayerPokemon;
+    private boolean itemAutorise;
 
     public Pokemon(int idSpecie, int level, boolean canEvolve) {
 
@@ -111,8 +116,8 @@ public class Pokemon implements Serializable {
         this.level = level;
         this.xp = 0;
         this.shiny = Utils.getRandom().nextInt(2) == 1;
-        this.lostHealthThisTurn = false;
-        this.hasMovedThisTurn = false;
+        this.aPerduDeLaVieCeTour = false;
+        this.aDejaAttaque = false;
         this.friendship = 0;
 
         this.gender = Gender.getById(getPokemonSpeciesAPI().getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 1 : 0);
@@ -135,7 +140,7 @@ public class Pokemon implements Serializable {
 
         this.alterations = new ArrayList<>();
 
-//        levelXTimes(level);
+        levelXTimes(level, false);
 //        //si c'est un pokemon wild ou de npc, on lui donne une chance d'évoluer par lui-même même s'il a normalmeent besoin d'un item ou de bonheur
 //            if (canEvolve) {
 //            while (this.species.getEvolution() != null && this.species.getLvlEvo() == null && Utils.randomTest(level)) {
@@ -150,6 +155,7 @@ public class Pokemon implements Serializable {
 //                usables = Arrays.stream(EvoItem.values()).filter(i -> i.getMakeEvo().contains(finalSpecies1)).collect(Collectors.toList());
 //            }
 //        }
+
         //on reset le bonheur apres les levels up, sinon ca fausse car rapportent du bonheur
         this.friendship = getPokemonSpeciesAPI().getBaseHappiness();
         this.moveset = new ArrayList<>();
@@ -179,7 +185,7 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int currentCritChance, double critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean lostHealthThisTurn, boolean hasMovedThisTurn, boolean isPlayerPokemon) {
+    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int currentCritChance, double critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean aPerduDeLaVieCeTour, boolean aDejaAttaque) {
         this.id = id;
         this.gender = gender;
         this.idSpecie = idSpecie;
@@ -222,66 +228,157 @@ public class Pokemon implements Serializable {
         this.speedStage = speedStage;
         this.accuracyStage = accuracyStage;
         this.evasivenessStage = evasivenessStage;
-        this.lostHealthThisTurn = lostHealthThisTurn;
-        this.hasMovedThisTurn = hasMovedThisTurn;
-        this.isPlayerPokemon = isPlayerPokemon;
+        this.aPerduDeLaVieCeTour = aPerduDeLaVieCeTour;
+        this.aDejaAttaque = aDejaAttaque;
     }
 
     @JsonIgnore
-    public PokemonSpecies getPokemonSpeciesAPI(){
+    public PokemonSpecies getPokemonSpeciesAPI() {
         return Client.getPokemonSpeciesById(idSpecie);
     }
 
     @JsonIgnore
-    public com.github.oscar0812.pokeapi.models.pokemon.Pokemon getPokemonAPI(){
+    public com.github.oscar0812.pokeapi.models.pokemon.Pokemon getPokemonAPI() {
         return Client.getPokemonById(idSpecie);
     }
+
+    public void levelXTimes(int times, boolean allowEvolution) {
+        for (int i = 0; i < times; i++) {
+            levelUp(false, false, allowEvolution);
+        }
+    }
+
+    private void levelUp(boolean affichage, boolean choixManuel, boolean evolution) {
+        //on ne peut pas aller au dessus du lv100
+        if (level >= 100) {
+            return;
+        }
+        level++;
+        friendship += FriendshipGains.getGainsFromAction(FriendshipGains.LEVEL_UP, friendship);
+
+        if (choixManuel) {
+//            movesetManuel();
+        } else {
+            moveSetAuto();
+        }
+
+        xp = 0;
+        if (affichage) {
+            //TODO notif level up
+        }
+//todo soigner
+
+//        if (evolution && HeldItem.EVERSTONE.equals(heldItem)) {
+//            evolution = false;
+//        }
+
+        if (evolution) {
+//TODO faire évoluer si possible
+        }
+    }
+
+    private void moveSetAuto() {
+        //TODO lister tous les moves apprenables par niveau accessibles par ce pokemon
+
+        //TODO eventuellement filtrer certains moves en doublons dans es nivaux éléeves hyperbeam etc
+
+        //TODO ne garder que les moves pas déjà appris
+//        List<Moves> alreadyLearned = getMoveset().stream().map(Attack::getMove).collect(Collectors.toList());
+//
+//        List<Moves> finalAvailables = availables;
+//        availables.addAll(alreadyLearned.stream()
+//                .filter(t -> finalAvailables.stream().noneMatch(t::equals))
+//                .collect(Collectors.toList())
+//        );
+
+
+///TODO vérifier que tous les moves sont non-nulls
+        //TODO on apprend chaque move
+//        while (!learn.isEmpty() && moveset.size() < MOVESET_MAX_SIZE) {
+//            MoveLearning selected = learn.remove(0);
+//            moveset.add(new Attack(Moves.getById(selected.getIdMove())));
+//        }
+    }
+
+    public void gainXp(int amount, boolean manual) {
+        int xpNeededToLvlUp = getXpNeededToLevelUp();
+        if (amount > xpNeededToLvlUp) {
+            levelUp(true, manual, true);
+            changeLevel(level);
+            amount -= xpNeededToLvlUp;
+            gainXp(amount, manual);
+        } else {
+            xp += amount;
+            //TODO afficher la notif
+//            Utils.println(xp + "/" + (xpNeededToLvlUp + xp) + " (" + ((xp * 100) / (xpNeededToLvlUp + xp)) + "% du niveau " + (level + 1) + ")");
+        }
+    }
+
     @JsonIgnore
-    public String getBackSprite(){
-        if(isShiny()){
-            if(gender.equals(Gender.FEMALE)){
+    private int getXpNeededToLevelUp() {
+        return getPokemonAPI().getGrowthRate().getLevels().filter(this.level).findAny();
+    }
+
+    public void changeLevel(int newLevel) {
+        int oldMaxHP = getMaxHp();
+        this.level = newLevel;
+        //maj des stats en conséquence
+        this.currentAtkPhy = getMaxAtkPhy();
+        this.currentDefPhy = getMaxDefPhy();
+        this.currentAtkSpe = getMaxAtkSpe();
+        this.currentDefSpe = getMaxDefSpe();
+        this.currentSpeed = getMaxSpeed();
+        this.currentHp = getMaxHp() * currentHp / oldMaxHP;
+    }
+
+    @JsonIgnore
+    public String getBackSprite() {
+        if (isShiny()) {
+            if (gender.equals(Gender.FEMALE)) {
                 String shinyFemale = getPokemonAPI().getSprites().getBackShinyFemale();
                 return shinyFemale != null ? shinyFemale : getPokemonAPI().getSprites().getBackShiny();
-            }else{
+            } else {
                 return getPokemonAPI().getSprites().getBackShiny();
             }
-        }else{
-            if(gender.equals(Gender.FEMALE)){
+        } else {
+            if (gender.equals(Gender.FEMALE)) {
                 String female = getPokemonAPI().getSprites().getBackFemale();
                 return female != null ? female : getPokemonAPI().getSprites().getBackDefault();
-            }else{
+            } else {
                 return getPokemonAPI().getSprites().getBackDefault();
             }
         }
     }
 
     @JsonIgnore
-    public String getFrontSprite(){
-        if(isShiny()){
-            if(gender.equals(Gender.FEMALE)){
+    public String getFrontSprite() {
+        if (isShiny()) {
+            if (gender.equals(Gender.FEMALE)) {
                 String shinyFemale = getPokemonAPI().getSprites().getFrontShinyFemale();
                 return shinyFemale != null ? shinyFemale : getPokemonAPI().getSprites().getFrontShiny();
-            }else{
+            } else {
                 return getPokemonAPI().getSprites().getFrontShiny();
             }
-        }else{
-            if(gender.equals(Gender.FEMALE)){
+        } else {
+            if (gender.equals(Gender.FEMALE)) {
                 String female = getPokemonAPI().getSprites().getFrontFemale();
                 return female != null ? female : getPokemonAPI().getSprites().getFrontDefault();
-            }else{
+            } else {
                 return getPokemonAPI().getSprites().getFrontDefault();
             }
         }
     }
 
     @JsonIgnore
-    public String getSpecieName(){
+    public String getSpecieName() {
         return APIUtils.getFrName(getPokemonSpeciesAPI().getNames());
     }
+
     @JsonIgnore
     public int getTotalEV() {
         return getHpEV() + getSpeedEV() + getAtkPhyEV() + getAtkSpeEV() + getDefPhyEV() + getDefSpeEV();
     }
+
     @JsonIgnore
     public int getMaxHp() {
         int baseHp = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.HP.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
@@ -292,7 +389,7 @@ public class Pokemon implements Serializable {
     public int getMaxAtkSpe() {
         int baseAtkSpe = getPokemonAPI().getStats().stream().filter(s -> s.getStat().getId() == Stats.SPECIAL_ATTACK.getId()).map(PokemonStat::getBaseStat).findAny().orElse(1);
 
-        return ((((2 * baseAtkSpe+ atkSpeIV + (atkSpeEV / 4)) * level) / 100) + 5) * nature.getAtkSpe() / 100;
+        return ((((2 * baseAtkSpe + atkSpeIV + (atkSpeEV / 4)) * level) / 100) + 5) * nature.getAtkSpe() / 100;
     }
 
     @JsonIgnore
@@ -319,8 +416,8 @@ public class Pokemon implements Serializable {
         return ((((2 * baseSpeed + speedIV + (speedEV / 4)) * level) / 100) + 5) * nature.getSpeed() / 100;
     }
 
-    public boolean hasType(Type type){
-        if(type == null){
+    public boolean hasType(Type type) {
+        if (type == null) {
             return false;
         }
         return type.equals(this.type1) || type.equals(this.type2);
@@ -680,28 +777,28 @@ public class Pokemon implements Serializable {
         this.evasivenessStage = evasivenessStage;
     }
 
-    public boolean isLostHealthThisTurn() {
-        return lostHealthThisTurn;
+    public boolean isItemAutorise() {
+        return itemAutorise;
     }
 
-    public void setLostHealthThisTurn(boolean lostHealthThisTurn) {
-        this.lostHealthThisTurn = lostHealthThisTurn;
+    public void setItemAutorise(boolean itemAutorise) {
+        this.itemAutorise = itemAutorise;
     }
 
-    public boolean isHasMovedThisTurn() {
-        return hasMovedThisTurn;
+    public boolean isaPerduDeLaVieCeTour() {
+        return aPerduDeLaVieCeTour;
     }
 
-    public void setHasMovedThisTurn(boolean hasMovedThisTurn) {
-        this.hasMovedThisTurn = hasMovedThisTurn;
+    public void setaPerduDeLaVieCeTour(boolean aPerduDeLaVieCeTour) {
+        this.aPerduDeLaVieCeTour = aPerduDeLaVieCeTour;
     }
 
-    public boolean isPlayerPokemon() {
-        return isPlayerPokemon;
+    public boolean isaDejaAttaque() {
+        return aDejaAttaque;
     }
 
-    public void setPlayerPokemon(boolean playerPokemon) {
-        isPlayerPokemon = playerPokemon;
+    public void setaDejaAttaque(boolean aDejaAttaque) {
+        this.aDejaAttaque = aDejaAttaque;
     }
 
     public void setId(long id) {
@@ -736,31 +833,29 @@ public class Pokemon implements Serializable {
     public String getDescriptionDetaillee() {
         String res = "";
         res += getSpecieName();
-        res += "Niveau " + level + " "+xp+"xp\n";
+        res += "Niveau " + level + " " + xp + "xp\n";
         res += currentHp + "/maxHp";
         return res;
     }
 
-    public void completeHeal(){
-//        this.currentHp = currentHp;//TODO faire les current par les max
-
+    public void completeHeal() {
+        this.currentHp = getMaxHp();
         this.alterations.clear();
     }
 
-    public void postFightHeal(){
-        //        this.currentHp = currentHp;//TODO faire les current par les max
-        this.alterations.removeIf(a-> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
+    public void postFightHeal() {
+        this.alterations.removeIf(a -> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
     }
 
-    public void inFightHeal(){
+    public void inFightHeal() {
         this.alterations.removeIf(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.VOLATILE_BATTLE));
     }
 
-    public boolean hasStatut(AlterationEtat alterationEtat){
+    public boolean hasStatut(AlterationEtat alterationEtat) {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().equals(alterationEtat));
     }
 
-    public boolean hasAnyNonVolatileStatus(){
+    public boolean hasAnyNonVolatileStatus() {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
     }
 
@@ -772,7 +867,7 @@ public class Pokemon implements Serializable {
         }
 
         //un seul statut non-volatile à la fois
-        if(alterationEtat.getTypeAlteration().equals(TypeAlteration.NON_VOLATILE) && hasAnyNonVolatileStatus()){
+        if (alterationEtat.getTypeAlteration().equals(TypeAlteration.NON_VOLATILE) && hasAnyNonVolatileStatus()) {
             return;
         }
 

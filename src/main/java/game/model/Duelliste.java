@@ -113,4 +113,8 @@ public class Duelliste implements Serializable {
     public void setTypeDuelliste(TypeDuelliste typeDuelliste) {
         this.typeDuelliste = typeDuelliste;
     }
+
+    public void soinsLeger() {
+        equipe.forEach(p -> p.postFightHeal());
+    }
 }
