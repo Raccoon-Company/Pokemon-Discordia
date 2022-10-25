@@ -20,6 +20,21 @@ public class Utils {
         return (int) ((Math.random() * (max - min)) + min);
     }
 
+    //en %
+    public static boolean randomTest(int seuil) {
+        if (seuil >= 100) {
+            return true;
+        }
+        return random.nextInt(101) <= seuil;
+    }
+
+    public static boolean randomTest(double seuil) {
+        if (seuil >= 100) {
+            return true;
+        }
+        return (random.nextDouble() * 100) <= seuil;
+    }
+
     public static Random getRandom() {
         return random;
     }

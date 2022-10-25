@@ -1,11 +1,9 @@
 package game.model;
 
 import com.github.oscar0812.pokeapi.models.moves.Move;
+import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
-import game.model.enums.Meteo;
-import game.model.enums.Type;
-import game.model.enums.TypeCombat;
-import game.model.enums.TypeCombatResultat;
+import game.model.enums.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -60,6 +58,8 @@ public class Combat {
 
     private Game game;
 
+    private int turnCount;
+
     private Duelliste blanc;
     private Duelliste noir;
 
@@ -67,10 +67,6 @@ public class Combat {
 
     private Terrain terrainBlanc;
     private Terrain terrainNoir;
-
-    private Pokemon currentPokemonBlanc;
-    private Pokemon currentPokemonNoir;
-
     private Meteo meteo;
 
     private TypeCombatResultat typeCombatResultat;
@@ -92,10 +88,9 @@ public class Combat {
         this.typeCombat = typeCombat;
         this.blanc = blanc;
         this.noir = noir;
+        this.turnCount = 0;
         this.meteo = meteo;
         this.objetsAutorises = objetsAutorises;
-        this.currentPokemonBlanc = blanc.getEquipe().get(0);
-        this.currentPokemonNoir = noir.getEquipe().get(0);
 
         setUpBackground();
     }
@@ -108,16 +103,22 @@ public class Combat {
 
     public void resolve() {
         this.typeCombatResultat = TypeCombatResultat.EN_COURS;
-        blanc.getEquipe().forEach(p -> p.setItemAutorise(true));
-        noir.getEquipe().forEach(p -> p.setItemAutorise(true));
+        this.turnCount = 1;
+        blanc.getEquipe().forEach(p -> {
+            p.setItemAutorise(true);
+            p.setLastUsedMoves(new ArrayList<>());
+        });
+        noir.getEquipe().forEach(p -> {
+            p.setItemAutorise(true);
+            p.setLastUsedMoves(new ArrayList<>());
+        });
 
         //todo effets d'entree sur le champ de bataille
 
-        roundPhase1(1);
+        roundPhase1();
     }
 
-    public void roundPhase1(int num) {
-
+    public void roundPhase1() {
         String imageCombat;
         try {
             imageCombat = updateImageCombat();
@@ -128,10 +129,12 @@ public class Combat {
 
         String text = "";
 
-        if (num == 1) {
+        if (turnCount == 1 && noir.getTypeDuelliste().equals(TypeDuelliste.POKEMON_SAUVAGE)) {
             text += "Un " + noir.getNom() + " sauvage apparaît !";
-        } else {
-            text += "Tour " + num;
+        } else if (turnCount == 1 && noir.getTypeDuelliste().equals(TypeDuelliste.PNJ)) {
+            text += noir.getNom() + " veut se battre !";
+        } else{
+            text += "Tour " + turnCount;
         }
 
         //on créé le message à partir de la nouvelle image et des infos combat
@@ -150,19 +153,19 @@ public class Combat {
                             e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                             if (e.getComponentId().equals("change")) {
                                 //changer de pokes
-                                roundPhase2(num);
+                                roundPhase2();
                             } else if (e.getComponentId().equals("ball")) {
                                 //pokeball
-                                roundPhase2(num);
+                                pokeballMenu();
                             } else if (e.getComponentId().equals("item")) {
                                 //bag//
-                                roundPhase2(num);
+                                roundPhase2();
                             } else if (e.getComponentId().equals("escape")) {
-                                typeCombatResultat = TypeCombatResultat.FUITE_JOUEUR;
-                                game.apresCombat(this);
+                                fuite();
                             } else {
                                 //choix de l'attaque
-                                roundPhase2(num);
+                                blanc.getPokemonActif().getLastUsedMoves().add(Client.getMoveById(Integer.parseInt(e.getComponentId())));
+                                roundPhase2();
                             }
                         },
                         1,
@@ -173,15 +176,168 @@ public class Combat {
                 ));
     }
 
-    public void roundPhase2(int num) {
+    public boolean fuiteAutorisee(Pokemon fuyard, Duelliste adversaire, boolean simulation) {
+        if (adversaire.getTypeDuelliste().equals(TypeDuelliste.PNJ)) {
+            if (!simulation) {
+                game.getChannel().sendMessage("Impossible de fuir une bataille de dresseurs !").queue();
+            }
+            return false;
+        }
+//        if (HeldItem.SHED_SHELL.equals(fuyard.getHeldItem()) || HeldItem.SMOKE_BALL.equals(fuyard.getHeldItem())) {
+//            return true;
+//        }
+        if (fuyard.hasStatut(AlterationEtat.RACINES)) {
+            return false;
+        }
+//        if (Talent.RUN_AWAY.equals(flee.getTalent())) {
+//            return true;
+//        }
+
+        if (fuyard.hasStatut(AlterationEtat.LIEN) || fuyard.hasStatut(AlterationEtat.NO_ESCAPE)) {
+            if (!simulation) {
+                game.getChannel().sendMessage(fuyard.getSpecieName() + " est piégé et ne peut pas s'enfuir !").queue();
+            }
+            return false;
+        }
+
+//        if (fight.getFightType().equals(FightType.PLAYER_VS_AI) || fight.getFightType().equals(FightType.PLAYER_VS_PLAYER)) {
+//            if (fight.getOwner(flee).equals(fight.getPlayer()) && fight.getField1().getStatusList().contains(FieldStatus.SPIDER_WEB) || fight.getOwner(flee).equals(fight.getFoe()) && fight.getField2().getStatusList().contains(FieldStatus.SPIDER_WEB)) {
+//                if (!simulation) {
+//                    Utils.println("Le terrain recouvert de toile d'araignées vous empêche de fuir !");
+//                }
+//                return false;
+//            }
+//        } else {
+//            if (fight.getOwner(flee).equals(fight.getTrainer()) && fight.getField1().getStatusList().contains(FieldStatus.SPIDER_WEB) || fight.getOwner(flee).equals(fight.getFoe()) && fight.getField2().getStatusList().contains(FieldStatus.SPIDER_WEB)) {
+//                if (!simulation) {
+//                    Utils.println("Le terrain recouvert de toile d'araignées vous empêche de fuir !");
+//                }
+//                return false;
+//            }
+//        }
+//
+//        if (Talent.ARENA_TRAP.equals(other.getTalent())) {
+//            if (!simulation) {
+//                Utils.println("ARENA TRAP de " + other.getLibelleColorized() + " empêche " + flee.getLibelleColorized() + " de s'enfuir !");
+//            }
+//            return false;
+//        }
+//        if (Talent.MAGNET_PULL.equals(other.getTalent()) && (flee.getSpecies().getType2().equals(ChartMonType.STEEL) || flee.getSpecies().getType1().equals(ChartMonType.STEEL))) {
+//            if (!simulation) {
+//                Utils.println("MAGNET PULL de " + other.getLibelleColorized() + " empêche " + flee.getLibelleColorized() + " de s'enfuir !");
+//            }
+//            return false;
+//        }
+        return true;
+    }
+
+    private void fuite(){
+        //on vérifie avant tout que le joueur puisse bien fuir
+        //sinon retour à l'étape 1
+        if(!fuiteAutorisee(blanc.getPokemonActif(), noir, false)){
+            roundPhase1();
+        }
+
+        //up le nm de tentatives de fuite
+        tentativesDeFuite++;
+        //on passe le tour du pokemon, utilisé a fuir
+        blanc.getPokemonActif().getLastUsedMoves().add(null);
+
+        //si le temps est HARSH_SUNLIGHT, les kemons avec le talent chlorophyll doublent leur vitesse
+        double speedPlayer = blanc.getPokemonActif().getCurrentSpeed();
+        double speedWild = noir.getPokemonActif().getCurrentSpeed();
+
+//        if (computeWeatherEffects()) {
+//            if (weather.equals(Weather.HARSH_SUNLIGHT)) {
+//                if (Talent.CHLOROPHYLL.equals(currentPokemonFirstTrainer.getTalent())) {
+//                    speedPlayer = speedPlayer * 2;
+//                }
+//                if (Talent.CHLOROPHYLL.equals(currentPokemonSecondTrainer.getTalent())) {
+//                    speedWild = speedWild * 2;
+//                }
+//            } else if (weather.equals(Weather.RAIN)) {
+//                if (Talent.SWIFT_SWIM.equals(currentPokemonFirstTrainer.getTalent())) {
+//                    speedPlayer = speedPlayer * 2;
+//                }
+//                if (Talent.SWIFT_SWIM.equals(currentPokemonSecondTrainer.getTalent())) {
+//                    speedWild = speedWild * 2;
+//                }
+//            }
+//        }
+
+        double proba = (((speedPlayer * 128) / speedWild) + (30 * tentativesDeFuite)) % 256;
+
+        if (speedPlayer > speedWild || Utils.randomTest(proba)) {
+            //fuite réussie
+            game.getChannel().sendMessage("Vous fuyez le combat !").queue();
+            typeCombatResultat = TypeCombatResultat.FUITE_JOUEUR;
+            game.apresCombat(this);
+        } else {
+            //échec de la fuite
+            game.getChannel().sendMessage("Vous ne parvenez pas à vous enfuir !").queue();
+            roundPhase2();
+        }
+    }
+
+    private void pokeballMenu() {
+        List<Button> buttons = new ArrayList<>(Arrays.asList(
+                Button.of(ButtonStyle.PRIMARY, "pokeball", "Pokéball", Emoji.fromCustom("pokeball", 1032561600701399110L, false)),
+                Button.of(ButtonStyle.PRIMARY, "superball", "Superball", Emoji.fromCustom("superball", 1034421567570063400L, false)),
+                Button.of(ButtonStyle.PRIMARY, "hyperball", "HyperBall", Emoji.fromCustom("hyperball", 1034421564210429993L, false)),
+                Button.of(ButtonStyle.PRIMARY, "masterball", "Masterball", Emoji.fromCustom("masterball", 1034421566244659280L, false)),
+                Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19"))
+        ));
+
+        LayoutComponent lc = ActionRow.of(buttons);
+
+        game.getBot().lock(game.getUser());
+        game.getChannel().sendMessage(game.getMessageManager().createMessageImage(game.getSave(), "Attraper le pokémon", lc, null))
+                .queue((message) ->
+                        game.getBot().getEventWaiter().waitForEvent(
+                                ButtonInteractionEvent.class,
+                                //vérif basique de correspondance entre message/interaction
+                                e -> game.getButtonManager().createPredicate(e, message, game.getSave(), lc),
+                                //action quand interaction détectée
+
+                                e -> {
+                                    game.getBot().unlock(game.getUser());
+                                    e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                                    switch (e.getComponentId()) {
+                                        case "pokeball":
+                                        case "superball":
+                                        case "hyperball":
+                                        case "masterball":
+//                                            launchPokeball
+                                            roundPhase2();
+                                            break;
+                                        case "back":
+                                            roundPhase1();
+                                            break;
+                                        default:
+                                            roundPhase1();
+                                    }
+                                },
+                                1,
+                                TimeUnit.MINUTES,
+                                () -> {
+                                    game.getButtonManager().timeout(game.getChannel(), game.getUser());
+                                }
+                        )
+                );
+    }
+
+    public void roundPhase2() {
         //TODO resolution des attaques choisies
+        blanc.getPokemonActif().setCurrentHp(blanc.getPokemonActif().getCurrentHp() -4);
+        noir.getPokemonActif().setCurrentHp(noir.getPokemonActif().getCurrentHp() - 8);
 
         //TODO effets de fin de tour
 
-        //si le combat est terminé
-        if (currentPokemonBlanc.getCurrentHp() >= 0 && currentPokemonNoir.getCurrentHp() >= 0) {
-            roundPhase1(num + 1);
+        //vérif combat terminé
+        if (blanc.getPokemonActif().getCurrentHp() >= 0 && noir.getPokemonActif().getCurrentHp() >= 0) {
+            roundPhase1();
 
+            //TODO combat terminé
         } else {
             game.apresCombat(this);
         }
@@ -193,7 +349,7 @@ public class Combat {
         List<Button> buttons = new ArrayList<>();
         List<Button> buttons2 = new ArrayList<>();
 
-        for (Attaque attaque : currentPokemonBlanc.getMoveset()) {
+        for (Attaque attaque : blanc.getPokemonActif().getMoveset()) {
             Move move = attaque.getMoveAPI();
             Type type = Type.getById(move.getType().getId());
             buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
@@ -244,24 +400,24 @@ public class Combat {
         FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
 
         //pokemon allié
-        elementUIS.add(new ImageUI(-5, 50, ImageIO.read(new URL(currentPokemonBlanc.getBackSprite()))));
-        TextUI nomPokemonBlanc = new TextUI(91, 90, currentPokemonBlanc.getSpecieName(), font, Color.BLACK);
-        TextUI genrePokemonBlanc = new TextUI(91 + (int) (font.getStringBounds(nomPokemonBlanc.getText(), frc).getWidth()), 90, " " + currentPokemonBlanc.getGender().getEmoji(), fontGender, currentPokemonBlanc.getGender().getColor());
+        elementUIS.add(new ImageUI(-5, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
+        TextUI nomPokemonBlanc = new TextUI(91, 90, blanc.getPokemonActif().getSpecieName(), font, Color.BLACK);
+        TextUI genrePokemonBlanc = new TextUI(91 + (int) (font.getStringBounds(nomPokemonBlanc.getText(), frc).getWidth()), 90, " " + blanc.getPokemonActif().getGender().getEmoji(), fontGender, blanc.getPokemonActif().getGender().getColor());
         elementUIS.add(nomPokemonBlanc);
         elementUIS.add(genrePokemonBlanc);
-        int hpBarBlanc = (int) ((MAX_X_HP_BAR_BLANC - MIN_X_HP_BAR_BLANC) * ((double) currentPokemonBlanc.getCurrentHp() / currentPokemonBlanc.getMaxHp()));
-        if (currentPokemonBlanc.getCurrentHp() > 0 && hpBarBlanc <= 0) {
+        int hpBarBlanc = (int) ((MAX_X_HP_BAR_BLANC - MIN_X_HP_BAR_BLANC) * ((double) blanc.getPokemonActif().getCurrentHp() / blanc.getPokemonActif().getMaxHp()));
+        if (blanc.getPokemonActif().getCurrentHp() > 0 && hpBarBlanc <= 0) {
             hpBarBlanc = 1;
         }
         RectangleUI hpBlanc = new RectangleUI(MIN_X_HP_BAR_BLANC, MIN_Y_HP_BAR_BLANC, Color.GREEN, hpBarBlanc, MAX_Y_HP_BAR_BLANC - MIN_Y_HP_BAR_BLANC);
         elementUIS.add(hpBlanc);
-        TextUI hpTextBlanc = new TextUI(144, 109, currentPokemonBlanc.getCurrentHp() + "/" + currentPokemonBlanc.getMaxHp(), fontHp, Color.BLACK);
+        TextUI hpTextBlanc = new TextUI(144, 109, blanc.getPokemonActif().getCurrentHp() + "/" + blanc.getPokemonActif().getMaxHp(), fontHp, Color.BLACK);
         elementUIS.add(hpTextBlanc);
 
-        TextUI levelBlanc = new TextUI(166, 90, "Lv." + currentPokemonBlanc.getLevel(), font, Color.BLACK);
+        TextUI levelBlanc = new TextUI(166, 90, "Lv." + blanc.getPokemonActif().getLevel(), font, Color.BLACK);
         elementUIS.add(levelBlanc);
-        currentPokemonBlanc.setXp(48);
-        int currentXpBar = (int) ((MAX_X_XP_BAR - MIN_X_XP_BAR) * ((double) currentPokemonBlanc.getXp() / 155));
+        blanc.getPokemonActif().setXp(48);
+        int currentXpBar = (int) ((MAX_X_XP_BAR - MIN_X_XP_BAR) * ((double) blanc.getPokemonActif().getXp() / 155));
         RectangleUI xpBar = new RectangleUI(MIN_X_XP_BAR, MIN_Y_XP_BAR, Color.CYAN, currentXpBar, MAX_Y_XP_BAR - MIN_Y_XP_BAR);
         elementUIS.add(xpBar);
 
@@ -275,26 +431,26 @@ public class Combat {
             pokeY -= 12;
         }
 
-        if (currentPokemonBlanc.isShiny()) {
+        if (blanc.getPokemonActif().isShiny()) {
             elementUIS.add(new ImageUI(genrePokemonBlanc.getX() + (int) (font.getStringBounds(genrePokemonBlanc.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
         }
 
-        elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(currentPokemonNoir.getFrontSprite()))));
-        TextUI nomPokemonNoir = new TextUI(16, 19, currentPokemonNoir.getSpecieName(), font, Color.BLACK);
-        TextUI genrePokemonNoir = new TextUI(16 + (int) (font.getStringBounds(nomPokemonNoir.getText(), frc).getWidth()), 19, " " + currentPokemonNoir.getGender().getEmoji(), fontGender, currentPokemonNoir.getGender().getColor());
+        elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
+        TextUI nomPokemonNoir = new TextUI(16, 19, noir.getPokemonActif().getSpecieName(), font, Color.BLACK);
+        TextUI genrePokemonNoir = new TextUI(16 + (int) (font.getStringBounds(nomPokemonNoir.getText(), frc).getWidth()), 19, " " + noir.getPokemonActif().getGender().getEmoji(), fontGender, noir.getPokemonActif().getGender().getColor());
         elementUIS.add(nomPokemonNoir);
         elementUIS.add(genrePokemonNoir);
-        int hpBarNoir = (int) ((MAX_X_HP_BAR_NOIR - MIN_X_HP_BAR_NOIR) * ((double) currentPokemonNoir.getCurrentHp() / currentPokemonNoir.getMaxHp()));
-        if (currentPokemonNoir.getCurrentHp() > 0 && hpBarNoir <= 0) {
+        int hpBarNoir = (int) ((MAX_X_HP_BAR_NOIR - MIN_X_HP_BAR_NOIR) * ((double) noir.getPokemonActif().getCurrentHp() / noir.getPokemonActif().getMaxHp()));
+        if (noir.getPokemonActif().getCurrentHp() > 0 && hpBarNoir <= 0) {
             hpBarNoir = 1;
         }
         RectangleUI hpNoir = new RectangleUI(MIN_X_HP_BAR_NOIR, MIN_Y_HP_BAR_NOIR, Color.GREEN, hpBarNoir, MAX_Y_HP_BAR_NOIR - MIN_Y_HP_BAR_NOIR);
         elementUIS.add(hpNoir);
 
-        TextUI levelNoir = new TextUI(80, 19, "Lv." + currentPokemonNoir.getLevel(), font, Color.BLACK);
+        TextUI levelNoir = new TextUI(80, 19, "Lv." + noir.getPokemonActif().getLevel(), font, Color.BLACK);
         elementUIS.add(levelNoir);
 
-        if (currentPokemonNoir.isShiny()) {
+        if (noir.getPokemonActif().isShiny()) {
             elementUIS.add(new ImageUI(genrePokemonNoir.getX() + (int) (font.getStringBounds(genrePokemonNoir.getText(), frc).getWidth()) + 2, 11, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
         }
 
@@ -350,22 +506,6 @@ public class Combat {
 
     public void setTerrainNoir(Terrain terrainNoir) {
         this.terrainNoir = terrainNoir;
-    }
-
-    public Pokemon getCurrentPokemonBlanc() {
-        return currentPokemonBlanc;
-    }
-
-    public void setCurrentPokemonBlanc(Pokemon currentPokemonBlanc) {
-        this.currentPokemonBlanc = currentPokemonBlanc;
-    }
-
-    public Pokemon getCurrentPokemonNoir() {
-        return currentPokemonNoir;
-    }
-
-    public void setCurrentPokemonNoir(Pokemon currentPokemonNoir) {
-        this.currentPokemonNoir = currentPokemonNoir;
     }
 
     public Meteo getMeteo() {

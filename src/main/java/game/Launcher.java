@@ -386,7 +386,7 @@ public class Launcher extends ListenerAdapter {
                                     e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     if (e.getComponentId().equals("true")) {
                                         save.getCampaign().setIdStarter(id);
-                                        validationSave(save);
+                                        validationSave(save,channel);
                                     } else {
                                         choixStarter(channel, user, save);
                                     }
@@ -401,7 +401,8 @@ public class Launcher extends ListenerAdapter {
                 );
     }
 
-    private void validationSave(Save save) {
+    private void validationSave(Save save, MessageChannelUnion channel) {
+        channel.sendTyping().queue();
         Pokemon starter = new Pokemon(save.getCampaign().getIdStarter(), 5, false);
         Campaign campaign = new Campaign(save.getCampaign().getNom(), save.getCampaign().isGender(), save.getCampaign().getNomRival(), save.getCampaign().getIdStarter());
         save.setCampaign(campaign);

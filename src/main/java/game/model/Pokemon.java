@@ -1,20 +1,21 @@
 package game.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.github.oscar0812.pokeapi.models.pokemon.GrowthRateExperienceLevel;
-import com.github.oscar0812.pokeapi.models.pokemon.PokemonSpecies;
-import com.github.oscar0812.pokeapi.models.pokemon.PokemonStat;
+import com.github.oscar0812.pokeapi.models.games.VersionGroup;
+import com.github.oscar0812.pokeapi.models.moves.Move;
+import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
+import game.model.enums.Gender;
+import game.model.enums.Nature;
+import game.model.enums.Type;
 import game.model.enums.*;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import utils.APIUtils;
 import utils.Utils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Pokemon implements Serializable {
     private static final double BASE_CRIT_MODIFIER = 1.5;
@@ -110,6 +111,18 @@ public class Pokemon implements Serializable {
     @JsonIgnore
     private boolean itemAutorise;
 
+    @JsonIgnore
+    private List<Move> lastUsedMoves;
+
+    @JsonIgnore
+    private List<PokemonMove> allMovesAPI;
+
+    @JsonIgnore
+    private com.github.oscar0812.pokeapi.models.pokemon.Pokemon pokemonAPI;
+
+    @JsonIgnore
+    private PokemonSpecies pokemonSpeciesAPI;
+
     public Pokemon(int idSpecie, int level, boolean canEvolve) {
 
         this.idSpecie = idSpecie;
@@ -117,7 +130,7 @@ public class Pokemon implements Serializable {
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
         this.level = level;
         this.xp = 0;
-        this.shiny = Utils.getRandom().nextInt(2) == 1;
+        this.shiny = Utils.getRandom().nextInt(4096) == 1;
         this.aPerduDeLaVieCeTour = false;
         this.aDejaAttaque = false;
         this.friendship = 0;
@@ -141,8 +154,9 @@ public class Pokemon implements Serializable {
         this.speedEV = startingEV;
 
         this.alterations = new ArrayList<>();
+        this.moveset = new ArrayList<>();
 
-        levelXTimes(level, false);
+        levelXTimes(level, false,false);
 //        //si c'est un pokemon wild ou de npc, on lui donne une chance d'évoluer par lui-même même s'il a normalmeent besoin d'un item ou de bonheur
 //            if (canEvolve) {
 //            while (this.species.getEvolution() != null && this.species.getLvlEvo() == null && Utils.randomTest(level)) {
@@ -160,8 +174,6 @@ public class Pokemon implements Serializable {
 
         //on reset le bonheur apres les levels up, sinon ca fausse car rapportent du bonheur
         this.friendship = getPokemonSpeciesAPI().getBaseHappiness();
-        this.moveset = new ArrayList<>();
-        fillMoveset();
 
         //talent random si disponible
 //        this.talent = species.getTalents().isEmpty() ? null : species.getTalents().get(Utils.getRandom().nextInt(species.getTalents().size()));
@@ -172,15 +184,6 @@ public class Pokemon implements Serializable {
         this.currentDefSpe = getMaxDefSpe();
         this.currentSpeed = getMaxSpeed();
         this.currentHp = getMaxHp();
-
-    }
-
-    private void fillMoveset() {
-        moveset.add(new Attaque(Client.getMoveById(4)));
-        moveset.add(new Attaque(Client.getMoveById(44)));
-        moveset.add(new Attaque(Client.getMoveById(78)));
-        moveset.add(new Attaque(Client.getMoveById(575)));
-
     }
 
     //default constructors
@@ -234,23 +237,27 @@ public class Pokemon implements Serializable {
         this.aDejaAttaque = aDejaAttaque;
     }
 
-    @JsonIgnore
     public PokemonSpecies getPokemonSpeciesAPI() {
-        return Client.getPokemonSpeciesById(idSpecie);
+        if (pokemonSpeciesAPI == null) {
+            pokemonSpeciesAPI = Client.getPokemonSpeciesById(idSpecie);
+        }
+        return pokemonSpeciesAPI;
     }
 
-    @JsonIgnore
     public com.github.oscar0812.pokeapi.models.pokemon.Pokemon getPokemonAPI() {
-        return Client.getPokemonById(idSpecie);
+        if (pokemonAPI == null) {
+            pokemonAPI = Client.getPokemonById(idSpecie);
+        }
+        return pokemonAPI;
     }
 
-    public void levelXTimes(int times, boolean allowEvolution) {
+    public void levelXTimes(int times, boolean allowEvolution, boolean updateMoves) {
         for (int i = 0; i < times; i++) {
-            levelUp(null, false, allowEvolution);
+            levelUp(null, false, allowEvolution, updateMoves);
         }
     }
 
-    private void levelUp(MessageChannelUnion channel, boolean choixManuel, boolean evolution) {
+    private void levelUp(MessageChannelUnion channel, boolean choixManuel, boolean evolution, boolean updateMoves) {
         //on ne peut pas aller au dessus du lv100
         if (level >= 100) {
             return;
@@ -258,10 +265,12 @@ public class Pokemon implements Serializable {
         level++;
         friendship += FriendshipGains.getGainsFromAction(FriendshipGains.LEVEL_UP, friendship);
 
-        if (choixManuel) {
+        if (updateMoves) {
+            if (choixManuel) {
 //            movesetManuel();
-//        } else {
-            moveSetAuto();
+            } else {
+                moveSetAuto();
+            }
         }
 
         xp = 0;
@@ -279,33 +288,50 @@ public class Pokemon implements Serializable {
         }
     }
 
-    private void moveSetAuto() {
-        //TODO lister tous les moves apprenables par niveau accessibles par ce pokemon
+    public void moveSetAuto() {
+        //lister tous les moves apprenables par niveau accessibles par ce pokemon
+        List<PokemonMove> pokemonMoves = getAllMovesAPI();
+        HashMap<Move, Integer> availables = new HashMap<>();
 
+        for (PokemonMove pokemonMove : pokemonMoves) {
+            pokemonMove.getVersionGroupDetails().stream().map(PokemonMoveVersion::getVersionGroup).filter(p -> !APIUtils.FAUSSES_VERSIONS.contains(p.getName())).max(Comparator.comparing(VersionGroup::getOrder)).ifPresent(v -> {
+                pokemonMove.getVersionGroupDetails().stream().filter(p -> p.getVersionGroup().equals(v)).findAny().ifPresent(d -> {
+                    //vérifie que le move s'apprenne bien en level up
+                    if (d.getMoveLearnMethod().getName().equals("level-up") && d.getLevelLearnedAt() <= level) {
+                        availables.put(pokemonMove.getMove(), d.getLevelLearnedAt());
+                    }
+                });
+            });
+        }
         //TODO eventuellement filtrer certains moves en doublons dans es nivaux éléeves hyperbeam etc
 
-        //TODO ne garder que les moves pas déjà appris
-//        List<Moves> alreadyLearned = getMoveset().stream().map(Attack::getMove).collect(Collectors.toList());
-//
-//        List<Moves> finalAvailables = availables;
-//        availables.addAll(alreadyLearned.stream()
-//                .filter(t -> finalAvailables.stream().noneMatch(t::equals))
-//                .collect(Collectors.toList())
-//        );
+        //ne garder que les moves pas déjà appris
+        List<Integer> alreadyLearned = getMoveset().stream().map(Attaque::getIdMoveAPI).collect(Collectors.toList());
+        List<Move> learnables = availables.keySet()
+                .stream().filter(t -> alreadyLearned.stream().noneMatch(a -> a == t.getId()))
+                .collect(Collectors.toList());
 
+        learnables = learnables.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
-///TODO vérifier que tous les moves sont non-nulls
-        //TODO on apprend chaque move
-//        while (!learn.isEmpty() && moveset.size() < MOVESET_MAX_SIZE) {
-//            MoveLearning selected = learn.remove(0);
-//            moveset.add(new Attack(Moves.getById(selected.getIdMove())));
-//        }
+        Comparator<Move> comparator = Comparator.comparing(availables::get);
+
+        learnables.sort(comparator.reversed());
+
+        this.moveset.clear();
+
+        //on apprend chaque move
+        while (!learnables.isEmpty() && moveset.size() < 4) {
+            Move selected = learnables.remove(0);
+            moveset.add(new Attaque(selected));
+        }
     }
 
     public void gainXp(int amount, boolean manual, MessageChannelUnion channel) {
         int xpNeededToLvlUp = getXpNeededToLevelUp();
         if (amount > xpNeededToLvlUp) {
-            levelUp(channel, manual, true);
+            levelUp(channel, manual, true,true);
             changeLevel(level);
             amount -= xpNeededToLvlUp;
             gainXp(amount, manual, channel);
@@ -586,6 +612,14 @@ public class Pokemon implements Serializable {
         this.critChanceStage = critChanceStage;
     }
 
+    public List<Move> getLastUsedMoves() {
+        return lastUsedMoves;
+    }
+
+    public void setLastUsedMoves(List<Move> lastUsedMoves) {
+        this.lastUsedMoves = lastUsedMoves;
+    }
+
     public int getHpIV() {
         return hpIV;
     }
@@ -828,6 +862,20 @@ public class Pokemon implements Serializable {
 
     public void setType2(Type type2) {
         this.type2 = type2;
+    }
+
+
+    /**
+     * garde en mémoire les moves pour éviter d'avoir à les requêter à chaque fois
+     *
+     * @return
+     */
+    @JsonIgnore
+    public List<PokemonMove> getAllMovesAPI() {
+        if (allMovesAPI == null || allMovesAPI.isEmpty()) {
+            allMovesAPI = getPokemonAPI().getMoves();
+        }
+        return allMovesAPI;
     }
 
     @JsonIgnore

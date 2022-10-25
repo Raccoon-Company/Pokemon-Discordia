@@ -10,30 +10,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Duelliste implements Serializable {
+public class Duelliste {
 
     private long id;
 
     private String nom;
     private List<Pokemon> equipe;
+
+    private Pokemon pokemonActif;
     private NiveauIA niveauIA;
     private int potionsRestantes;
 
     private TypeDuelliste typeDuelliste;
 
-    //defaults constructors
-    public Duelliste() {
-    }
-
-    public Duelliste(long id, String nom, List<Pokemon> equipe, NiveauIA niveauIA, int potionsRestantes, TypeDuelliste typeDuelliste) {
-        this.id = id;
-        this.nom = nom;
-        this.equipe = equipe;
-        this.niveauIA = niveauIA;
-        this.potionsRestantes = potionsRestantes;
-        this.typeDuelliste = typeDuelliste;
-    }
-
+    /**
+     * duelliste à partir d'un joueur humain
+     * @param save
+     */
     public Duelliste(Save save) {
         this.id = save.getUserId();
         this.nom = save.getCampaign().getNom();
@@ -41,8 +34,13 @@ public class Duelliste implements Serializable {
         this.typeDuelliste = TypeDuelliste.JOUEUR;
         this.potionsRestantes = 0;
         this.equipe = save.getCampaign().getEquipe();
+        this.pokemonActif = save.getCampaign().getEquipe().get(0);
     }
 
+    /**
+     * duelliste à partir d'un pnj
+     * @param dresseur
+     */
     public Duelliste(Dresseur dresseur){
         this.id = dresseur.getProgress();
         this.nom = dresseur.getNom();
@@ -57,6 +55,10 @@ public class Duelliste implements Serializable {
         });
     }
 
+    /**
+     * Duelliste à partir d'un pokémon sauvage
+     * @param pokemon
+     */
     public Duelliste(Pokemon pokemon) {
         this.id = pokemon.getId();
         this.nom = pokemon.getSpecieName();
@@ -64,6 +66,7 @@ public class Duelliste implements Serializable {
         this.niveauIA = NiveauIA.RANDOM;
         this.potionsRestantes = 0;
         this.equipe = new ArrayList<>(Collections.singleton(pokemon));
+        this.pokemonActif = pokemon;
     }
 
     public long getId() {
@@ -114,7 +117,15 @@ public class Duelliste implements Serializable {
         this.typeDuelliste = typeDuelliste;
     }
 
+    public Pokemon getPokemonActif() {
+        return pokemonActif;
+    }
+
+    public void setPokemonActif(Pokemon pokemonActif) {
+        this.pokemonActif = pokemonActif;
+    }
+
     public void soinsLeger() {
-        equipe.forEach(p -> p.postFightHeal());
+        equipe.forEach(Pokemon::postFightHeal);
     }
 }

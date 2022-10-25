@@ -186,6 +186,8 @@ public class Game {
 
     private void combatPokemonSauvage() {
 
+        channel.sendTyping().queue();
+
         List<String> locationsAreasNames = Client.getLocationById(save.getCampaign().getCurrentZone().getIdZone()).getAreas().stream().map(LocationArea::getName).collect(Collectors.toList());
 
         List<LocationArea> locationAreas = locationsAreasNames.stream().map(Client::getLocationAreaByName).collect(Collectors.toList());
@@ -205,10 +207,12 @@ public class Game {
         PokemonEncounter selected = null;
         for (PokemonEncounter e : encounters) {
             VersionEncounterDetail ved = e.getVersionDetails().stream().filter(f -> f.getVersion().getId() == save.getCampaign().getCurrentZone().getRegion().getVersionGroupId()).findAny().get();
-            num += ved.getMaxChance();
-            if (num >= ran) {
-                selected = e;
-                break;
+            if(ved.getEncounterDetails().stream().anyMatch(ed -> ed.getMethod().getId() == 1)){
+                num += ved.getMaxChance();
+                if (num >= ran) {
+                    selected = e;
+                    break;
+                }
             }
         }
 
