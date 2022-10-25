@@ -133,7 +133,7 @@ public class Combat {
             text += "Un " + noir.getNom() + " sauvage apparaît !";
         } else if (turnCount == 1 && noir.getTypeDuelliste().equals(TypeDuelliste.PNJ)) {
             text += noir.getNom() + " veut se battre !";
-        } else{
+        } else {
             text += "Tour " + turnCount;
         }
 
@@ -231,10 +231,10 @@ public class Combat {
         return true;
     }
 
-    private void fuite(){
+    private void fuite() {
         //on vérifie avant tout que le joueur puisse bien fuir
         //sinon retour à l'étape 1
-        if(!fuiteAutorisee(blanc.getPokemonActif(), noir, false)){
+        if (!fuiteAutorisee(blanc.getPokemonActif(), noir, false)) {
             roundPhase1();
         }
 
@@ -304,10 +304,19 @@ public class Combat {
                                     e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     switch (e.getComponentId()) {
                                         case "pokeball":
+                                            launchPokeball(Pokeball.POKEBALL);
+                                            roundPhase2();
+                                            break;
                                         case "superball":
+                                            launchPokeball(Pokeball.GREATBALL);
+                                            roundPhase2();
+                                            break;
                                         case "hyperball":
+                                            launchPokeball(Pokeball.ULTRABALL);
+                                            roundPhase2();
+                                            break;
                                         case "masterball":
-//                                            launchPokeball
+                                            launchPokeball(Pokeball.MASTERBALL);
                                             roundPhase2();
                                             break;
                                         case "back":
@@ -326,9 +335,35 @@ public class Combat {
                 );
     }
 
+    private void launchPokeball(Pokeball pokeball) {
+
+//      TODO  campaign.updateInventory(this, -1);
+        if (!noir.getTypeDuelliste().equals(TypeDuelliste.POKEMON_SAUVAGE)) {
+            //erreur
+            roundPhase1();
+        }
+        //KEBALL
+        //throw keball
+        double hpMax = noir.getPokemonActif().getMaxHp();
+        double hpCur = noir.getPokemonActif().getCurrentHp();
+        double rate = noir.getPokemonActif().getPokemonAPI().getSpecies().getCaptureRate();
+//        double bonusStatus = 1 + (noir.getPokemonActif().getStatuses().size() * 0.5); //TODO ratio pour les status
+        double a = ((((3 * hpMax) - (3 * hpCur)) * rate * pokeball.getEfficacite()) / (3 * hpMax)); //* bonusStatus;
+        if (Utils.randomTest(a) || pokeball.equals(Pokeball.MASTERBALL)) {
+            //réussite de la capture
+            noir.getPokemonActif().setFriendship(Pokemon.BASE_FRIENDSHIP_VALUE);
+            //si pas déjà attrapé
+            if (game.getSave().getCampaign().getPokedex().get(noir.getPokemonActif().getIdSpecie()) != 2) {
+                game.getSave().getCampaign().getPokedex().replace(noir.getPokemonActif().getIdSpecie(), 2);
+            }
+        }else{
+            //TODO capture ratée
+        }
+    }
+
     public void roundPhase2() {
         //TODO resolution des attaques choisies
-        blanc.getPokemonActif().setCurrentHp(blanc.getPokemonActif().getCurrentHp() -4);
+        blanc.getPokemonActif().setCurrentHp(blanc.getPokemonActif().getCurrentHp() - 4);
         noir.getPokemonActif().setCurrentHp(noir.getPokemonActif().getCurrentHp() - 8);
 
         //TODO effets de fin de tour
