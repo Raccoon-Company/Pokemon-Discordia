@@ -129,6 +129,7 @@ public class Game {
         }
 //        Button.of(ButtonStyle.SUCCESS, "battle", "Combat de dresseur", Emoji.fromFormatted("\uD83D\uDCA5"));
 
+        this.getSave().getCampaign().getEquipe().get(0).getEvolution(false,DeclencheurEvo.LEVEL_UP,1, Zones.BOURG_PALETTE,this,0);
 
         //déclaration des boutons choix du genre
         LayoutComponent lc = ActionRow.of(buttons);

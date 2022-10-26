@@ -1,10 +1,13 @@
 package game.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.github.oscar0812.pokeapi.models.evolution.ChainLink;
+import com.github.oscar0812.pokeapi.models.evolution.EvolutionDetail;
 import com.github.oscar0812.pokeapi.models.games.VersionGroup;
 import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
+import game.Game;
 import game.model.enums.Gender;
 import game.model.enums.Nature;
 import game.model.enums.Type;
@@ -156,7 +159,7 @@ public class Pokemon implements Serializable {
         this.alterations = new ArrayList<>();
         this.moveset = new ArrayList<>();
 
-        levelXTimes(level, false,false);
+        levelXTimes(level, false, false);
 //        //si c'est un pokemon wild ou de npc, on lui donne une chance d'évoluer par lui-même même s'il a normalmeent besoin d'un item ou de bonheur
 //            if (canEvolve) {
 //            while (this.species.getEvolution() != null && this.species.getLvlEvo() == null && Utils.randomTest(level)) {
@@ -251,6 +254,89 @@ public class Pokemon implements Serializable {
         return pokemonAPI;
     }
 
+    @JsonIgnore
+    public PokemonSpecies getEvolution(boolean isRaining, DeclencheurEvo declencheurEvo, int idItem, Zones zone, Game game, int idTraded) {
+        List<ChainLink> evoPossibles = getPokemonSpeciesAPI().getEvolutionChain().getChain().getEvolvesTo();
+
+        PokemonSpecies ps = null;
+
+        boucle:
+        for (ChainLink evoPossible : evoPossibles) {
+            for (EvolutionDetail evolutionDetail : evoPossible.getEvolutionDetails()) {
+                if (isEvoPossible(evolutionDetail, isRaining, declencheurEvo, idItem, game, idTraded)) {
+                    ps = evoPossible.getSpecies();
+                    break boucle;
+                }
+            }
+        }
+        return ps;
+    }
+
+    private boolean isEvoPossible(EvolutionDetail e, boolean isRaining, DeclencheurEvo declencheurEvo, int idItem, Game game, int idTraded) {
+        if (e.getTrigger().getId() != declencheurEvo.getIdTrigger()) {
+            return false;
+        }
+        if (e.getGender() != 0 && e.getGender() != gender.getIdGender()) {
+            return false;
+        }
+        if (e.getNeedsOverworldRain() && !isRaining) {
+            return false;
+        }
+        //TODO debugger ici
+        if (e.getKnownMove() != null && moveset.stream().anyMatch(m -> m.getIdMoveAPI() == e.getKnownMove().getId())) {
+            return false;
+        }
+        if (e.getKnownMoveType() != null && moveset.stream().anyMatch(m -> m.getMoveAPI().getType().getId() == e.getKnownMoveType().getId())) {
+            return false;
+        }
+        if (e.getItem() != null && e.getItem().getId() != idItem) {
+            return false;
+        }
+        if (e.getHeldItem() != null && getIdItemTenu() != e.getHeldItem().getId()) {
+            return false;
+        }
+        if (e.getLocation() != null && e.getLocation().getId() != game.getSave().getCampaign().getCurrentZone().getIdZone()) {
+            return false;
+        }
+        if ((e.getMinAffection() > 0 && friendship < e.getMinHappiness())) {
+            return false;
+        }
+        if ((e.getMinHappiness() > 0 && friendship < e.getMinHappiness())) {
+            return false;
+        }
+        //beauté pas prévue pour être implémentée atm
+        if (e.getMinBeauty() > 0) {
+            return false;
+        }
+        if (e.getPartyType() != null && game.getSave().getCampaign().getEquipe().stream().noneMatch(p -> p.hasType(Type.getById(e.getPartyType().getId())))) {
+            return false;
+        }
+        if (e.getPartySpecies() != null && game.getSave().getCampaign().getEquipe().stream().noneMatch(p -> p.getIdSpecie() == e.getPartySpecies().getId())) {
+            return false;
+        }
+        if (e.getMinLevel() > 0 && level < e.getMinLevel()) {
+            return false;
+        }
+        if (idSpecie == 236 && e.getRelativePhysicalStats() != Integer.compare(currentAtkPhy, currentDefPhy)) {
+            return false;
+        }
+        Calendar calendar = Calendar.getInstance();
+        boolean isNight = calendar.get(Calendar.HOUR_OF_DAY) >= 22 || calendar.get(Calendar.HOUR_OF_DAY) < 6;
+
+        if (e.getTimeOfDay() != null) {
+            if (e.getTimeOfDay().equals("night") && !isNight) {
+                return false;
+            } else if (e.getTimeOfDay().equals("day") && isNight) {
+                return false;
+            }
+        }
+        if (e.getTradeSpecies() != null && e.getTradeSpecies().getId() != idTraded) {
+            return false;
+        }
+        return true;
+    }
+
+
     public void levelXTimes(int times, boolean allowEvolution, boolean updateMoves) {
         for (int i = 0; i < times; i++) {
             levelUp(null, false, allowEvolution, updateMoves);
@@ -331,7 +417,7 @@ public class Pokemon implements Serializable {
     public void gainXp(int amount, boolean manual, MessageChannelUnion channel) {
         int xpNeededToLvlUp = getXpNeededToLevelUp();
         if (amount > xpNeededToLvlUp) {
-            levelUp(channel, manual, true,true);
+            levelUp(channel, manual, true, true);
             changeLevel(level);
             amount -= xpNeededToLvlUp;
             gainXp(amount, manual, channel);

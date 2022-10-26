@@ -61,6 +61,7 @@ public enum PNJ {
             case SYSTEM:
                 break;
             case RAOULT:
+                message = "Allez "+game.getSave().getCampaign().getNom()+", au boulot ! Montre moi que je ne t'ai pas filé ce pokémon pour rien !";
                 break;
             case MOM:
                 message = "Bonjour mon lapin ! Fais attention aux rattatas sur la route !";

@@ -104,8 +104,8 @@ public class Launcher extends ListenerAdapter {
         MessageCreateBuilder mcb = new MessageCreateBuilder();
 
         List<Button> buttons = new ArrayList<>();
-        for (int i = 0; i < saves.size(); i++) {
-            buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(saves.get(i).getId()), saves.get(i).getCampaign().getNom()));
+        for (Save value : saves) {
+            buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(value.getId()), value.getCampaign().getNom()));
         }
         if (saves.size() < 3) {
             buttons.add(Button.of(ButtonStyle.PRIMARY, "new", "Nouvelle partie", Emoji.fromFormatted("\uD83C\uDD95")));
