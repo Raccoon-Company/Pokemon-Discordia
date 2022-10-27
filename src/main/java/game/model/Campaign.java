@@ -1,6 +1,7 @@
 package game.model;
 
 import com.github.oscar0812.pokeapi.utils.Client;
+import game.model.enums.Item;
 import game.model.enums.Structure;
 import game.model.enums.Zones;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,8 @@ public class Campaign implements Serializable {
         this.pokedex = new Pokedex();
         this.pokedex.captured(idStarter);
         this.inventaire = new Inventaire();
+        inventaire.ajoutItem(Item.POKEBALL, 10);
+        inventaire.ajoutItem(Item.POTION,2);
     }
 
     public String getNom() {

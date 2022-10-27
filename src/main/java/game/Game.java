@@ -314,6 +314,45 @@ public class Game {
         bagMenu();
     }
 
+    private void inventaire() {
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
+        List<Button> buttons2 = new ArrayList<>();
+
+        LayoutComponent lc = ActionRow.of(Arrays.asList(
+                Button.of(ButtonStyle.PRIMARY, "potions", "Consommables", Emoji.fromFormatted("❌")),
+                Button.of(ButtonStyle.PRIMARY, "balls", "Pokéballs", Emoji.fromFormatted("❌")),
+                Button.of(ButtonStyle.PRIMARY, "cts", "CT", Emoji.fromFormatted("❌")),
+                Button.of(ButtonStyle.PRIMARY, "tenus", "Objets tenus", Emoji.fromFormatted("❌")),
+                Button.of(ButtonStyle.PRIMARY, "autres", "Autres", Emoji.fromFormatted("❌"))
+        ));
+
+        buttons2.add(Button.of(ButtonStyle.SECONDARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
+
+        LayoutComponent lc2 = ActionRow.of(buttons2);
+        mcb.addComponents(lc, lc2);
+        mcb.addContent("Inventaire");
+        bot.lock(user);
+        channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
+                        ButtonInteractionEvent.class,
+                        e -> buttonManager.createPredicate(e, message, save.getUserId(), lc.getButtons()),
+                        //action quand réponse détectée
+                        e -> {
+                            e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                            bot.unlock(user);
+                            if (e.getComponentId().equals("back")) {
+                                gameMenu();
+                            } else {
+                                //TODO categ items visu
+                                gameMenu();
+                            }
+                        },
+                        1, TimeUnit.MINUTES,
+                        () -> buttonManager.timeout(channel, user)
+                )
+        );
+
+    }
+
     private void pokemons() {
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         List<Button> buttons = new ArrayList<>();
@@ -555,6 +594,7 @@ public class Game {
                                             pokemons();
                                             break;
                                         case "sac":
+                                            inventaire();
                                             break;
                                         case "options":
                                             settings();
