@@ -408,7 +408,7 @@ public class Launcher extends ListenerAdapter {
         save.setCampaign(campaign);
         save.getCampaign().getEquipe().add(starter);
         Game game = new Game(bot, save);
-        game.gameMenu();
+        starter.choixSurnom(game, "mainmenu");
     }
 
     private void clearMessagesAssociated() {

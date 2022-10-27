@@ -10,11 +10,14 @@ import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
 import game.model.enums.*;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.apache.commons.lang.StringUtils;
 import utils.APIUtils;
 import utils.Utils;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Pokemon implements Serializable {
@@ -349,7 +352,7 @@ public class Pokemon implements Serializable {
 
         xp = 0;
         if (game.getChannel() != null) {
-            game.getChannel().sendMessage(getSpecieName() + " passe au niveau " + level + " !").queue();
+            game.getChannel().sendMessage(getNomPresentation() + " passe au niveau " + level + " !").queue();
         }
 
         if (evolution) { //&& !HeldItem.EVERSTONE.equals(heldItem))
@@ -950,6 +953,11 @@ public class Pokemon implements Serializable {
         this.type2 = type2;
     }
 
+    @JsonIgnore
+    public String getNomPresentation() {
+        return StringUtils.isEmpty(surnom) ? getSpecieName() : surnom;
+    }
+
 
     /**
      * garde en mémoire les moves pour éviter d'avoir à les requêter à chaque fois
@@ -975,9 +983,14 @@ public class Pokemon implements Serializable {
     @JsonIgnore
     public String getDescriptionDetaillee() {
         String res = "";
-        res += getSpecieName();
-        res += "Niveau " + level + " " + xp + "xp\n";
-        res += currentHp + "/maxHp";
+        if (StringUtils.isNotEmpty(surnom)) {
+            res += surnom + " (" + getSpecieName() + ")";
+        } else {
+            res += getSpecieName();
+        }
+
+        res += "Lv." + level + " " + xp + "xp\n";
+        res += currentHp + "/" + getMaxHp();
         return res;
     }
 
@@ -1142,6 +1155,37 @@ public class Pokemon implements Serializable {
 //                otherPokemon.applyStatus(alterationEtat, duree, fight, simulation);
 //            }
 //        }
+    }
+
+    /**
+     * @param game
+     * @param origine code déterminant où revenir après
+     */
+    public void choixSurnom(Game game, String origine) {
+        game.getBot().lock(game.getUser());
+        //demande d'entrée du prénom
+        game.getChannel().sendMessage(game.getMessageManager().createMessageThumbnail(game.getSave(), PNJ.SYSTEM, "Choix du surnom pour le " + getSpecieName() + ". Laissez vide pour passer.", null))
+                .queue(message -> game.getBot().getEventWaiter().waitForEvent( // Setup Wait action once message was send
+                                MessageReceivedEvent.class,
+                                e -> game.getMessageManager().createPredicate(e, game.getSave()),
+                                //action quand réponse détectée
+                                e -> {
+                                    game.getBot().unlock(game.getUser());
+                                    String choix = e.getMessage().getContentRaw();
+                                    this.surnom = StringUtils.isEmpty(choix) ? null : choix;
+                                    //en fonction d'où on vient, renvoie au bon endroit
+                                    switch (origine) {
+                                        case "mainmenu":
+                                            game.gameMenu();
+                                            break;
+                                        default:
+                                            game.gameMenu();
+                                    }
+                                },
+                                1, TimeUnit.MINUTES,
+                                () -> game.getMessageManager().timeout(game.getChannel(), game.getUser())
+                        )
+                );
     }
 
 }

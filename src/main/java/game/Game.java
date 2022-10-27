@@ -264,6 +264,10 @@ public class Game {
                 //TODO notif racket
                 break;
             case POKEMON_SAUVAGE:
+                //quand on capture le pokémon sauvage, on le renomme
+                if(combat.getTypeCombatResultat().equals(TypeCombatResultat.CAPTURE)){
+                    combat.getNoir().getPokemonActif().choixSurnom(this, "mainmenu");
+                }
                 break;
             case JOUEUR:
                 break;
@@ -360,9 +364,9 @@ public class Game {
 
         for (Pokemon pokemon : save.getCampaign().getEquipe()) {
             if (buttons.size() >= 5) {
-                buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getSpecieName(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+                buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
             } else {
-                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getSpecieName(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
             }
         }
         buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));

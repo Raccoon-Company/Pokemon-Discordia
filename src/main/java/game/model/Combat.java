@@ -152,7 +152,7 @@ public class Combat {
             text += "Tour " + turnCount;
         }
 
-        text += "\nQue dois-faire " + blanc.getPokemonChoixCourant(turnCount).getSpecieName() + " ?";
+        text += "\nQue dois-faire " + blanc.getPokemonChoixCourant(turnCount).getNomPresentation() + " ?";
 
         //on créé le message à partir de la nouvelle image et des infos combat
         MessageCreateBuilder mcb = getMcb(imageCombat, text);
@@ -170,7 +170,7 @@ public class Combat {
                             Pokemon choixCourant = blanc.getPokemonChoixCourant(turnCount);
                             if (e.getComponentId().equals("change")) {
                                 if (choixCourant.hasStatut(AlterationEtat.NO_ESCAPE) || choixCourant.hasStatut(AlterationEtat.LIEN)) {
-                                    game.getChannel().sendMessage(choixCourant.getSpecieName() + " ne peut pas être échangé !").queue();
+                                    game.getChannel().sendMessage(choixCourant.getNomPresentation() + " ne peut pas être échangé !").queue();
                                     roundPhase1();
                                 } else {
                                     //changer de pokes
@@ -347,7 +347,7 @@ public class Combat {
 
         if (fuyard.hasStatut(AlterationEtat.LIEN) || fuyard.hasStatut(AlterationEtat.NO_ESCAPE)) {
             if (!simulation) {
-                game.getChannel().sendMessage(fuyard.getSpecieName() + " est piégé et ne peut pas s'enfuir !").queue();
+                game.getChannel().sendMessage(fuyard.getNomPresentation() + " est piégé et ne peut pas s'enfuir !").queue();
             }
             return false;
         }
@@ -829,7 +829,7 @@ public class Combat {
 
             //pokemon allié
             elementUIS.add(new ImageUI(-5, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
-            TextUI nomPokemonBlanc = new TextUI(91, 90, blanc.getPokemonActif().getSpecieName(), font, Color.BLACK);
+            TextUI nomPokemonBlanc = new TextUI(91, 90, blanc.getPokemonActif().getNomPresentation(), font, Color.BLACK);
             TextUI genrePokemonBlanc = new TextUI(91 + (int) (font.getStringBounds(nomPokemonBlanc.getText(), frc).getWidth()), 90, " " + blanc.getPokemonActif().getGender().getEmoji(), fontGender, blanc.getPokemonActif().getGender().getColor());
             elementUIS.add(nomPokemonBlanc);
             elementUIS.add(genrePokemonBlanc);
@@ -864,7 +864,7 @@ public class Combat {
             }
 
             elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
-            TextUI nomPokemonNoir = new TextUI(16, 19, noir.getPokemonActif().getSpecieName(), font, Color.BLACK);
+            TextUI nomPokemonNoir = new TextUI(16, 19, noir.getPokemonActif().getNomPresentation(), font, Color.BLACK);
             TextUI genrePokemonNoir = new TextUI(16 + (int) (font.getStringBounds(nomPokemonNoir.getText(), frc).getWidth()), 19, " " + noir.getPokemonActif().getGender().getEmoji(), fontGender, noir.getPokemonActif().getGender().getColor());
             elementUIS.add(nomPokemonNoir);
             elementUIS.add(genrePokemonNoir);
@@ -942,6 +942,30 @@ public class Combat {
 
     public void setTerrainNoir(Terrain terrainNoir) {
         this.terrainNoir = terrainNoir;
+    }
+
+    public int getTurnCount() {
+        return turnCount;
+    }
+
+    public void setTurnCount(int turnCount) {
+        this.turnCount = turnCount;
+    }
+
+    public TypeCombatResultat getTypeCombatResultat() {
+        return typeCombatResultat;
+    }
+
+    public void setTypeCombatResultat(TypeCombatResultat typeCombatResultat) {
+        this.typeCombatResultat = typeCombatResultat;
+    }
+
+    public String getImageCombat() {
+        return imageCombat;
+    }
+
+    public void setImageCombat(String imageCombat) {
+        this.imageCombat = imageCombat;
     }
 
     public String getBackground() {
