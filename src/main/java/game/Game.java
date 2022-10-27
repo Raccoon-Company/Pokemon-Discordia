@@ -7,6 +7,7 @@ import com.github.oscar0812.pokeapi.models.utility.VersionEncounterDetail;
 import com.github.oscar0812.pokeapi.utils.Client;
 import commands.Commands;
 import executable.MyBot;
+import game.model.Attaque;
 import game.model.Combat;
 import game.model.Duelliste;
 import game.model.Pokemon;
@@ -21,10 +22,12 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import utils.*;
 
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -400,18 +403,84 @@ public class Game {
             pokemons();
             return;
         }
+
+        List<Button> buttons = new ArrayList<>();
+        List<Button> buttons2 = new ArrayList<>();
+
+        for (Attaque attaque : pokemon.getMoveset()) {
+            Move move = attaque.getMoveAPI();
+            Type type = Type.getById(move.getType().getId());
+            buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
+        }
+        if(!save.getCampaign().getEquipe().get(0).equals(pokemon)){
+            buttons2.add(Button.of(ButtonStyle.PRIMARY, "first", "Définir comme premier", Emoji.fromFormatted("\uD83D\uDD19")));
+        }
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "item", "Utiliser un objet", Emoji.fromFormatted("\uD83D\uDD19")));
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "give", "Donner un objet", Emoji.fromFormatted("\uD83D\uDD19")));
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
+
+        LayoutComponent lc = ActionRow.of(buttons);
+        LayoutComponent lc2 = ActionRow.of(buttons2);
+
         String text = pokemon.getDescriptionDetaillee();
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         EmbedBuilder embedBuilder = new EmbedBuilder()
+                //TODO thumbnail colorée en fonction du type du pokemon?
                 .setColor(new Color(save.getColorRGB()))
                 .setDescription(text);
 
         embedBuilder.setThumbnail(pokemon.getPokemonAPI().getSprites().getFrontDefault());
 
+        mcb.addComponents(lc, lc2);
         mcb.addEmbeds(embedBuilder.build());
 
-        channel.sendMessage(messageManager.createMessageData(mcb)).queue();
+        channel.sendMessage(messageManager.createMessageData(mcb)).queue((message) ->
+                getBot().getEventWaiter().waitForEvent(
+                        ButtonInteractionEvent.class,
+                        //vérif basique de correspondance entre message/interaction
+                        e -> getButtonManager().createPredicate(e, message, save, mcb.getComponents()),
+                        //action quand interaction détectée
+
+                        e -> {
+                            e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                            getBot().unlock(getUser());
+                            if (e.getComponentId().equals("back")) {
+                                pokemons();
+                            } else {
+                                //choix de la ou des cibles de l'attaque si nécessaire
+                                descriptionAttaque(e.getComponentId(), pokemon);
+                            }
+                        },
+                        1,
+                        TimeUnit.MINUTES,
+                        () -> {
+                            buttonManager.timeout(channel, user);
+                        }
+                ));
         pokemons();
+    }
+
+    public void descriptionAttaque(int idMove, Pokemon pokemon){
+        Move move = Client.getMoveById(idMove);
+        String description = APIUtils.getFrName(move.getNames());
+        //TODO thumbnail colorée en fonction du type de move?
+        //TODO afficher texte description, puissance, type element, phys/spec/status, précision
+
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
+
+        File typeMove = new File(fileManager.getFullPathToImage(PropertiesManager.getInstance().getImage("empty")));
+        mcb.addFiles(FileUpload.fromData(typeMove, typeMove.getName()));
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(new Color(Type.getById(move.getType().getId()).getCodeCouleur()))
+                .setDescription(description)
+                .setImage("attachment://" + typeMove.getName());
+        
+        mcb.addEmbeds(embedBuilder.build());
+
+        channel.sendMessage(mcb.build()).queue();
+
+        menuPokemon(pokemon);
     }
 
     private void settings() {

@@ -13,6 +13,9 @@ public class Attaque implements Serializable {
     private int bonusPp;
     private int ppLeft;
 
+    @JsonIgnore
+    private Move move;
+
     public Attaque() {
     }
 
@@ -38,7 +41,10 @@ public class Attaque implements Serializable {
 
     @JsonIgnore
     public Move getMoveAPI(){
-        return Client.getMoveById(idMoveAPI);
+        if(this.move == null){
+            this.move = Client.getMoveById(idMoveAPI);
+        }
+       return this.move;
     }
 
     public int getBonusPp() {
