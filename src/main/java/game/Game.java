@@ -129,8 +129,6 @@ public class Game {
         }
 //        Button.of(ButtonStyle.SUCCESS, "battle", "Combat de dresseur", Emoji.fromFormatted("\uD83D\uDCA5"));
 
-        this.getSave().getCampaign().getEquipe().get(0).getEvolution(false,DeclencheurEvo.LEVEL_UP,1, Zones.BOURG_PALETTE,this,0);
-
         //déclaration des boutons choix du genre
         LayoutComponent lc = ActionRow.of(buttons);
 
@@ -254,7 +252,7 @@ public class Game {
         Duelliste noir = new Duelliste(pokemon);//TODO pokemon sauvage
 
         //le combat emmène à la méthode apresCombat(combat);
-        new Combat(this, blanc, noir, TypeCombat.SIMPLE, Meteo.NEUTRE, true).resolve();
+        new Combat(this, blanc, noir, TypeCombat.SIMPLE, true).resolve();
     }
 
     public void apresCombat(Combat combat){
@@ -262,16 +260,14 @@ public class Game {
         combat.getNoir().soinsLeger();
         switch(combat.getNoir().getTypeDuelliste()){
             case PNJ:
+                save.getCampaign().gagnerArgent(combat.getNoir().racketter());
+                //TODO notif racket
                 break;
             case POKEMON_SAUVAGE:
                 break;
             case JOUEUR:
                 break;
         }
-        //en fonction du résultat, appliquer le nécessaire :
-        //capture du pokémon ?
-        //fuite ?
-        //gain d'or/xp
         gameMenu();
     }
 
@@ -311,10 +307,10 @@ public class Game {
     }
 
     private void pokedex() {
-        long a = save.getCampaign().getPokedex().entrySet().stream().filter(e -> e.getValue() == 1).count();
-        long b = save.getCampaign().getPokedex().entrySet().stream().filter(e -> e.getValue() == 2).count();
+        long a = save.getCampaign().getPokedex().getNombrePokemonsCaptures();
+        long b = save.getCampaign().getPokedex().getNombrePokemonsVus();
 
-        channel.sendMessage("Espèces de pokémons observées : " + (a + b) + "\nEspèces de pokémons capturées : " + b).queue();
+        channel.sendMessage("Espèces de pokémons observées : " + (b) + "\nEspèces de pokémons capturées : " + a).queue();
         bagMenu();
     }
 

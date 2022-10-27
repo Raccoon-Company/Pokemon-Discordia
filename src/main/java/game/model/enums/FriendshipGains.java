@@ -16,8 +16,6 @@ public enum FriendshipGains {
     MASSAGE_74(5,5,5),
     ;
 
-
-
     private final int upTo100;
     private final int upTo200;
     private final int upTo255;

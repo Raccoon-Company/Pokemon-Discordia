@@ -6,9 +6,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum Dresseur {
-    RIVAL_0(0, "Rival", NiveauIA.RANDOM, "J'ai toujours rêvé de faire ça !", new ArrayList<>()),
+    RIVAL_0(0, "Rival", NiveauIA.RANDOM, new ArrayList<>(),
+            "J'ai toujours rêvé de faire ça !",
+            "WOAAA C'ETAIT INCROYABLE !"),
 
-    TEST(1, "TEST", NiveauIA.RANDOM, "J'ai testé !", Arrays.asList(new SimpleEntry<>(1,3),new SimpleEntry<>(151,2))),
+    TEST(1, "TEST", NiveauIA.RANDOM, Arrays.asList(new SimpleEntry<>(1, 3), new SimpleEntry<>(151, 2)),
+            "J'ai testé intro !",
+            "J'ai testé outro !"),
 
     ;
 
@@ -18,6 +22,7 @@ public enum Dresseur {
 
     private final String texteIntro;
     private final List<SimpleEntry<Integer, Integer>> equipe;
+    private final String texteOutro;
 
     /**
      * @param nom        nom du dresseur
@@ -25,12 +30,17 @@ public enum Dresseur {
      * @param texteIntro texte affiché au début du combat
      * @param equipe     couple<idPokemon,niveauPokemon>
      */
-    Dresseur(int progress, String nom, NiveauIA niveauIA, String texteIntro, List<SimpleEntry<Integer, Integer>> equipe) {
+    Dresseur(int progress, String nom, NiveauIA niveauIA, List<SimpleEntry<Integer, Integer>> equipe, String texteIntro, String texteOutro) {
         this.progress = progress;
         this.nom = nom;
         this.niveauIA = niveauIA;
         this.texteIntro = texteIntro;
         this.equipe = equipe;
+        this.texteOutro = texteOutro;
+    }
+
+    public String getTexteOutro() {
+        return texteOutro;
     }
 
     public int getProgress() {
@@ -49,7 +59,7 @@ public enum Dresseur {
         return niveauIA;
     }
 
-    public List<SimpleEntry<Integer,Integer>> getEquipe() {
+    public List<SimpleEntry<Integer, Integer>> getEquipe() {
         return equipe;
     }
 }

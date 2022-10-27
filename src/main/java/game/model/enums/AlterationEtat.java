@@ -8,6 +8,7 @@ public enum AlterationEtat {
     GEL(NON_VOLATILE, "est gelé !", "est gelé et ne peut pas bouger !", "images.statusIcons.gel", 0.25f),
     SOMMEIL(NON_VOLATILE, "s'endort...", "est endormi.", "images.statusIcons.sommeil", 0.25f),
     POISON(NON_VOLATILE, "est empoisonné.", "souffre du poison", "images.statusIcons.poison", 0.75f),
+    //dans le cas du poison grave, le compteur de tours est utilisé pour garder en mémoire la progression du poison
     POISON_GRAVE(NON_VOLATILE, "est empoisonné gravement.", "souffre du poison", "images.statusIcons.poison-grave", 0.66f),
 
     CONFUSION(VOLATILE, "est confus !", "est confus ! Il se blesse lui-même dans sa confusion !", "", 0.66f),

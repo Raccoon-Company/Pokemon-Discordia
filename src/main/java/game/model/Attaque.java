@@ -56,4 +56,9 @@ public class Attaque implements Serializable {
     public void setPpLeft(int ppLeft) {
         this.ppLeft = ppLeft;
     }
+
+    public void realiser(Combat combat, ActionCombat actionCombat){
+        Move move = actionCombat.getAttaque().getMoveAPI();
+        //TODO utiliser l'attaque
+    }
 }

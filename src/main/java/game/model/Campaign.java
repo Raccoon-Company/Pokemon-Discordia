@@ -4,6 +4,8 @@ import com.github.oscar0812.pokeapi.utils.Client;
 import game.model.enums.Structure;
 import game.model.enums.Zones;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -12,6 +14,8 @@ import java.util.List;
 
 public class Campaign implements Serializable {
 
+    private static final long ARGENT_DEPART = 5000;
+    private final Logger logger = LoggerFactory.getLogger(Campaign.class);
     private String nom; //set à la création de la save
     //déso pas déso y a que 2 genres (true pour gars, false pour fille)
     private boolean gender;//set à la création de la save
@@ -25,8 +29,10 @@ public class Campaign implements Serializable {
 
     private List<Pokemon> reserve;
 
-    //<idSpecie,status> status : 0 for unseen, 1 for seen, 2 for captured
-    private HashMap<Integer, Integer> pokedex;
+    private Pokedex pokedex;
+    private Inventaire inventaire;
+
+    private long pokedollars;
 
     private Zones currentZone;
 
@@ -39,22 +45,16 @@ public class Campaign implements Serializable {
     public Campaign(String nom, boolean gender, String nomRival, int idStarter) {
         this.nom = nom;
         this.gender = gender;
+        this.pokedollars = ARGENT_DEPART;
         this.nomRival = nomRival;
         this.currentZone = Zones.BOURG_PALETTE;
         this.currentStructure = Structure.CHAMBRE;
         this.idStarter = idStarter;
         this.reserve = new ArrayList<>();
         this.equipe = new ArrayList<>();
-        this.pokedex = new HashMap<>();
-        setUpPokedex();
-    }
-
-    private void setUpPokedex() {
-        int n = Client.getPokemonSpeciesList(151, 1).getCount();
-        for (int i = 1; i <= n; i++) {
-            this.pokedex.put(i, 0);
-        }
-        this.pokedex.replace(idStarter,2);
+        this.pokedex = new Pokedex();
+        this.pokedex.captured(idStarter);
+        this.inventaire = new Inventaire();
     }
 
     public String getNom() {
@@ -63,6 +63,27 @@ public class Campaign implements Serializable {
 
     public void setNom(String nom) {
         this.nom = nom;
+    }
+
+    public long getPokedollars() {
+        return pokedollars;
+    }
+
+    public void setPokedollars(long pokedollars) {
+        this.pokedollars = pokedollars;
+    }
+
+    public void gagnerArgent(long montant){
+        pokedollars += montant;
+    }
+
+    public void depenserArgent(long montant){
+        if(montant > pokedollars){
+            logger.error("Pas assez d'argent ("+pokedollars+") pour dépenser "+montant+" !");
+            throw new IllegalStateException("Problème d'argent !");
+        }else{
+            pokedollars -= montant;
+        }
     }
 
     public boolean isGender() {
@@ -79,14 +100,6 @@ public class Campaign implements Serializable {
 
     public void setNomRival(String nomRival) {
         this.nomRival = nomRival;
-    }
-
-    public HashMap<Integer, Integer> getPokedex() {
-        return pokedex;
-    }
-
-    public void setPokedex(HashMap<Integer, Integer> pokedex) {
-        this.pokedex = pokedex;
     }
 
     public int getIdStarter() {
@@ -119,6 +132,22 @@ public class Campaign implements Serializable {
 
     public void setCurrentZone(Zones currentZone) {
         this.currentZone = currentZone;
+    }
+
+    public Pokedex getPokedex() {
+        return pokedex;
+    }
+
+    public void setPokedex(Pokedex pokedex) {
+        this.pokedex = pokedex;
+    }
+
+    public Inventaire getInventaire() {
+        return inventaire;
+    }
+
+    public void setInventaire(Inventaire inventaire) {
+        this.inventaire = inventaire;
     }
 
     @Nullable

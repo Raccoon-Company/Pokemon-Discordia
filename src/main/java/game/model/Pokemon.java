@@ -8,9 +8,6 @@ import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
-import game.model.enums.Gender;
-import game.model.enums.Nature;
-import game.model.enums.Type;
 import game.model.enums.*;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import utils.APIUtils;
@@ -110,12 +107,11 @@ public class Pokemon implements Serializable {
     private boolean aPerduDeLaVieCeTour;
     @JsonIgnore
     private boolean aDejaAttaque;
+    @JsonIgnore
+    private HashMap<Integer, ActionCombat> actionsCombat;
 
     @JsonIgnore
     private boolean itemAutorise;
-
-    @JsonIgnore
-    private List<Move> lastUsedMoves;
 
     @JsonIgnore
     private List<PokemonMove> allMovesAPI;
@@ -337,19 +333,31 @@ public class Pokemon implements Serializable {
     }
 
 
-    public void levelXTimes(int times, boolean allowEvolution, boolean updateMoves) {
+    public void levelXTimes(Game game, int times, boolean allowEvolution, boolean updateMoves) {
         for (int i = 0; i < times; i++) {
             levelUp(null, false, allowEvolution, updateMoves);
         }
     }
 
-    private void levelUp(MessageChannelUnion channel, boolean choixManuel, boolean evolution, boolean updateMoves) {
+    private void levelUp(Game game, boolean choixManuel, boolean evolution, boolean updateMoves) {
         //on ne peut pas aller au dessus du lv100
         if (level >= 100) {
             return;
         }
         level++;
         friendship += FriendshipGains.getGainsFromAction(FriendshipGains.LEVEL_UP, friendship);
+
+        xp = 0;
+        if (game.getChannel() != null) {
+            game.getChannel().sendMessage(getSpecieName() + " passe au niveau " + level + " !").queue();
+        }
+
+        if (evolution) { //&& !HeldItem.EVERSTONE.equals(heldItem))
+            PokemonSpecies species = game.getSave().getCampaign().getEquipe().get(0).getEvolution(false, DeclencheurEvo.LEVEL_UP, 1, Zones.BOURG_PALETTE, this, 0);
+            if (species != null) {
+                evolveTo(species);
+            }
+        }
 
         if (updateMoves) {
             if (choixManuel) {
@@ -358,20 +366,20 @@ public class Pokemon implements Serializable {
                 moveSetAuto();
             }
         }
+    }
 
-        xp = 0;
-        if (channel != null) {
-            channel.sendMessage(getSpecieName() + " passe au niveau " + level + " !").queue();
+    private void evolveTo(PokemonSpecies species) {
+        int oldMax = getMaxHp();
+        setIdSpecie(species.getId());
+        pokemonAPI = null;
+        pokemonSpeciesAPI = null;
+        soinLegerApresCombat();
+        int newMax = getMaxHp();
+        if (newMax - oldMax > 0) {
+            soigner(newMax - oldMax);
         }
-//todo soigner
 
-//        if (evolution && HeldItem.EVERSTONE.equals(heldItem)) {
-//            evolution = false;
-//        }
-
-        if (evolution) {
-//TODO faire évoluer si possible
-        }
+        //TODO mettre à jour le talent
     }
 
     public void moveSetAuto() {
@@ -698,14 +706,6 @@ public class Pokemon implements Serializable {
         this.critChanceStage = critChanceStage;
     }
 
-    public List<Move> getLastUsedMoves() {
-        return lastUsedMoves;
-    }
-
-    public void setLastUsedMoves(List<Move> lastUsedMoves) {
-        this.lastUsedMoves = lastUsedMoves;
-    }
-
     public int getHpIV() {
         return hpIV;
     }
@@ -964,6 +964,14 @@ public class Pokemon implements Serializable {
         return allMovesAPI;
     }
 
+    public HashMap<Integer, ActionCombat> getActionsCombat() {
+        return actionsCombat;
+    }
+
+    public void setActionsCombat(HashMap<Integer, ActionCombat> actionsCombat) {
+        this.actionsCombat = actionsCombat;
+    }
+
     @JsonIgnore
     public String getDescriptionDetaillee() {
         String res = "";
@@ -973,17 +981,83 @@ public class Pokemon implements Serializable {
         return res;
     }
 
-    public void completeHeal() {
+    public void soinComplet() {
         this.currentHp = getMaxHp();
         this.alterations.clear();
+        soinLegerApresCombat();
     }
 
-    public void postFightHeal() {
+    public void soinLegerCombat() {
         this.alterations.removeIf(a -> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
+        this.alterations.stream().filter(a -> a.getAlterationEtat().equals(AlterationEtat.POISON_GRAVE)).findAny().ifPresent(p -> {
+            p.setToursRestants(1);
+        });
+        this.currentCritChance = critChance;
+        this.currentAtkPhy = getMaxAtkPhy();
+        this.currentDefPhy = getMaxDefPhy();
+        this.currentAtkSpe = getMaxAtkSpe();
+        this.currentDefSpe = getMaxDefSpe();
+        this.currentSpeed = getMaxSpeed();
+        this.currentHp = getMaxHp();
     }
 
-    public void inFightHeal() {
-        this.alterations.removeIf(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.VOLATILE_BATTLE));
+    public void soinLegerApresCombat() {
+        this.alterations.removeIf(a -> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
+        if (hasStatut(AlterationEtat.POISON_GRAVE)) {
+            enleveStatut(AlterationEtat.POISON_GRAVE);
+            applyStatus(AlterationEtat.POISON, 1, false);
+        }
+        this.currentCritChance = critChance;
+        this.currentAtkPhy = getMaxAtkPhy();
+        this.currentDefPhy = getMaxDefPhy();
+        this.currentAtkSpe = getMaxAtkSpe();
+        this.currentDefSpe = getMaxDefSpe();
+        this.currentSpeed = getMaxSpeed();
+    }
+
+    public int blesser(int valeur, SourceDegats sourceDegats) {
+        //TODO magic_guard, sturdy, fauxchage, focus sash, focus band, requiem, air balloon
+
+        int degatsFinaux = Math.min(currentHp, valeur);
+        if (degatsFinaux > 0) {
+            currentHp -= degatsFinaux;
+            aPerduDeLaVieCeTour = true;
+        }
+
+        //TODO notif degats
+
+        return degatsFinaux;
+    }
+
+    public int soigner(int valeur) {
+        //on ne peut pas heal les morts !
+        if (currentHp <= 0) {
+            return 0;
+        }
+
+        if (hasStatut(AlterationEtat.ANTISOIN)) {
+            //TODO notif antisoin
+            return 0;
+        }
+
+        //calcul du heal effectif en fonction des pvs max
+        int soinFinal = currentHp + valeur > getMaxHp() ? getMaxHp() - currentHp : valeur;
+
+        currentHp += soinFinal;
+        //inutile, mais par précaution
+        if (currentHp > getMaxHp()) {
+            currentHp = getMaxHp();
+        }
+
+        return soinFinal;
+    }
+
+    public void enleveStatut(AlterationEtat alteration) {
+        alterations.removeIf(a -> a.getAlterationEtat().equals(alteration));
+    }
+
+    public void enleveAlterationsPerimees() {
+        alterations.removeIf(a -> a.getToursRestants() <= 0);
     }
 
     public boolean hasStatut(AlterationEtat alterationEtat) {
@@ -1045,7 +1119,7 @@ public class Pokemon implements Serializable {
 //            return;
 //        }
 
-        alterations.add(new AlterationInstance(alterationEtat, 999));
+        alterations.add(new AlterationInstance(alterationEtat, duree));
 
 //        //DESTINY KNOT
 //        if (alterationEtat.equals(Status.INFATUATED) && HeldItem.DESTINY_KNOT.equals(getHeldItem())) {

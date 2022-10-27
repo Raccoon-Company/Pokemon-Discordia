@@ -7,6 +7,5 @@ public enum Meteo {
     GRELE,
     TEMPETE_DE_SABLE,
     BROUILLARD,
-    AURA_TENEBREUSE,
     ;
 }

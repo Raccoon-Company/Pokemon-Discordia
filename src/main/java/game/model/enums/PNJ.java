@@ -84,7 +84,7 @@ public enum PNJ {
         //suite éventuelle pour certains PNJs
         switch (this) {
             case INFIRMIERE:
-                game.getSave().getCampaign().getEquipe().forEach(Pokemon::completeHeal);
+                game.getSave().getCampaign().getEquipe().forEach(Pokemon::soinComplet);
                 message = "Et voilà, vos pokémons sont complètements soignés ! À bientôt !";
                 game.getChannel().sendMessage(
                         game.getMessageManager().createMessageThumbnail(game.getSave(), this, message, lc)
