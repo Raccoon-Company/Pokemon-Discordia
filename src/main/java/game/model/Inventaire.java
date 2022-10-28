@@ -15,6 +15,7 @@ public class Inventaire {
     private HashMap<Item, Integer> items;
 
     public Inventaire() {
+        items = new HashMap<>();
     }
 
     public HashMap<Item, Integer> getItems() {

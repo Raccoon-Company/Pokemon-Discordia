@@ -2,6 +2,7 @@ package game.model;
 
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.model.enums.Item;
+import game.model.enums.Meteo;
 import game.model.enums.Structure;
 import game.model.enums.Zones;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,7 @@ public class Campaign implements Serializable {
 
     @Nullable
     private Structure currentStructure;
+    private Meteo currentMeteo;
 
     public Campaign() {
     }
@@ -164,5 +166,13 @@ public class Campaign implements Serializable {
 
     public Pokemon getTeamPokemonById(long id) {
         return getEquipe().stream().filter(s -> s.getId() == id).findAny().orElse(null);
+    }
+
+    public void setCurrentMeteo(Meteo currentMeteo) {
+        this.currentMeteo = currentMeteo;
+    }
+
+    public Meteo getCurrentMeteo() {
+        return currentMeteo;
     }
 }

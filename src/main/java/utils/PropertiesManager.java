@@ -1,5 +1,8 @@
 package utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -13,6 +16,8 @@ public class PropertiesManager {
 
     private static Properties properties;
 
+    private final Logger logger = LoggerFactory.getLogger(PropertiesManager.class);
+
     /**
      * Constructeur.
      */
@@ -21,7 +26,7 @@ public class PropertiesManager {
         try {
             properties.load(Files.newInputStream(Paths.get(PROPERTIES_PATH)));
         } catch (Exception e) {
-            //TODO log
+           logger.error("Erreur chargement du fichier des propriétés", e);
         }
     }
 

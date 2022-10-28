@@ -403,11 +403,12 @@ public class Launcher extends ListenerAdapter {
 
     private void validationSave(Save save, MessageChannelUnion channel) {
         channel.sendTyping().queue();
-        Pokemon starter = new Pokemon(save.getCampaign().getIdStarter(), 5, false);
+
         Campaign campaign = new Campaign(save.getCampaign().getNom(), save.getCampaign().isGender(), save.getCampaign().getNomRival(), save.getCampaign().getIdStarter());
         save.setCampaign(campaign);
-        save.getCampaign().getEquipe().add(starter);
         Game game = new Game(bot, save);
+        Pokemon starter = new Pokemon(save.getCampaign().getIdStarter(), 5, false, game);
+        save.getCampaign().getEquipe().add(starter);
         starter.choixSurnom(game, "mainmenu");
     }
 

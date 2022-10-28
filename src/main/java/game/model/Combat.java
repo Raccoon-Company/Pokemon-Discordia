@@ -1,6 +1,7 @@
 package game.model;
 
 import com.github.oscar0812.pokeapi.models.moves.Move;
+import com.github.oscar0812.pokeapi.models.moves.MoveTarget;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
 import game.model.enums.*;
@@ -88,6 +89,8 @@ public class Combat {
         this.game = game;
         this.typeCombat = typeCombat;
         this.blanc = blanc;
+        this.terrainBlanc = new Terrain();
+        this.terrainNoir = new Terrain();
         this.noir = noir;
         this.turnCount = 0;
         this.objetsAutorises = objetsAutorises;
@@ -106,11 +109,11 @@ public class Combat {
         this.turnCount = 1;
         blanc.getEquipe().forEach(p -> {
             p.setItemAutorise(true);
-            p.setLastUsedMoves(new ArrayList<>());
+            p.setActionsCombat(new HashMap<>());
         });
         noir.getEquipe().forEach(p -> {
             p.setItemAutorise(true);
-            p.setLastUsedMoves(new ArrayList<>());
+            p.setActionsCombat(new HashMap<>());
         });
 
         game.getSave().getCampaign().getPokedex().saw(noir.getPokemonActif().getIdSpecie());
@@ -121,7 +124,7 @@ public class Combat {
 
         //todo effets d'entree sur le champ de bataille
 
-        roundPhase1();
+        roundPhase0();
     }
 
     /**
@@ -205,12 +208,12 @@ public class Combat {
                 ));
     }
 
-    private void selectionCibles(int idMove, Pokemon lanceur) {
+    private void selectionCibles(String idMove, Pokemon lanceur) {
         //choix cible(s)
-        Move move = Client.getMoveById(idMove);
+        Move move = Client.getMoveById(Integer.parseInt(idMove));
         MoveTarget target = move.getTarget();
         TypeCibleCombat typeCibleCombat = TypeCibleCombat.getById(target.getId());
-        Attaque attaque = lanceur.getMoveset().stream().filter(m -> m.getIdMoveAPI() == idMove).findAny().orElse(null);
+        Attaque attaque = lanceur.getMoveset().stream().filter(m -> String.valueOf(m.getIdMoveAPI()).equals(idMove)).findAny().orElse(null);
 
         switch (typeCibleCombat) {
             case SPECIFIC_MOVE:
@@ -245,11 +248,11 @@ public class Combat {
                 break;
             case USER_OR_ALLY:
                 if (typeCombat.equals(TypeCombat.SIMPLE)) {
-                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat,lanceur));
-                    roundPhase2();
-                }else{
+                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur));
+                } else {
                     //TODO selection lanceur ou allié
                 }
+                roundPhase2();
                 break;
             case OPPONENTS_FIELD:
                 lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, terrainNoir));
@@ -260,19 +263,20 @@ public class Combat {
                 roundPhase2();
                 break;
             case RANDOM_OPPONENT:
-                if(typeCombat.equals(TypeCombat.SIMPLE) || Utils.getRandom().nextBoolean()){
+                if (typeCombat.equals(TypeCombat.SIMPLE) || Utils.getRandom().nextBoolean()) {
                     lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, noir.getPokemonActif()));
-                }else{
+                } else {
                     lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, noir.getPokemonActifBis()));
                 }
                 roundPhase2();
                 break;
             case SELECTED_POKEMON:
-                if(typeCombat.equals(TypeCombat.SIMPLE)){
+                if (typeCombat.equals(TypeCombat.SIMPLE)) {
                     lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, noir.getPokemonActif()));
-                }else{
+                } else {
                     //TODO selection adversaire ou allié
                 }
+                roundPhase2();
                 break;
         }
     }
@@ -466,19 +470,15 @@ public class Combat {
                                     switch (e.getComponentId()) {
                                         case "pokeball":
                                             launchPokeball(Pokeball.POKEBALL);
-                                            roundPhase2();
                                             break;
                                         case "superball":
                                             launchPokeball(Pokeball.GREATBALL);
-                                            roundPhase2();
                                             break;
                                         case "hyperball":
                                             launchPokeball(Pokeball.ULTRABALL);
-                                            roundPhase2();
                                             break;
                                         case "masterball":
                                             launchPokeball(Pokeball.MASTERBALL);
-                                            roundPhase2();
                                             break;
                                         case "back":
                                             roundPhase1();
@@ -522,6 +522,13 @@ public class Combat {
             //réussite de la capture
             noir.getPokemonActif().setFriendship(Pokemon.BASE_FRIENDSHIP_VALUE);
             game.getSave().getCampaign().getPokedex().captured(noir.getPokemonActif().getIdSpecie());
+
+            if (game.getSave().getCampaign().getEquipe().size() < 6) {
+                game.getSave().getCampaign().getEquipe().add(noir.getPokemonActif());
+            } else {
+                game.getSave().getCampaign().getReserve().add(noir.getPokemonActif());
+            }
+
             this.typeCombatResultat = TypeCombatResultat.CAPTURE;
             game.apresCombat(this);
         } else {
@@ -546,11 +553,20 @@ public class Combat {
 
     public void roundPhase2() {
         //on vérifie que tous les pokémons actifs du joueur ont choisis une action, sinon on retourne à la phase 1 (double up)
-        if (!blanc.getPokemonActifBis().isaDejaChoisi() || !blanc.getPokemonActif().isaDejaChoisi()) {
-            roundPhase1();
+        if (typeCombat.equals(TypeCombat.SIMPLE)) {
+            if (blanc.getPokemonActif().getActionsCombat().get(turnCount) == null) {
+                roundPhase1();
+            }
+        } else if (typeCombat.equals(TypeCombat.DOUBLE)) {
+            if (blanc.getPokemonActifBis().getActionsCombat().get(turnCount) == null || blanc.getPokemonActif().getActionsCombat().get(turnCount) == null) {
+                roundPhase1();
+            }
         }
 
         //TODO le pokémon adverse choisit ce qu'il fait
+
+        noir.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, new Attaque(1, 20, 20), TypeCibleCombat.RANDOM_OPPONENT, blanc.getPokemonActif()));
+
         //attaque si sauvage
         //mais aussi eventuellement utiliser une potion ou changer de pokemon selon l'IA en face
 
@@ -558,7 +574,7 @@ public class Combat {
         ordreDAction().forEach(this::effectuerAction);
 
         blanc.getPokemonActif().blesser(4, new SourceDegats(TypeSourceDegats.POKEMON, noir.getPokemonActif()));
-        blanc.getPokemonActif().blesser(10, new SourceDegats(TypeSourceDegats.POKEMON, blanc.getPokemonActif()));
+        noir.getPokemonActif().blesser(10, new SourceDegats(TypeSourceDegats.POKEMON, blanc.getPokemonActif()));
 
         effetsDeFinDeTour();
 
@@ -579,7 +595,7 @@ public class Combat {
         ActionCombat actionCombat = lanceur.getActionsCombat().get(turnCount);
 
         //on n'effectue des actions qu'en mode ATTAQUE ici
-        if(!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)){
+        if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;
         }
 
@@ -591,7 +607,7 @@ public class Combat {
         }
 
         //pas d'attaque si la cible est dead
-        if(actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0){
+        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0) {
             return;
         }
 
@@ -655,7 +671,7 @@ public class Combat {
         }
 
         if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().hasStatut(AlterationEtat.PROTECTION)) { //TODO && !attaqueSelectionnee.equals(Moves.RUSE)
-           //TODO notif protect
+            //TODO notif protect
             return;
         }
 //
@@ -697,6 +713,106 @@ public class Combat {
         return tenirCompteDeLaMeteo;
     }
 
+    public void effetsEntree(Pokemon entree, Terrain terrain, boolean affichage) {
+        //TODO impl. talents et items
+        //AIR BALLON
+//            if (HeldItem.AIR_BALLOON.equals(entered.getHeldItem()) && !simulation) {
+//                Utils.println(entered.getLibelleColorizedAndLvl() + " flotte grâce à son Ballon.");
+//            }
+//            //RAZOR CLAW monte le taux de crit
+//            if (HeldItem.RAZOR_CLAW.equals(entered.getHeldItem()) || HeldItem.SCOPE_LENS.equals(entered.getHeldItem())) {
+//                entered.updateStage(1, simulation, Stats.CRIT);
+//            }
+//            //WIDE LENS monte l'accuracy'
+//            if (HeldItem.WIDE_LENS.equals(entered.getHeldItem())) {
+//                entered.updateStage(1, simulation, Stats.ACCURACY);
+//            }
+//
+//            //TRACE copie le talent de l'adversaire
+//            if (Talent.TRACE.equals(entered.getTalent())) {
+//                if (!simulation) {
+//                    Utils.println(entered.getLibelleColorized() + " copie " + foe.getTalent().getLibelle() + " !");
+//                }
+//                entered.setTalent(foe.getTalent());
+//            }
+//            //DOWNLOAD change les stats par rapport à la def majo de l'adversaire
+//            if (Talent.DOWNLOAD.equals(entered.getTalent())) {
+//                if (!simulation) {
+//                    Utils.println(entered.getLibelleColorized() + " ajuste ses stats par rapport à son adversaire !");
+//                }
+//                if (foe.getCurrentDefSpe() > foe.getCurrentDefPhy()) {
+//                    entered.updateStage(1, false, Stats.ATK_PHY);
+//                } else {
+//                    entered.updateStage(1, false, Stats.ATK_SPE);
+//                }
+//            }
+//            //INTIMIDATE
+//            if (Talent.INTIMIDATE.equals(entered.getTalent())) {
+//                if (!simulation) {
+//                    Utils.println(Talent.INTIMIDATE.getLibelle() + " de " + entered.getLibelleColorized() + "  baisse l'attaque de " + foe.getLibelleColorized());
+//                }
+//                foe.updateStage(-1, false, Stats.ATK_PHY);
+//            }
+//            //FOREWARN
+//            if (Talent.FOREWARN.equals(entered.getTalent())) {
+//                List<Moves> mostPowerfulMove = foe.getMoveset()
+//                        .stream().map(Attack::getMove)
+//                        .sorted(Comparator.comparing(Moves::getPower)
+//                                .reversed()
+//                        )
+//                        .collect(Collectors.toList());
+//                if (!mostPowerfulMove.isEmpty() && !simulation) {
+//                    Utils.println(entered.getLibelleColorized() + " avertit que " + foe.getLibelleColorized() + " connaît l'attaque " + mostPowerfulMove.get(0) + " !");
+//                }
+//            }
+
+        //FIELD effects
+        if (terrain.hasStatut(StatutsTerrain.SPIKES) && entree.isGrounded(terrain)) {
+            long nb = terrain.getAlterations().get(StatutsTerrain.SPIKES);
+            int dmg;
+            switch ((int) nb) {
+                case 1:
+                    dmg = entree.getMaxHp() / 8;
+                    break;
+                case 2:
+                    dmg = entree.getMaxHp() / 6;
+                    break;
+                case 3:
+                    dmg = entree.getMaxHp() / 4;
+                    break;
+                default:
+                    throw new IllegalStateException(nb + " : Nb occurence picots invalide");
+            }
+            if (!affichage) {
+                game.getChannel().sendMessage(entree.getNomPresentation() + " est blessé par les picots au sol !").queue();
+            }
+            entree.blesser(dmg, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN));
+        }
+
+        if (terrain.hasStatut(StatutsTerrain.TOXIC_SPIKES) && entree.isGrounded(terrain)) {
+            long nb = terrain.getAlterations().get(StatutsTerrain.TOXIC_SPIKES);
+            if (nb > 1) {
+                entree.applyStatus(AlterationEtat.POISON_GRAVE, 1, affichage);
+            } else {
+                entree.applyStatus(AlterationEtat.POISON, 1, affichage);
+            }
+            if (!affichage) {
+                game.getChannel().sendMessage(entree.getNomPresentation() + " est empoisonné par les picots au sol !").queue();
+            }
+        }
+
+        if (terrain.hasStatut(StatutsTerrain.STEALTH_ROCK)) {
+            int rtio = Type.ROCK.pourcentageDegatsAttaque(entree.getPokemonAPI().getTypes());
+            double multiplier = rtio * 12.5 / 100;
+            int damage = (int) (multiplier * entree.getMaxHp());
+            entree.blesser(damage, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN));
+            if (!affichage) {
+                game.getChannel().sendMessage(entree.getNomPresentation() + " est blessé par les pierres !").queue();
+            }
+        }
+    }
+
+
     /**
      * TODO vérifier
      *
@@ -732,7 +848,9 @@ public class Combat {
                 v = -v;
             }
 
-            v += k.getLastMove().getPriorite() * 1000;
+            if (k.getActionsCombat().get(turnCount) != null) {
+                v += k.getActionsCombat().get(turnCount).getAttaque().getMoveAPI().getPriority() * 1000;
+            }
 
 
 //        } else if (HeldItem.QUICK_CLAW.equals( blanc.getPokemonActif().getHeldItem()) && Utils.randomTest(20)) {
@@ -740,6 +858,7 @@ public class Combat {
 //        } else if (HeldItem.QUICK_CLAW.equals(noir.getPokemonActif().getHeldItem()) && Utils.randomTest(20)) {
 //            return false;
 
+            scoresActionPokemons.put(k, v);
         });
 
         // Create an ArrayList and insert all hashmap key-value pairs.

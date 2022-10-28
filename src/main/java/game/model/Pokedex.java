@@ -1,6 +1,7 @@
 package game.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.github.oscar0812.pokeapi.utils.Client;
 
 import java.util.HashMap;
 

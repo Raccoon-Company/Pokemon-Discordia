@@ -41,7 +41,7 @@ public class FileManager {
         try {
             Files.createDirectories(Paths.get(getPersonalSaveRepo(idDiscord)));
         } catch (IOException ioException) {
-            //TODO log erreurs
+            logger.error("erreur création dossier de sauvegarde",ioException);
         }
     }
 
@@ -55,9 +55,8 @@ public class FileManager {
         File file = new File(getSavePath(save));
         try {
             objectMapper.writeValue(file, save);
-//            Files.delete(file.toPath());
         } catch (IOException ioException) {
-//TODO log error
+            logger.error("Erreur écriture de la sauvegarde", ioException);
         }
         return save;
     }
@@ -76,7 +75,7 @@ public class FileManager {
             List<String> lines = Files.readAllLines(path);
             fileContent = lines.isEmpty() ? "{}" : lines.get(0);
         } catch (IOException ioException) {
-//TODO log error
+            logger.error("Erreur lecture de la sauvegarde", ioException);
             System.err.println(ioException.getMessage());
         }
 
@@ -85,7 +84,7 @@ public class FileManager {
             });
 
         } catch (JsonProcessingException e) {
-//TODO log error
+            logger.error("Erreur conversion de la sauvegarde", e);
             System.err.println(e.getMessage());
         }
         return save;

@@ -8,8 +8,10 @@ import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
+import game.model.enums.Gender;
+import game.model.enums.Nature;
+import game.model.enums.Type;
 import game.model.enums.*;
-import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.apache.commons.lang.StringUtils;
 import utils.APIUtils;
@@ -125,12 +127,12 @@ public class Pokemon implements Serializable {
     @JsonIgnore
     private PokemonSpecies pokemonSpeciesAPI;
 
-    public Pokemon(int idSpecie, int level, boolean canEvolve) {
+    public Pokemon(int idSpecie, int level, boolean canEvolve, Game game) {
 
         this.idSpecie = idSpecie;
         this.nature = Nature.random();
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
-        this.level = level;
+        this.level = 0;
         this.xp = 0;
         this.shiny = Utils.getRandom().nextInt(4096) == 1;
         this.aPerduDeLaVieCeTour = false;
@@ -158,22 +160,9 @@ public class Pokemon implements Serializable {
         this.alterations = new ArrayList<>();
         this.moveset = new ArrayList<>();
 
-        levelXTimes(level, false, false);
-//        //si c'est un pokemon wild ou de npc, on lui donne une chance d'évoluer par lui-même même s'il a normalmeent besoin d'un item ou de bonheur
-//            if (canEvolve) {
-//            while (this.species.getEvolution() != null && this.species.getLvlEvo() == null && Utils.randomTest(level)) {
-//                this.species = this.species.getEvolution();
-//            }
-//            TypePokemon finalSpecies = species;
-//            List<EvoItem> usables = Arrays.stream(EvoItem.values()).filter(i -> i.getMakeEvo().contains(finalSpecies)).collect(Collectors.toList());
-//            while (!usables.isEmpty() && Utils.randomTest(level)) {
-//                EvoItem item = usables.get(Utils.getRandom().nextInt(usables.size()));
-//                species = item.evolveKemonWithItem(this, false);
-//                TypePokemon finalSpecies1 = species;
-//                usables = Arrays.stream(EvoItem.values()).filter(i -> i.getMakeEvo().contains(finalSpecies1)).collect(Collectors.toList());
-//            }
-//        }
+        levelXTimes(game, level, false, false, false);
 
+        moveSetAuto();
         //on reset le bonheur apres les levels up, sinon ca fausse car rapportent du bonheur
         this.friendship = getPokemonSpeciesAPI().getBaseHappiness();
 
@@ -186,6 +175,11 @@ public class Pokemon implements Serializable {
         this.currentDefSpe = getMaxDefSpe();
         this.currentSpeed = getMaxSpeed();
         this.currentHp = getMaxHp();
+        this.type1 = Type.getById(getPokemonAPI().getTypes().get(0).getType().getId());
+        if (getPokemonAPI().getTypes().size() > 1) {
+            this.type2 = Type.getById(getPokemonAPI().getTypes().get(1).getType().getId());
+        }
+
     }
 
     //default constructors
@@ -336,13 +330,13 @@ public class Pokemon implements Serializable {
     }
 
 
-    public void levelXTimes(Game game, int times, boolean allowEvolution, boolean updateMoves) {
+    public void levelXTimes(Game game, int times, boolean allowEvolution, boolean updateMoves, boolean affichage) {
         for (int i = 0; i < times; i++) {
-            levelUp(null, false, allowEvolution, updateMoves);
+            levelUp(game, false, allowEvolution, updateMoves, affichage);
         }
     }
 
-    private void levelUp(Game game, boolean choixManuel, boolean evolution, boolean updateMoves) {
+    private void levelUp(Game game, boolean choixManuel, boolean evolution, boolean updateMoves, boolean affichage) {
         //on ne peut pas aller au dessus du lv100
         if (level >= 100) {
             return;
@@ -351,14 +345,14 @@ public class Pokemon implements Serializable {
         friendship += FriendshipGains.getGainsFromAction(FriendshipGains.LEVEL_UP, friendship);
 
         xp = 0;
-        if (game.getChannel() != null) {
+        if (game.getChannel() != null && affichage) {
             game.getChannel().sendMessage(getNomPresentation() + " passe au niveau " + level + " !").queue();
         }
 
         if (evolution) { //&& !HeldItem.EVERSTONE.equals(heldItem))
-            PokemonSpecies species = game.getSave().getCampaign().getEquipe().get(0).getEvolution(false, DeclencheurEvo.LEVEL_UP, 1, Zones.BOURG_PALETTE, this, 0);
+            PokemonSpecies species = game.getSave().getCampaign().getEquipe().get(0).getEvolution(false, DeclencheurEvo.LEVEL_UP, 1, Zones.BOURG_PALETTE, game, 0);
             if (species != null) {
-                evolveTo(species);
+                evolveTo(species, game);
             }
         }
 
@@ -371,7 +365,7 @@ public class Pokemon implements Serializable {
         }
     }
 
-    private void evolveTo(PokemonSpecies species) {
+    private void evolveTo(PokemonSpecies species, Game game) {
         int oldMax = getMaxHp();
         setIdSpecie(species.getId());
         pokemonAPI = null;
@@ -379,7 +373,7 @@ public class Pokemon implements Serializable {
         soinLegerApresCombat();
         int newMax = getMaxHp();
         if (newMax - oldMax > 0) {
-            soigner(newMax - oldMax);
+            soigner(newMax - oldMax, game);
         }
 
         //TODO mettre à jour le talent
@@ -425,16 +419,16 @@ public class Pokemon implements Serializable {
         }
     }
 
-    public void gainXp(int amount, boolean manual, MessageChannelUnion channel) {
+    public void gainXp(int amount, boolean manual, Game game) {
         int xpNeededToLvlUp = getXpNeededToLevelUp();
         if (amount > xpNeededToLvlUp) {
-            levelUp(channel, manual, true, true);
+            levelUp(game, manual, true, true, true);
             changeLevel(level);
             amount -= xpNeededToLvlUp;
-            gainXp(amount, manual, channel);
+            gainXp(amount, manual, game);
         } else {
             xp += amount;
-            channel.sendMessage(xp + "/" + (xpNeededToLvlUp + xp) + " (" + ((xp * 100) / (xpNeededToLvlUp + xp)) + "% du niveau " + (level + 1) + ")").queue();
+            game.getChannel().sendMessage(xp + "/" + (xpNeededToLvlUp + xp) + " (" + ((xp * 100) / (xpNeededToLvlUp + xp)) + "% du niveau " + (level + 1) + ")").queue();
         }
     }
 
@@ -553,10 +547,10 @@ public class Pokemon implements Serializable {
     }
 
     @JsonIgnore
-    public boolean isGrounded() { //Field field
-//        if (HeldItem.IRON_BALL.equals(getHeldItem()) || field.getStatusList().contains(FieldStatus.INTENSE_GRAVITY)) {
-//            return true;
-//        }
+    public boolean isGrounded(Terrain terrain) {
+        if (terrain.hasStatut(StatutsTerrain.GRAVITY)) { //HeldItem.IRON_BALL.equals(getHeldItem()) || or
+            return true;
+        }
         if (hasStatut(AlterationEtat.RACINES)) {
             return true;
         }
@@ -958,6 +952,11 @@ public class Pokemon implements Serializable {
         return StringUtils.isEmpty(surnom) ? getSpecieName() : surnom;
     }
 
+    @JsonIgnore
+    public String getNomCompletPresentation() {
+        return StringUtils.isEmpty(surnom) ? getSpecieName() : surnom + " (" + getSpecieName() + ")";
+    }
+
 
     /**
      * garde en mémoire les moves pour éviter d'avoir à les requêter à chaque fois
@@ -982,16 +981,28 @@ public class Pokemon implements Serializable {
 
     @JsonIgnore
     public String getDescriptionDetaillee() {
-        String res = "";
+        StringBuilder res = new StringBuilder();
         if (StringUtils.isNotEmpty(surnom)) {
-            res += surnom + " (" + getSpecieName() + ")";
+            res.append(surnom).append(" (").append(getSpecieName()).append(")");
         } else {
-            res += getSpecieName();
+            res.append(getSpecieName());
         }
 
-        res += "Lv." + level + " " + xp + "xp\n";
-        res += currentHp + "/" + getMaxHp();
-        return res;
+        res.append(" Lv.").append(level).append(" ").append(xp).append("xp\n");
+        res.append(currentHp).append("/").append(getMaxHp());
+        res.append("  |");
+        for (PokemonType type : getPokemonAPI().getTypes()) {
+            res.append(APIUtils.getFrName(type.getType().getNames())).append("|");
+        }
+        res.append("\n");
+        res.append("HP :        ").append(getMaxHp()).append("\n");
+        res.append("Atk. :      ").append(getMaxAtkPhy()).append("\n");
+        res.append("Atk. spé. : ").append(getMaxAtkSpe()).append("\n");
+        res.append("Def. :      ").append(getMaxDefPhy()).append("\n");
+        res.append("Def. spé. : ").append(getMaxDefSpe()).append("\n");
+        res.append("Vitesse :   ").append(getMaxSpeed()).append("\n");
+        res.append("\n").append(nature.getLibelle());
+        return res.toString();
     }
 
     public void soinComplet() {
@@ -1042,14 +1053,14 @@ public class Pokemon implements Serializable {
         return degatsFinaux;
     }
 
-    public int soigner(int valeur) {
+    public int soigner(int valeur, Game game) {
         //on ne peut pas heal les morts !
         if (currentHp <= 0) {
             return 0;
         }
 
         if (hasStatut(AlterationEtat.ANTISOIN)) {
-            //TODO notif antisoin
+            game.getChannel().sendMessage(getNomPresentation()+" ne peut pas guérir !").queue();
             return 0;
         }
 

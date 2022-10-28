@@ -2,6 +2,8 @@ package game;
 
 import com.github.oscar0812.pokeapi.models.locations.LocationArea;
 import com.github.oscar0812.pokeapi.models.locations.PokemonEncounter;
+import com.github.oscar0812.pokeapi.models.moves.Move;
+import com.github.oscar0812.pokeapi.models.moves.MoveFlavorText;
 import com.github.oscar0812.pokeapi.models.utility.Encounter;
 import com.github.oscar0812.pokeapi.models.utility.VersionEncounterDetail;
 import com.github.oscar0812.pokeapi.utils.Client;
@@ -152,7 +154,7 @@ public class Game {
             nom = currentZone.getNom();
         }
 
-        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), getPlayerSprite(), x, y,LARGEUR_FOND,HAUTEUR_FOND);
+        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), getPlayerSprite(), x, y, LARGEUR_FOND, HAUTEUR_FOND);
 
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageImage(save, nom, lc, combined))
@@ -209,7 +211,7 @@ public class Game {
         PokemonEncounter selected = null;
         for (PokemonEncounter e : encounters) {
             VersionEncounterDetail ved = e.getVersionDetails().stream().filter(f -> f.getVersion().getId() == save.getCampaign().getCurrentZone().getRegion().getVersionGroupId()).findAny().get();
-            if(ved.getEncounterDetails().stream().anyMatch(ed -> ed.getMethod().getId() == 1)){
+            if (ved.getEncounterDetails().stream().anyMatch(ed -> ed.getMethod().getId() == 1)) {
                 num += ved.getMaxChance();
                 if (num >= ran) {
                     selected = e;
@@ -226,7 +228,7 @@ public class Game {
         VersionEncounterDetail ved = selected.getVersionDetails().stream().filter(f -> f.getVersion().getId() == save.getCampaign().getCurrentZone().getRegion().getVersionGroupId()).findAny().get();
         List<Encounter> rencontres = ved.getEncounterDetails().stream().filter(e -> e.getMethod().getId() == 1).collect(Collectors.toList());
 
-        int max = rencontres.stream().map(Encounter::getChance).reduce(0,Integer::sum);
+        int max = rencontres.stream().map(Encounter::getChance).reduce(0, Integer::sum);
 
         ran = Utils.getRandomNumber(1, max);
         num = 0;
@@ -246,36 +248,45 @@ public class Game {
 
         int level = Utils.getRandomNumber(rencontre.getMinLevel(), rencontre.getMaxLevel());
 
-        Pokemon pokemon = new Pokemon(Client.getPokemonByName(selected.getPokemon().getName()).getId(), level, true);
+        Pokemon pokemon = new Pokemon(Client.getPokemonByName(selected.getPokemon().getName()).getId(), level, true, this);
 
         //déterminer le niveau et l'espèce
         //créer les duellistes
         //meteo si pas défault
         Duelliste blanc = new Duelliste(save);
-        Duelliste noir = new Duelliste(pokemon);//TODO pokemon sauvage
+        Duelliste noir = new Duelliste(pokemon);
 
         //le combat emmène à la méthode apresCombat(combat);
-        new Combat(this, blanc, noir, TypeCombat.SIMPLE, true).resolve();
+        Combat combat = new Combat(this, blanc, noir, TypeCombat.SIMPLE, true);
+        combat.resolve();
     }
 
-    public void apresCombat(Combat combat){
+    public void apresCombat(Combat combat) {
         combat.getBlanc().soinsLeger();
         combat.getNoir().soinsLeger();
-        switch(combat.getNoir().getTypeDuelliste()){
+        switch (combat.getNoir().getTypeDuelliste()) {
             case PNJ:
-                save.getCampaign().gagnerArgent(combat.getNoir().racketter());
-                //TODO notif racket
+                if (combat.getTypeCombatResultat().equals(TypeCombatResultat.VICTOIRE)) {
+                    long gain = combat.getNoir().racketter();
+                    save.getCampaign().gagnerArgent(gain);
+                    channel.sendMessage("Vous obtenez " + gain + "$ de votre adversaire !").queue();
+                }
+
+                gameMenu();
                 break;
             case POKEMON_SAUVAGE:
                 //quand on capture le pokémon sauvage, on le renomme
-                if(combat.getTypeCombatResultat().equals(TypeCombatResultat.CAPTURE)){
+                if (combat.getTypeCombatResultat().equals(TypeCombatResultat.CAPTURE)) {
                     combat.getNoir().getPokemonActif().choixSurnom(this, "mainmenu");
+                } else {
+                    gameMenu();
                 }
                 break;
             case JOUEUR:
+                gameMenu();
                 break;
         }
-        gameMenu();
+
     }
 
     private void talkMenu() {
@@ -326,11 +337,11 @@ public class Game {
         List<Button> buttons2 = new ArrayList<>();
 
         LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.PRIMARY, "potions", "Consommables", Emoji.fromFormatted("❌")),
-                Button.of(ButtonStyle.PRIMARY, "balls", "Pokéballs", Emoji.fromFormatted("❌")),
-                Button.of(ButtonStyle.PRIMARY, "cts", "CT", Emoji.fromFormatted("❌")),
-                Button.of(ButtonStyle.PRIMARY, "tenus", "Objets tenus", Emoji.fromFormatted("❌")),
-                Button.of(ButtonStyle.PRIMARY, "autres", "Autres", Emoji.fromFormatted("❌"))
+                Button.of(ButtonStyle.PRIMARY, "item", "Items", Emoji.fromFormatted("\uD83E\uDDF4")),
+                Button.of(ButtonStyle.PRIMARY, "ball", "Pokéballs", Emoji.fromCustom("pokeball", 1032561600701399110L, false)),
+                Button.of(ButtonStyle.PRIMARY, "ct", "CT", Emoji.fromFormatted("\uD83D\uDCBF")),
+                Button.of(ButtonStyle.PRIMARY, "heal", "Santé", Emoji.fromFormatted("\uD83C\uDF81")),
+                Button.of(ButtonStyle.PRIMARY, "key", "Objets rares", Emoji.fromFormatted("\uD83E\uDDA4"))
         ));
 
         buttons2.add(Button.of(ButtonStyle.SECONDARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
@@ -339,17 +350,26 @@ public class Game {
         mcb.addComponents(lc, lc2);
         mcb.addContent("Inventaire");
         bot.lock(user);
+        List<Button> allButtons = new ArrayList<>(buttons2);
+        allButtons.addAll(lc.getButtons());
         channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
                         ButtonInteractionEvent.class,
-                        e -> buttonManager.createPredicate(e, message, save.getUserId(), lc.getButtons()),
+                        e -> buttonManager.createPredicate(e, message, save.getUserId(), allButtons),
                         //action quand réponse détectée
                         e -> {
                             e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                             bot.unlock(user);
-                            if (e.getComponentId().equals("back")) {
-                                gameMenu();
-                            } else {
-                                //TODO categ items visu
+                            if(e.getComponentId().equals("item")) {
+                                listeObjets();
+                            }else if(e.getComponentId().equals("key")) {
+                                listeObjetsRares();
+                            }else if(e.getComponentId().equals("ball")) {
+                                listePokeballs();
+                            }else if(e.getComponentId().equals("heal")) {
+                                listePotions();
+                            }else if(e.getComponentId().equals("ct")) {
+                                listeCTs();
+                            }else{
                                 gameMenu();
                             }
                         },
@@ -360,6 +380,26 @@ public class Game {
 
     }
 
+    private void listePotions() {
+        inventaire();
+    }
+
+    private void listeObjetsRares() {
+        inventaire();
+    }
+
+    private void listePokeballs() {
+        inventaire();
+    }
+
+    private void listeCTs() {
+        inventaire();
+    }
+
+    private void listeObjets() {
+        inventaire();
+    }
+
     private void pokemons() {
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         List<Button> buttons = new ArrayList<>();
@@ -367,20 +407,22 @@ public class Game {
 
         for (Pokemon pokemon : save.getCampaign().getEquipe()) {
             if (buttons.size() >= 5) {
-                buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+                buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomCompletPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
             } else {
-                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomCompletPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
             }
         }
         buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
         LayoutComponent lc = ActionRow.of(buttons);
         LayoutComponent lc2 = ActionRow.of(buttons2);
+        List<Button> allButtons = new ArrayList<>(lc.getButtons());
+        allButtons.addAll(lc2.getButtons());
         mcb.addComponents(lc, lc2);
-        mcb.addContent("Inspection de l'équipe");
+        mcb.addContent("Équipe");
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageData(mcb)).queue(message -> bot.getEventWaiter().waitForEvent( // Setup Wait action once message was send
                         ButtonInteractionEvent.class,
-                        e -> buttonManager.createPredicate(e, message, save.getUserId(), lc.getButtons()),
+                        e -> buttonManager.createPredicate(e, message, save.getUserId(), allButtons),
                         //action quand réponse détectée
                         e -> {
                             e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
@@ -412,11 +454,11 @@ public class Game {
             Type type = Type.getById(move.getType().getId());
             buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
         }
-        if(!save.getCampaign().getEquipe().get(0).equals(pokemon)){
-            buttons2.add(Button.of(ButtonStyle.PRIMARY, "first", "Définir comme premier", Emoji.fromFormatted("\uD83D\uDD19")));
+        if (!save.getCampaign().getEquipe().get(0).equals(pokemon)) {
+            buttons2.add(Button.of(ButtonStyle.PRIMARY, "first", "Définir comme premier", Emoji.fromFormatted("\uD83E\uDD47")));
         }
-        buttons2.add(Button.of(ButtonStyle.PRIMARY, "item", "Utiliser un objet", Emoji.fromFormatted("\uD83D\uDD19")));
-        buttons2.add(Button.of(ButtonStyle.PRIMARY, "give", "Donner un objet", Emoji.fromFormatted("\uD83D\uDD19")));
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "item", "Utiliser un objet", Emoji.fromFormatted("\uD83E\uDDF4")));
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "give", "Donner un objet", Emoji.fromFormatted("\uD83C\uDF81")));
         buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
 
         LayoutComponent lc = ActionRow.of(buttons);
@@ -425,8 +467,7 @@ public class Game {
         String text = pokemon.getDescriptionDetaillee();
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         EmbedBuilder embedBuilder = new EmbedBuilder()
-                //TODO thumbnail colorée en fonction du type du pokemon?
-                .setColor(new Color(save.getColorRGB()))
+                .setColor(Color.decode(pokemon.getType1().getCodeCouleur()))
                 .setDescription(text);
 
         embedBuilder.setThumbnail(pokemon.getPokemonAPI().getSprites().getFrontDefault());
@@ -457,25 +498,23 @@ public class Game {
                             buttonManager.timeout(channel, user);
                         }
                 ));
-        pokemons();
     }
 
-    public void descriptionAttaque(int idMove, Pokemon pokemon){
-        Move move = Client.getMoveById(idMove);
+    public void descriptionAttaque(String idMove, Pokemon pokemon) {
+        Move move = Client.getMoveById(Integer.parseInt(idMove));
         String description = APIUtils.getFrName(move.getNames());
-        //TODO thumbnail colorée en fonction du type de move?
-        //TODO afficher texte description, puissance, type element, phys/spec/status, précision
-
+        description += "\n" + move.getFlavorTextEntries().stream().filter(f -> f.getLanguage().getName().equals("fr")).findAny().map(MoveFlavorText::getFlavorText).orElse("");
+        description += "\nPuissance : " + move.getPower() + " Précision : " + move.getAccuracy();
         MessageCreateBuilder mcb = new MessageCreateBuilder();
 
-        File typeMove = new File(fileManager.getFullPathToImage(PropertiesManager.getInstance().getImage("empty")));
+        File typeMove = new File(fileManager.getFullPathToImage(PropertiesManager.getInstance().getImage("damageClassIcons." + move.getDamageClass().getName())));
         mcb.addFiles(FileUpload.fromData(typeMove, typeMove.getName()));
 
         EmbedBuilder embedBuilder = new EmbedBuilder()
-                .setColor(new Color(Type.getById(move.getType().getId()).getCodeCouleur()))
+                .setColor(Color.decode(Type.getById(move.getType().getId()).getCodeCouleur()))
                 .setDescription(description)
                 .setImage("attachment://" + typeMove.getName());
-        
+
         mcb.addEmbeds(embedBuilder.build());
 
         channel.sendMessage(mcb.build()).queue();
@@ -725,6 +764,7 @@ public class Game {
                                     } else {
                                         save.getCampaign().setCurrentZone(Zones.getById(e.getComponentId().split("z")[1]));
                                         save.getCampaign().setCurrentStructure(null);
+                                        save.getCampaign().setCurrentMeteo(save.getCampaign().getCurrentZone().getMeteo());
                                     }
                                     gameMenu();
                                 },

@@ -1,5 +1,6 @@
 package game.model;
 
+import game.Game;
 import game.Save;
 import game.model.enums.*;
 
@@ -45,7 +46,7 @@ public class Duelliste {
      *
      * @param dresseur
      */
-    public Duelliste(Dresseur dresseur) {
+    public Duelliste(Dresseur dresseur, Game game) {
         this.id = dresseur.getProgress();
         this.nom = dresseur.getNom();
         this.typeDuelliste = TypeDuelliste.PNJ;
@@ -54,7 +55,7 @@ public class Duelliste {
         this.equipe = new ArrayList<>();
 
         dresseur.getEquipe().forEach(k -> {
-            Pokemon pokemon = new Pokemon(k.getKey(), k.getValue(), false);
+            Pokemon pokemon = new Pokemon(k.getKey(), k.getValue(), false, game);
             this.equipe.add(pokemon);
         });
 
@@ -147,6 +148,9 @@ public class Duelliste {
     }
 
     public Pokemon getPokemonChoixCourant(int turn){
+        if(pokemonActifBis == null){
+            return pokemonActif;
+        }
         if(pokemonActifBis.getActionsCombat().get(turn) != null){
             return pokemonActif;
         }else if(pokemonActif.getActionsCombat().get(turn) != null){
