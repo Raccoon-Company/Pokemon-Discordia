@@ -295,31 +295,75 @@ public class Combat {
      */
     private void selectionPokemon(boolean force) {
         Pokemon choixCourant = blanc.getPokemonChoixCourant(turnCount);
+        List<Pokemon> dispos = new ArrayList<>(blanc.getEquipe());
+        dispos.remove(choixCourant);
+        dispos.removeIf(p -> p.getCurrentHp() <= 0);
+        if (dispos.size() == 0) {
+            game.getChannel().sendMessage("Vous n'avez pas d'autres pokémons en état de se battre").queue();
+            roundPhase1();
+        }
         //TODO affichage des choix possibles
         //equipe sauf actif
         //retour
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
+        List<Button> buttons = new ArrayList<>();
+        List<Button> buttons2 = new ArrayList<>();
 
-        if (true) { //si retour
-            roundPhase1();
-        } else {
+        for (Pokemon pokemon : game.getSave().getCampaign().getEquipe()) {
+            if (buttons.size() >= 5) {
+                buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomCompletPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+            } else {
+                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomCompletPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+            }
+        }
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19")));
+        LayoutComponent lc = ActionRow.of(buttons);
+        LayoutComponent lc2 = ActionRow.of(buttons2);
+        List<Button> allButtons = new ArrayList<>(lc.getButtons());
+        allButtons.addAll(lc2.getButtons());
+        mcb.addComponents(lc, lc2);
+        mcb.addContent("Équipe");
+        game.getBot().lock(game.getUser());
+        game.getChannel().sendMessage(game.getMessageManager().createMessageData(mcb)).queue(message -> game.getBot().getEventWaiter().waitForEvent( // Setup Wait action once message was send
+                        ButtonInteractionEvent.class,
+                        e -> game.getButtonManager().createPredicate(e, message, game.getSave().getUserId(), allButtons),
+                        //action quand réponse détectée
+                        e -> {
+                            e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                            game.getBot().unlock(game.getUser());
+                            if (e.getComponentId().equals("back")) {
+                                roundPhase1();
+                            } else {
+                                //switch active pokemno
+                                Pokemon incoming = blanc.getEquipe().stream().filter(a -> String.valueOf(a.getId()).equals(e.getComponentId())).findAny().orElseThrow(IllegalStateException::new);
+                                changerPokemonActif(choixCourant, incoming);
+                            }
+                        },
+                        1, TimeUnit.MINUTES,
+                        () -> game.getButtonManager().timeout(game.getChannel(), game.getUser())
+                )
+        );
+
+    }
+
+    private void changerPokemonActif(Pokemon sortant, Pokemon entrant) {
             //changement de kemon
 
             //TODO choix du nouveau pokemon
-            choixCourant.soinLegerCombat();
-            choixCourant.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_OUT));
+        sortant.soinLegerCombat();
+        sortant.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_OUT));
 
             //        if (Talent.NATURAL_CURE.equals(currentPokemonFirstTrainer.getTalent())) {
 //            currentPokemonFirstTrainer.getStatuses().clear();
 //        }
-            Pokemon selected = null;
 
-            if (choixCourant.equals(blanc.getPokemonActif())) {
-                blanc.setPokemonActif(selected);
+            if (sortant.equals(blanc.getPokemonActif())) {
+                blanc.setPokemonActif(entrant);
                 blanc.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
-            } else {
-                blanc.setPokemonActifBis(selected);
-                blanc.getPokemonActifBis().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
 
+            } else {
+                blanc.setPokemonActifBis(entrant);
+                blanc.getPokemonActifBis().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
             }
 
             try {
@@ -330,7 +374,7 @@ public class Combat {
             }
             roundPhase2();
         }
-    }
+
 
     public boolean fuiteAutorisee(Pokemon fuyard, Duelliste adversaire, boolean simulation) {
         if (adversaire.getTypeDuelliste().equals(TypeDuelliste.PNJ)) {
@@ -577,6 +621,7 @@ public class Combat {
         noir.getPokemonActif().blesser(10, new SourceDegats(TypeSourceDegats.POKEMON, blanc.getPokemonActif()));
 
         effetsDeFinDeTour();
+        turnCount++;
 
         //vérif combat terminé
         if (blanc.getPokemonActif().getCurrentHp() >= 0 && noir.getPokemonActif().getCurrentHp() >= 0) {
@@ -848,10 +893,11 @@ public class Combat {
                 v = -v;
             }
 
-            if (k.getActionsCombat().get(turnCount) != null) {
-                v += k.getActionsCombat().get(turnCount).getAttaque().getMoveAPI().getPriority() * 1000;
+            if(k.getActionsCombat().get(turnCount).getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)){
+                if (k.getActionsCombat().get(turnCount) != null) {
+                    v += k.getActionsCombat().get(turnCount).getAttaque().getMoveAPI().getPriority() * 1000;
+                }
             }
-
 
 //        } else if (HeldItem.QUICK_CLAW.equals( blanc.getPokemonActif().getHeldItem()) && Utils.randomTest(20)) {
 //            return true;

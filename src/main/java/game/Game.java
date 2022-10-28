@@ -337,10 +337,10 @@ public class Game {
         List<Button> buttons2 = new ArrayList<>();
 
         LayoutComponent lc = ActionRow.of(Arrays.asList(
-                Button.of(ButtonStyle.PRIMARY, "item", "Items", Emoji.fromFormatted("\uD83E\uDDF4")),
+                Button.of(ButtonStyle.PRIMARY, "item", "Items", Emoji.fromFormatted("\uD83E\uDDF0")),
                 Button.of(ButtonStyle.PRIMARY, "ball", "Pokéballs", Emoji.fromCustom("pokeball", 1032561600701399110L, false)),
                 Button.of(ButtonStyle.PRIMARY, "ct", "CT", Emoji.fromFormatted("\uD83D\uDCBF")),
-                Button.of(ButtonStyle.PRIMARY, "heal", "Santé", Emoji.fromFormatted("\uD83C\uDF81")),
+                Button.of(ButtonStyle.PRIMARY, "heal", "Santé", Emoji.fromFormatted("\uD83E\uDDF4")),
                 Button.of(ButtonStyle.PRIMARY, "key", "Objets rares", Emoji.fromFormatted("\uD83E\uDDA4"))
         ));
 
