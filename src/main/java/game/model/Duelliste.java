@@ -27,17 +27,17 @@ public class Duelliste {
      *
      * @param save
      */
-    public Duelliste(Save save) {
+    public Duelliste(Save save, TypeCombat typeCombat) {
         this.id = save.getUserId();
         this.nom = save.getCampaign().getNom();
         this.niveauIA = NiveauIA.HUMAN;
         this.typeDuelliste = TypeDuelliste.JOUEUR;
         this.potionsRestantes = 0;
         this.equipe = save.getCampaign().getEquipe();
-        this.pokemonActif = equipe.get(0);
+        this.pokemonActif = equipe.stream().filter(Pokemon::estEnVie).findFirst().orElse(null);
 
-        if(equipe.size()>1){
-            this.pokemonActif = equipe.get(1);
+        if (typeCombat.equals(TypeCombat.DOUBLE)) {
+            this.pokemonActifBis = equipe.stream().filter(a -> a.estEnVie() && !a.equals(pokemonActif)).findFirst().orElse(null);
         }
     }
 
@@ -46,23 +46,34 @@ public class Duelliste {
      *
      * @param dresseur
      */
-    public Duelliste(Dresseur dresseur, Game game) {
+    public Duelliste(Dresseur dresseur, Game game, boolean rival) {
         this.id = dresseur.getProgress();
-        this.nom = dresseur.getNom();
+        if (rival) {
+            this.nom = game.getSave().getCampaign().getNomRival();
+        } else {
+            this.nom = dresseur.getNom();
+        }
+
         this.typeDuelliste = TypeDuelliste.PNJ;
         this.niveauIA = dresseur.getNiveauIA();
         this.potionsRestantes = niveauIA.getNbPotionsAutorisees();
         this.equipe = new ArrayList<>();
 
-        dresseur.getEquipe().forEach(k -> {
-            Pokemon pokemon = new Pokemon(k.getKey(), k.getValue(), false, game);
-            this.equipe.add(pokemon);
-        });
+        if (rival) {
+            EquipesRival.obtenir(game.getSave().getCampaign().getProgress(), game.getSave().getCampaign().getIdStarter()).getEquipe().forEach(k -> {
+                Pokemon pokemon = new Pokemon(k.getKey(), k.getValue(), false, game);
+                this.equipe.add(pokemon);
+            });
+        } else {
+            dresseur.getEquipe().forEach(k -> {
+                Pokemon pokemon = new Pokemon(k.getKey(), k.getValue(), false, game);
+                this.equipe.add(pokemon);
+            });
+        }
 
         this.pokemonActif = equipe.get(0);
-
-        if(equipe.size()>1){
-            this.pokemonActif =equipe.get(1);
+        if (dresseur.getTypeCombat().equals(TypeCombat.DOUBLE)) {
+            this.pokemonActifBis = equipe.stream().filter(a -> a.estEnVie() && !a.equals(pokemonActif)).findFirst().orElse(null);
         }
     }
 
@@ -147,20 +158,20 @@ public class Duelliste {
         this.pokemonActifBis = pokemonActifBis;
     }
 
-    public Pokemon getPokemonChoixCourant(int turn){
-        if(pokemonActifBis == null){
+    public Pokemon getPokemonChoixCourant(int turn) {
+        if (pokemonActifBis == null) {
             return pokemonActif;
         }
-        if(pokemonActifBis.getActionsCombat().get(turn) != null){
+        if (pokemonActifBis.getActionsCombat().get(turn) != null) {
             return pokemonActif;
-        }else if(pokemonActif.getActionsCombat().get(turn) != null){
+        } else if (pokemonActif.getActionsCombat().get(turn) != null) {
             return pokemonActifBis;
-        }else{
+        } else {
             return pokemonActif.getCurrentSpeed() >= pokemonActifBis.getCurrentSpeed() ? pokemonActif : pokemonActifBis;
         }
     }
 
-    public boolean estALui(Pokemon pokemon){
+    public boolean estALui(Pokemon pokemon) {
         return pokemon.equals(pokemonActif) || pokemon.equals(pokemonActifBis);
     }
 
@@ -168,17 +179,22 @@ public class Duelliste {
         equipe.forEach(Pokemon::soinLegerApresCombat);
     }
 
-    public void decrementerAlterations() {
-        getPokemonActif().getAlterations().stream().filter(a -> a.getAlterationEtat().equals(AlterationEtat.GEL) || a.getAlterationEtat().equals(AlterationEtat.SOMMEIL) || !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE)).forEach(v -> {
-            v.setToursRestants(v.getToursRestants() - 1);
-        });
-        getPokemonActif().enleveAlterationsPerimees();
+
+    public List<Pokemon> getPokemonsActifsEnVie() {
+        List<Pokemon> enVie = new ArrayList<>();
+        if (pokemonActif.estEnVie()) {
+            enVie.add(pokemonActif);
+        }
+        if (pokemonActifBis != null && pokemonActifBis.estEnVie()) {
+            enVie.add(pokemonActifBis);
+        }
+        return enVie;
     }
 
     public long racketter() {
-        if(typeDuelliste.equals(TypeDuelliste.PNJ)){
+        if (typeDuelliste.equals(TypeDuelliste.PNJ)) {
             return equipe.stream().map(Pokemon::getLevel).max(Integer::compare).orElse(0) * 80;
-        }else{
+        } else {
             return 0;
         }
     }

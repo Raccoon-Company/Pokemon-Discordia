@@ -1029,7 +1029,7 @@ public class Pokemon implements Serializable {
         this.alterations.removeIf(a -> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
         if (hasStatut(AlterationEtat.POISON_GRAVE)) {
             enleveStatut(AlterationEtat.POISON_GRAVE);
-            applyStatus(AlterationEtat.POISON, 1, false);
+            applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT),1, false);
         }
         this.currentCritChance = critChance;
         this.currentAtkPhy = getMaxAtkPhy();
@@ -1055,7 +1055,7 @@ public class Pokemon implements Serializable {
 
     public int soigner(int valeur, Game game) {
         //on ne peut pas heal les morts !
-        if (currentHp <= 0) {
+        if (!estEnVie()) {
             return 0;
         }
 
@@ -1080,19 +1080,47 @@ public class Pokemon implements Serializable {
         alterations.removeIf(a -> a.getAlterationEtat().equals(alteration));
     }
 
-    public void enleveAlterationsPerimees() {
-        alterations.removeIf(a -> a.getToursRestants() <= 0);
+    public void enleveAlterationsPerimees(Game game) {
+        alterations.removeIf(a -> {
+            if(a.getToursRestants() <= 0){
+                //les altérations produisant des effets à la dissipation (compte à rebours) requiem etc
+
+                if(a.getAlterationEtat().equals(AlterationEtat.REQUIEM)){
+                    game.getChannel().sendMessage(getNomPresentation()+" tombe K.O. !").queue();
+                    setCurrentHp(0);
+                }
+                if(a.getAlterationEtat().equals(AlterationEtat.SOMNOLENCE)){
+                    game.getChannel().sendMessage(getNomPresentation()+" s'endort...").queue();
+                    applyStatus(AlterationEtat.SOMMEIL, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), Utils.getRandomNumber(1,3),false);
+                }
+
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public void decrementerAlterations(Game game) {
+        getAlterations().stream().filter(a -> a.getAlterationEtat().equals(AlterationEtat.GEL) || a.getAlterationEtat().equals(AlterationEtat.SOMMEIL) || !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE)).forEach(v -> {
+            v.setToursRestants(v.getToursRestants() - 1);
+        });
+        enleveAlterationsPerimees(game);
     }
 
     public boolean hasStatut(AlterationEtat alterationEtat) {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().equals(alterationEtat));
     }
 
+    public AlterationInstance getAlterationInstance(AlterationEtat alterationEtat){
+       return alterations.stream().filter(a -> a.getAlterationEtat().equals(alterationEtat)).findAny().orElse(null);
+
+    }
+
     public boolean hasAnyNonVolatileStatus() {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
     }
 
-    public void applyStatus(AlterationEtat alterationEtat, int duree, boolean simulation) {
+    public void applyStatus(AlterationEtat alterationEtat,SourceDegats source, int duree, boolean simulation) {
 
         //altération déjà infligée
         if (hasStatut(alterationEtat)) {
@@ -1143,7 +1171,7 @@ public class Pokemon implements Serializable {
 //            return;
 //        }
 
-        alterations.add(new AlterationInstance(alterationEtat, duree));
+        alterations.add(new AlterationInstance(alterationEtat,source, duree));
 
 //        //DESTINY KNOT
 //        if (alterationEtat.equals(Status.INFATUATED) && HeldItem.DESTINY_KNOT.equals(getHeldItem())) {
@@ -1189,6 +1217,9 @@ public class Pokemon implements Serializable {
                                         case "mainmenu":
                                             game.gameMenu();
                                             break;
+                                        case "premiercombat":
+                                            game.combatDresseur();
+                                            break;
                                         default:
                                             game.gameMenu();
                                     }
@@ -1199,4 +1230,7 @@ public class Pokemon implements Serializable {
                 );
     }
 
+    public boolean estEnVie() {
+        return currentHp > 0;
+    }
 }

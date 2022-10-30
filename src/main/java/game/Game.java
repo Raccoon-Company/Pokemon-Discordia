@@ -26,16 +26,21 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.*;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Game {
+
+    private Logger logger = LoggerFactory.getLogger(Game.class);
     private MyBot bot;
     private Save save;
     private final DiscordManager discordManager;
@@ -121,10 +126,14 @@ public class Game {
         Structure currentStructure = save.getCampaign().getCurrentStructure();
         Zones currentZone = save.getCampaign().getCurrentZone();
 
-        List<Button> buttons = new ArrayList<>(Arrays.asList(
-                Button.of(ButtonStyle.PRIMARY, "move", "Se déplacer", Emoji.fromFormatted("\uD83E\uDDED")),
-                Button.of(ButtonStyle.PRIMARY, "bag", "Sac à dos", Emoji.fromFormatted("\uD83C\uDF92"))
-        ));
+        List<Button> buttons = new ArrayList<>();
+
+        if (Dresseur.trouverDresseur(currentZone, currentStructure, save.getCampaign().getProgress()) != null) {
+            buttons.add(Button.of(ButtonStyle.PRIMARY, "duel", "Combat de dresseur", Emoji.fromFormatted("⚔")));
+        }
+
+        buttons.add(Button.of(ButtonStyle.PRIMARY, "move", "Se déplacer", Emoji.fromFormatted("\uD83E\uDDED")));
+        buttons.add(Button.of(ButtonStyle.PRIMARY, "bag", "Sac à dos", Emoji.fromFormatted("\uD83C\uDF92")));
 
         if (currentStructure == null && currentZone.getTypeZone().equals(ZoneTypes.ROUTE)) {
             buttons.add(Button.of(ButtonStyle.PRIMARY, "grass", "Hautes herbes", Emoji.fromFormatted("\uD83C\uDF3F")));
@@ -154,7 +163,7 @@ public class Game {
             nom = currentZone.getNom();
         }
 
-        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), getPlayerSprite(), x, y, LARGEUR_FOND, HAUTEUR_FOND);
+        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), PropertiesManager.getInstance().getImage(save.getCampaign().getCurrentZone().getMeteo().getFiltre()), getPlayerSprite(), x, y, LARGEUR_FOND, HAUTEUR_FOND);
 
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageImage(save, nom, lc, combined))
@@ -170,6 +179,8 @@ public class Game {
                                     e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     if (e.getComponentId().equals("move")) {
                                         moveMenu();
+                                    } else if (e.getComponentId().equals("duel")) {
+                                        combatDresseur();
                                     } else if (e.getComponentId().equals("pnj")) {
                                         talkMenu();
                                     } else if (e.getComponentId().equals("bag")) {
@@ -186,6 +197,35 @@ public class Game {
                         )
                 );
 
+    }
+
+    public void combatDresseur() {
+        Dresseur dresseur = Dresseur.trouverDresseur(save.getCampaign().getCurrentZone(), save.getCampaign().getCurrentStructure(), save.getCampaign().getProgress());
+
+        channel.sendMessage(messageManager.createMessageThumbnail(save, dresseur)).queue((message -> {
+            channel.sendTyping().queue();
+        }));
+
+        //pas de 2v2 si le joueur n'a pas 2 pokémons
+        if (dresseur.getTypeCombat().equals(TypeCombat.DOUBLE) && save.getCampaign().getEquipe().stream().filter(Pokemon::estEnVie).count() < 2) {
+            //pas assez de pokemons pour le double
+            channel.sendMessage(messageManager.createMessageThumbnail(save, dresseur, "Hé ! On va faire un combat en double, donc il faut que tu aies au moins deux pokémons !\nReviens me voir après !")).queue();
+            gameMenu();
+            return;
+        }
+
+        //TODO optimiser la création des duellistes, trop longue
+        Duelliste blanc = new Duelliste(save, dresseur.getTypeCombat());
+        Duelliste noir;
+        if (Arrays.asList(Dresseur.rivaux).contains(dresseur)) {
+            noir = new Duelliste(dresseur, this, true);
+        } else {
+            noir = new Duelliste(dresseur, this, false);
+        }
+
+        //le combat emmène à la méthode apresCombat(combat);
+        Combat combat = new Combat(this, blanc, noir, dresseur.getTypeCombat(), true);
+        combat.resolve();
     }
 
     private void combatPokemonSauvage() {
@@ -250,10 +290,7 @@ public class Game {
 
         Pokemon pokemon = new Pokemon(Client.getPokemonByName(selected.getPokemon().getName()).getId(), level, true, this);
 
-        //déterminer le niveau et l'espèce
-        //créer les duellistes
-        //meteo si pas défault
-        Duelliste blanc = new Duelliste(save);
+        Duelliste blanc = new Duelliste(save, TypeCombat.SIMPLE);
         Duelliste noir = new Duelliste(pokemon);
 
         //le combat emmène à la méthode apresCombat(combat);
@@ -264,11 +301,22 @@ public class Game {
     public void apresCombat(Combat combat) {
         combat.getBlanc().soinsLeger();
         combat.getNoir().soinsLeger();
+        try {
+            combat.updateImageCombat();
+        } catch (IOException io) {
+            logger.error("Erreur update image");
+            throw new IllegalStateException("erreur update image", io);
+        }
+        channel.sendMessage(messageManager.createMessageImage(save, combat.getTypeCombatResultat().getDescription(), null, "temp/" + combat.getImageCombat())).queue();
+        if (combat.getTypeCombatResultat().equals(TypeCombatResultat.DEFAITE)) {
+            combat.getBlanc().getEquipe().forEach(Pokemon::soinComplet);
+        }
         switch (combat.getNoir().getTypeDuelliste()) {
             case PNJ:
                 if (combat.getTypeCombatResultat().equals(TypeCombatResultat.VICTOIRE)) {
                     long gain = combat.getNoir().racketter();
                     save.getCampaign().gagnerArgent(gain);
+                    save.getCampaign().setProgress(save.getCampaign().getProgress() + 1); //TODO décommenter
                     channel.sendMessage("Vous obtenez " + gain + "$ de votre adversaire !").queue();
                 }
 
@@ -359,17 +407,17 @@ public class Game {
                         e -> {
                             e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                             bot.unlock(user);
-                            if(e.getComponentId().equals("item")) {
+                            if (e.getComponentId().equals("item")) {
                                 listeObjets();
-                            }else if(e.getComponentId().equals("key")) {
+                            } else if (e.getComponentId().equals("key")) {
                                 listeObjetsRares();
-                            }else if(e.getComponentId().equals("ball")) {
+                            } else if (e.getComponentId().equals("ball")) {
                                 listePokeballs();
-                            }else if(e.getComponentId().equals("heal")) {
+                            } else if (e.getComponentId().equals("heal")) {
                                 listePotions();
-                            }else if(e.getComponentId().equals("ct")) {
+                            } else if (e.getComponentId().equals("ct")) {
                                 listeCTs();
-                            }else{
+                            } else {
                                 gameMenu();
                             }
                         },

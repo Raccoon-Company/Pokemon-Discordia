@@ -5,6 +5,7 @@ import game.model.ElementUI;
 import game.model.ImageUI;
 import game.model.RectangleUI;
 import game.model.TextUI;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,17 +74,21 @@ public class ImageManager {
         return "";
     }
 
-    public String merge(String imageBack, String imageFront, int x, int y, int largeur, int hauteur) {
+    public String merge(String imageBack, String meteo, String imageFront, int x, int y, int largeur, int hauteur) {
+        boolean drawMeteo = StringUtils.isNotEmpty(meteo);
         String pathBack = fileManager.getFullPathToImage(imageBack);
         String pathFront = fileManager.getFullPathToImage(imageFront);
+        String pathFrontMeteo = fileManager.getFullPathToImage(meteo);
         // load source images
         BufferedImage background = null;
         BufferedImage overlay = null;
-        BufferedImage overlay2 = null;
+        BufferedImage overlayMeteo = null;
         try {
             background = ImageIO.read(new File(pathBack));
             overlay = ImageIO.read(new File(pathFront));
-//        overlay2 = ImageIO.read(new File(path, "25.png"));
+            if(drawMeteo){
+                overlayMeteo = ImageIO.read(new File(pathFrontMeteo));
+            }
         } catch (
                 IOException e) {
             throw new RuntimeException(e);
@@ -96,8 +101,10 @@ public class ImageManager {
         // paint both images, preserving the alpha channels
         Graphics g = combined.getGraphics();
         g.drawImage(background, 0, 0, null);
+        if(drawMeteo){
+            g.drawImage(overlayMeteo,0,0,null);
+        }
         g.drawImage(overlay, x, y, null);
-//        g.drawImage(overlay2, 100, 0, null);
 
         g.dispose();
 

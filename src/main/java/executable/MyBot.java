@@ -1,7 +1,11 @@
 package executable;
 
+import com.github.oscar0812.pokeapi.models.moves.Move;
+import com.github.oscar0812.pokeapi.models.moves.MoveCategory;
+import com.github.oscar0812.pokeapi.utils.Client;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import game.Launcher;
+import game.model.enums.TypeCibleCombat;
 import listeners.ButtonListener;
 import listeners.CommandListener;
 import listeners.MainListener;
@@ -70,6 +74,16 @@ public class MyBot {
                 GatewayIntent.GUILD_MESSAGE_REACTIONS,
                 GatewayIntent.GUILD_MEMBERS);
 
+//        List<String> used = new ArrayList<>();
+//        for (Move move : Client.getMoveCategoryById(0).getMoves()) {
+//           Move m = Client.getMoveByName(move.getName());
+//            if(!used.contains(m.getTarget().getName())){
+//                used.add(m.getTarget().getName());
+//                if(m.getTarget().getId()== TypeCibleCombat.SPECIFIC_MOVE.getIdApi() ||m.getTarget().getId()== TypeCibleCombat.USER.getIdApi() ||m.getTarget().getId()== TypeCibleCombat.SELECTED_POKEMON_ME_FIRST.getIdApi()){
+//                    System.out.println(m.getName() +" -> "+m.getTarget().getName());
+//                }
+//            }
+//        }
 
         this.jda = builder.build();
         this.lockedUsers = Collections.synchronizedList(new ArrayList<>());

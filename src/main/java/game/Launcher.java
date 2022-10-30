@@ -409,7 +409,7 @@ public class Launcher extends ListenerAdapter {
         Game game = new Game(bot, save);
         Pokemon starter = new Pokemon(save.getCampaign().getIdStarter(), 5, false, game);
         save.getCampaign().getEquipe().add(starter);
-        starter.choixSurnom(game, "mainmenu");
+        starter.choixSurnom(game, "premiercombat");
     }
 
     private void clearMessagesAssociated() {

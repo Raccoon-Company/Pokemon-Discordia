@@ -1,5 +1,6 @@
 package game.model;
 
+import game.model.enums.Meteo;
 import game.model.enums.StatutsTerrain;
 
 import java.util.HashMap;
@@ -56,5 +57,8 @@ public class Terrain {
 
     public void setAlterations(HashMap<StatutsTerrain, Integer> alterations) {
         this.alterations = alterations;
+    }
+    public Meteo getMeteo(){
+        return alterations.entrySet().stream().filter(e -> e.getKey().isMeteo() && e.getValue() > 0).findAny().map(a -> StatutsTerrain.getMeteoFromStatut(a.getKey())).orElse(Meteo.NEUTRE);
     }
 }

@@ -36,6 +36,7 @@ public class Campaign implements Serializable {
 
     private long pokedollars;
 
+    private int progress;
     private Zones currentZone;
 
     @Nullable
@@ -55,6 +56,7 @@ public class Campaign implements Serializable {
         this.idStarter = idStarter;
         this.reserve = new ArrayList<>();
         this.equipe = new ArrayList<>();
+        this.progress = 0;
         this.pokedex = new Pokedex();
         this.pokedex.captured(idStarter);
         this.inventaire = new Inventaire();
@@ -89,6 +91,14 @@ public class Campaign implements Serializable {
         }else{
             pokedollars -= montant;
         }
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public void setProgress(int progress) {
+        this.progress = progress;
     }
 
     public boolean isGender() {

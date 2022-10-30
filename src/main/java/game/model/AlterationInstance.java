@@ -4,11 +4,22 @@ import game.model.enums.AlterationEtat;
 
 public class AlterationInstance {
     private AlterationEtat alterationEtat;
+
+    private SourceDegats sourceAlteration;
     private int toursRestants;
 
-    public AlterationInstance(AlterationEtat alterationEtat, int toursRestants) {
+    public AlterationInstance(AlterationEtat alterationEtat, SourceDegats sourceAlteration,int toursRestants) {
         this.alterationEtat = alterationEtat;
+        this.sourceAlteration = sourceAlteration;
         this.toursRestants = toursRestants;
+    }
+
+    public SourceDegats getSourceAlteration() {
+        return sourceAlteration;
+    }
+
+    public void setSourceAlteration(SourceDegats sourceAlteration) {
+        this.sourceAlteration = sourceAlteration;
     }
 
     public AlterationEtat getAlterationEtat() {

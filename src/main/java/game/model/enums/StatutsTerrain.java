@@ -65,6 +65,23 @@ public enum StatutsTerrain {
         }
     }
 
+    public static Meteo getMeteoFromStatut(StatutsTerrain statutsTerrain) {
+        switch (statutsTerrain){
+            case SUNNY_DAY:
+                return Meteo.FORT_SOLEIL;
+            case RAIN_DANCE:
+                return Meteo.PLUIE;
+            case HAIL:
+                return Meteo.GRELE;
+            case SANDSTORM:
+                return Meteo.TEMPETE_DE_SABLE;
+            case HAZE:
+                return Meteo.BROUILLARD;
+            default:
+                return Meteo.NEUTRE;
+        }
+    }
+
     public boolean isTemporaire() {
         return temporaire;
     }

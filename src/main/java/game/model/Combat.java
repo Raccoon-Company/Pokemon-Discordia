@@ -5,6 +5,7 @@ import com.github.oscar0812.pokeapi.models.moves.MoveTarget;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
 import game.model.enums.*;
+import game.model.enums.moveEffets.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -58,6 +59,24 @@ public class Combat {
     private final static int MIN_Y_HP_BAR_NOIR = 24;
     private final static int MAX_Y_HP_BAR_NOIR = 27;
 
+    private final static int DOUBLE_MIN_X_HP_BAR_BLANC = 144;
+    private final static int DOUBLE_MAX_X_HP_BAR_BLANC = 190;
+    private final static int DOUBLE_MIN_Y_HP_BAR_BLANC = 95;
+    private final static int DOUBLE_MAX_Y_HP_BAR_BLANC = 98;
+    private final static int DOUBLE_MIN_X_HP_BAR_NOIR = 52;
+    private final static int DOUBLE_MAX_X_HP_BAR_NOIR = 98;
+    private final static int DOUBLE_MIN_Y_HP_BAR_NOIR = 16;
+    private final static int DOUBLE_MAX_Y_HP_BAR_NOIR = 19;
+
+    private final static int DOUBLE_MIN_X_HP_BAR_BLANC_BIS = 144;
+    private final static int DOUBLE_MAX_X_HP_BAR_BLANC_BIS = 190;
+    private final static int DOUBLE_MIN_Y_HP_BAR_BLANC_BIS = 115;
+    private final static int DOUBLE_MAX_Y_HP_BAR_BLANC_BIS = 118;
+    private final static int DOUBLE_MIN_X_HP_BAR_NOIR_BIS = 52;
+    private final static int DOUBLE_MAX_X_HP_BAR_NOIR_BIS = 98;
+    private final static int DOUBLE_MIN_Y_HP_BAR_NOIR_BIS = 36;
+    private final static int DOUBLE_MAX_Y_HP_BAR_NOIR_BIS = 39;
+
     private Game game;
 
     private int turnCount;
@@ -94,19 +113,29 @@ public class Combat {
         this.noir = noir;
         this.turnCount = 0;
         this.objetsAutorises = objetsAutorises;
-
+        //set up meteo et background
+        StatutsTerrain statutFromMeteo = StatutsTerrain.getStatutFromMeteo(game.getSave().getCampaign().getCurrentMeteo());
+        if (statutFromMeteo != null) {
+            terrainBlanc.ajoutStatut(statutFromMeteo, 999);
+            terrainNoir.ajoutStatut(statutFromMeteo, 999);
+        }
         setUpBackground();
     }
 
     private void setUpBackground() {
         String bg = game.getSave().getCampaign().getCurrentZone().getCombatBackground();
-        this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg), PropertiesManager.getInstance().getImage("battle.ui"), 0, 0, LARGEUR, HAUTEUR);
 
+        if (typeCombat.equals(TypeCombat.DOUBLE)) {
+            this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg),PropertiesManager.getInstance().getImage(terrainBlanc.getMeteo().getFiltre()), PropertiesManager.getInstance().getImage("battle-double.ui"), 0, 0, LARGEUR, HAUTEUR);
+        } else {
+            this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg),PropertiesManager.getInstance().getImage(terrainBlanc.getMeteo().getFiltre()) ,PropertiesManager.getInstance().getImage("battle.ui"), 0, 0, LARGEUR, HAUTEUR);
+        }
     }
 
     public void resolve() {
         this.typeCombatResultat = TypeCombatResultat.EN_COURS;
         this.turnCount = 1;
+
         blanc.getEquipe().forEach(p -> {
             p.setItemAutorise(true);
             p.setActionsCombat(new HashMap<>());
@@ -122,9 +151,17 @@ public class Combat {
             game.getSave().getCampaign().getPokedex().saw(noir.getPokemonActifBis().getIdSpecie());
         }
 
-        //todo effets d'entree sur le champ de bataille
+        for (Pokemon pokemon : tousLesPokemonsEnJeu()) {
+            effetsEntree(pokemon, getDuellisteAllie(pokemon).getId() == blanc.getId() ? terrainBlanc : terrainNoir, true);
+        }
 
         roundPhase0();
+    }
+
+    private List<Pokemon> tousLesPokemonsEnJeu() {
+        List<Pokemon> tous = new ArrayList<>(blanc.getPokemonsActifsEnVie());
+        tous.addAll(noir.getPokemonsActifsEnVie());
+        return tous;
     }
 
     /**
@@ -137,6 +174,7 @@ public class Combat {
             logger.error("Erreur update image", ioe);
             throw new IllegalStateException("Erreur mise à jour de l'image");
         }
+
         roundPhase1();
     }
 
@@ -158,7 +196,7 @@ public class Combat {
         text += "\nQue dois-faire " + blanc.getPokemonChoixCourant(turnCount).getNomPresentation() + " ?";
 
         //on créé le message à partir de la nouvelle image et des infos combat
-        MessageCreateBuilder mcb = getMcb(imageCombat, text);
+        MessageCreateBuilder mcb = getMcb(blanc.getPokemonChoixCourant(turnCount), imageCombat, text);
         //envoi du message
         game.getChannel().sendMessage(mcb.build()).queue((message) ->
                 game.getBot().getEventWaiter().waitForEvent(
@@ -223,7 +261,7 @@ public class Combat {
             case USER_AND_ALLIES:
             case ALL_POKEMON:
             case ALL_ALLIES:
-                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat));
+                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur));
                 roundPhase2();
                 break;
             case SELECTED_POKEMON_ME_FIRST:
@@ -232,7 +270,7 @@ public class Combat {
             case ALLY:
                 if (typeCombat.equals(TypeCombat.SIMPLE)) {
                     //échec
-                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat));
+                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur));
                 } else {
                     if (lanceur.equals(blanc.getPokemonActif())) {
                         lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, blanc.getPokemonActifBis()));
@@ -243,19 +281,22 @@ public class Combat {
                 roundPhase2();
                 break;
             case USERS_FIELD:
-                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, terrainBlanc));
+                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, terrainBlanc));
                 roundPhase2();
                 break;
             case USER_OR_ALLY:
                 if (typeCombat.equals(TypeCombat.SIMPLE)) {
                     lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur));
+                    roundPhase2();
                 } else {
-                    //TODO selection lanceur ou allié
+                    List<Pokemon> cibles = new ArrayList<>();
+                    cibles.add(blanc.getPokemonActif());
+                    cibles.add(blanc.getPokemonActifBis());
+                    selectionCibleManuelle(cibles, lanceur, attaque, typeCibleCombat);
                 }
-                roundPhase2();
                 break;
             case OPPONENTS_FIELD:
-                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, terrainNoir));
+                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, terrainNoir));
                 roundPhase2();
                 break;
             case USER:
@@ -263,22 +304,79 @@ public class Combat {
                 roundPhase2();
                 break;
             case RANDOM_OPPONENT:
-                if (typeCombat.equals(TypeCombat.SIMPLE) || Utils.getRandom().nextBoolean()) {
-                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, noir.getPokemonActif()));
+                if (typeCombat.equals(TypeCombat.SIMPLE)) {
+                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, noir.getPokemonActif()));
                 } else {
-                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, noir.getPokemonActifBis()));
+                    if (Utils.getRandom().nextBoolean() || !noir.getPokemonActif().estEnVie()) {
+                        lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, noir.getPokemonActifBis()));
+                    } else {
+                        lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, noir.getPokemonActif()));
+                    }
                 }
                 roundPhase2();
                 break;
             case SELECTED_POKEMON:
                 if (typeCombat.equals(TypeCombat.SIMPLE)) {
-                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, noir.getPokemonActif()));
+                    lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, noir.getPokemonActif()));
+                    roundPhase2();
                 } else {
-                    //TODO selection adversaire ou allié
+                    List<Pokemon> cibles = new ArrayList<>();
+                    cibles.add(noir.getPokemonActifBis());
+                    cibles.add(noir.getPokemonActif());
+                    cibles.add(blanc.getPokemonActif());
+                    cibles.add(blanc.getPokemonActifBis());
+                    cibles.remove(lanceur);
+                    selectionCibleManuelle(cibles, lanceur, attaque, typeCibleCombat);
                 }
-                roundPhase2();
+
                 break;
         }
+    }
+
+    private void selectionCibleManuelle(List<Pokemon> cibles, Pokemon lanceur, Attaque attaque, TypeCibleCombat typeCibleCombat) {
+        cibles.removeIf(p -> p.getCurrentHp() <= 0);
+        if (cibles.size() == 0) {
+            game.getChannel().sendMessage("Aucune cible valide !").queue();
+            roundPhase1();
+        }
+        //retour
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
+        List<Button> buttons = new ArrayList<>();
+        List<Button> buttons2 = new ArrayList<>();
+
+        for (Pokemon pokemon : cibles) {
+            if (buttons.size() >= 5) {
+                buttons2.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomCompletPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+            } else {
+                buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(pokemon.getId()), pokemon.getNomCompletPresentation(), Emoji.fromCustom("pokeball", 1032561600701399110L, false)));
+            }
+        }
+        buttons2.add(Button.of(ButtonStyle.PRIMARY, "back", "Annuler", Emoji.fromFormatted("\uD83D\uDD19")));
+        LayoutComponent lc = ActionRow.of(buttons);
+        LayoutComponent lc2 = ActionRow.of(buttons2);
+        List<Button> allButtons = new ArrayList<>(lc.getButtons());
+        allButtons.addAll(lc2.getButtons());
+        mcb.addComponents(lc, lc2);
+        mcb.addContent("Choisir une cible");
+        game.getBot().lock(game.getUser());
+        game.getChannel().sendMessage(game.getMessageManager().createMessageData(mcb)).queue(message -> game.getBot().getEventWaiter().waitForEvent( // Setup Wait action once message was send
+                        ButtonInteractionEvent.class,
+                        e -> game.getButtonManager().createPredicate(e, message, game.getSave().getUserId(), allButtons),
+                        //action quand réponse détectée
+                        e -> {
+                            e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
+                            game.getBot().unlock(game.getUser());
+                            if (e.getComponentId().equals("back")) {
+                                roundPhase1();
+                            } else {
+                                lanceur.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, cibles.stream().filter(c -> String.valueOf(c.getId()).equals(e.getComponentId())).findAny().orElse(null)));
+                                roundPhase2();
+                            }
+                        },
+                        1, TimeUnit.MINUTES,
+                        () -> game.getButtonManager().timeout(game.getChannel(), game.getUser())
+                )
+        );
     }
 
     private void menuSac() {
@@ -302,7 +400,7 @@ public class Combat {
             game.getChannel().sendMessage("Vous n'avez pas d'autres pokémons en état de se battre").queue();
             roundPhase1();
         }
-        //TODO affichage des choix possibles
+
         //equipe sauf actif
         //retour
         MessageCreateBuilder mcb = new MessageCreateBuilder();
@@ -347,33 +445,31 @@ public class Combat {
     }
 
     private void changerPokemonActif(Pokemon sortant, Pokemon entrant) {
-            //changement de kemon
-
-            //TODO choix du nouveau pokemon
+        //changement de kemon
         sortant.soinLegerCombat();
         sortant.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_OUT));
 
-            //        if (Talent.NATURAL_CURE.equals(currentPokemonFirstTrainer.getTalent())) {
+        //        if (Talent.NATURAL_CURE.equals(currentPokemonFirstTrainer.getTalent())) {
 //            currentPokemonFirstTrainer.getStatuses().clear();
 //        }
 
-            if (sortant.equals(blanc.getPokemonActif())) {
-                blanc.setPokemonActif(entrant);
-                blanc.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
+        if (sortant.equals(blanc.getPokemonActif())) {
+            blanc.setPokemonActif(entrant);
+            blanc.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
 
-            } else {
-                blanc.setPokemonActifBis(entrant);
-                blanc.getPokemonActifBis().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
-            }
-
-            try {
-                updateImageCombat();
-            } catch (IOException ioe) {
-                logger.error("Erreur update image", ioe);
-                throw new IllegalStateException("Erreur mise à jour de l'image");
-            }
-            roundPhase2();
+        } else {
+            blanc.setPokemonActifBis(entrant);
+            blanc.getPokemonActifBis().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.SWITCH_IN));
         }
+
+        try {
+            updateImageCombat();
+        } catch (IOException ioe) {
+            logger.error("Erreur update image", ioe);
+            throw new IllegalStateException("Erreur mise à jour de l'image");
+        }
+        roundPhase2();
+    }
 
 
     public boolean fuiteAutorisee(Pokemon fuyard, Duelliste adversaire, boolean simulation) {
@@ -469,7 +565,6 @@ public class Combat {
 
         if (speedPlayer > speedWild || Utils.randomTest(proba)) {
             //fuite réussie
-            game.getChannel().sendMessage("Vous fuyez le combat !").queue();
             typeCombatResultat = TypeCombatResultat.FUITE_JOUEUR;
             game.apresCombat(this);
         } else {
@@ -560,7 +655,11 @@ public class Combat {
             }
         }
 
-        //TODO afficher les secousses
+        StringBuilder pokeEmotes = new StringBuilder();
+        for (int i = 0; i < secoussesReussies; i++) {
+            pokeEmotes.append(Emoji.fromCustom("pokeball", 1032561600701399110L, false).getFormatted());
+        }
+        game.getChannel().sendMessage(pokeEmotes).queue();
 
         if (secoussesReussies >= 4) {
             //réussite de la capture
@@ -576,7 +675,7 @@ public class Combat {
             this.typeCombatResultat = TypeCombatResultat.CAPTURE;
             game.apresCombat(this);
         } else {
-            //TODO capture ratée
+            game.getChannel().sendMessage("Oh non ! Le " + noir.getPokemonActif().getNomPresentation() + " s'est échappé de la pokéball !").queue();
             roundPhase2();
         }
     }
@@ -607,16 +706,15 @@ public class Combat {
             }
         }
 
-        //TODO le pokémon adverse choisit ce qu'il fait
-
+        //TODO le pokémon adverse IA choisit ce qu'il fait
         noir.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, new Attaque(1, 20, 20), TypeCibleCombat.RANDOM_OPPONENT, blanc.getPokemonActif()));
 
         //attaque si sauvage
         //mais aussi eventuellement utiliser une potion ou changer de pokemon selon l'IA en face
 
-        //TODO resolution des attaques choisies
         ordreDAction().forEach(this::effectuerAction);
 
+        //TODO suppr ca quand plus besoin
         blanc.getPokemonActif().blesser(4, new SourceDegats(TypeSourceDegats.POKEMON, noir.getPokemonActif()));
         noir.getPokemonActif().blesser(10, new SourceDegats(TypeSourceDegats.POKEMON, blanc.getPokemonActif()));
 
@@ -624,12 +722,15 @@ public class Combat {
         turnCount++;
 
         //vérif combat terminé
-        if (blanc.getPokemonActif().getCurrentHp() >= 0 && noir.getPokemonActif().getCurrentHp() >= 0) {
+        if (!blanc.getPokemonsActifsEnVie().isEmpty() && !noir.getPokemonsActifsEnVie().isEmpty()) {
             //tour suivant
             roundPhase0();
-
-            //TODO combat terminé
         } else {
+            if (blanc.getPokemonsActifsEnVie().isEmpty()) {
+                typeCombatResultat = TypeCombatResultat.DEFAITE;
+            } else {
+                typeCombatResultat = TypeCombatResultat.VICTOIRE;
+            }
             game.apresCombat(this);
         }
     }
@@ -651,28 +752,38 @@ public class Combat {
             return;
         }
 
-        //pas d'attaque si la cible est dead
-        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0) {
-            return;
-        }
-
         if (lanceur.hasStatut(AlterationEtat.APEURE)) {
-//TODO poke apeure notif
+            game.getChannel().sendMessage(lanceur.getNomPresentation() + " est effrayé et ne peut pas attaquer !").queue();
             return;
         }
 
         if (lanceur.hasStatut(AlterationEtat.CHARGING_TURN)) {
+            String text = lanceur.getNomPresentation();
+            if (attaqueSelectionnee.getId() == 143) {//sky attack
+                text += " est entouré d'une lumière intense !";
+            } else if (attaqueSelectionnee.getId() == 76 || attaqueSelectionnee.getId() == 669) {
+                text += " absorbe la lumière !";
+            } else if (attaqueSelectionnee.getId() == 13) {
+                text += " déclenche un cyclone !";
+            } else {
+                text += " prépare son attaque !";
+            }
+            game.getChannel().sendMessage(text).queue();
             return;
         }
 
         if (lanceur.hasStatut(AlterationEtat.RECHARGE)) {
+            game.getChannel().sendMessage(lanceur.getNomPresentation() + " est fatigué et doit se recharger !").queue();
             return;
         }
 
         if (lanceur.hasStatut(AlterationEtat.GEL)) {
+            game.getChannel().sendMessage(lanceur.getNomPresentation() + " est congelé et ne peut pas bouger !").queue();
             return;
         }
+
         if (lanceur.hasStatut(AlterationEtat.SOMMEIL)) { //&& !(selectedMove.equals(Moves.RONFLEMENT) || selectedMove.equals(Moves.BLABLA_DODO))
+            game.getChannel().sendMessage(lanceur.getNomPresentation() + " est endormi et ne peut pas bouger !").queue();
             return;
         }
 
@@ -699,54 +810,71 @@ public class Combat {
 //        }
 //
         if (lanceur.hasStatut(AlterationEtat.PARALYSIE) && Utils.getRandom().nextBoolean()) {
-            //TODO notif paralysie
+            game.getChannel().sendMessage(lanceur.getNomPresentation() + " est paralysé et ne peut pas bouger !").queue();
             return;
         }
 //
         if (lanceur.hasStatut(AlterationEtat.CHARME) && Utils.getRandom().nextBoolean()) {
-            //TODO notif charme
+            game.getChannel().sendMessage(lanceur.getNomPresentation() + " est amoureux et refuse d'attaquer !").queue();
             return;
         }
 
         if (lanceur.hasStatut(AlterationEtat.CONFUSION)) {
             if (Utils.randomTest(33)) {
-                //TODO notif + perte hp
+                game.getChannel().sendMessage(lanceur.getNomPresentation() + " se blesse dans sa confusion !").queue();
+                //TODO Confusion damage is calculated as if it were a typeless physical move with a power of 40; it cannot score a critical hit, and does not receive STAB
+                lanceur.blesser(40, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
                 return;
             }
         }
 
-        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().hasStatut(AlterationEtat.PROTECTION)) { //TODO && !attaqueSelectionnee.equals(Moves.RUSE)
-            //TODO notif protect
-            return;
+        switch (attaqueSelectionnee.getMeta().getCategory().getName()) {
+            case "damage":
+                MoveDamage.utiliser(this, actionCombat);
+                break;
+            case "ailment":
+                MoveAilment.utiliser(this, actionCombat);
+                break;
+            case "net-good-stats":
+                MoveNetGoodStats.utiliser(this, actionCombat);
+                break;
+            case "heal":
+                MoveHeal.utiliser(this, actionCombat);
+                break;
+            case "damage+ailment":
+                MoveDamageAilment.utiliser(this, actionCombat);
+                break;
+            case "swagger":
+                MoveSwagger.utiliser(this, actionCombat);
+                break;
+            case "damage+lower":
+                MoveDamageLower.utiliser(this, actionCombat);
+                break;
+            case "damage+raise":
+                MoveDamageRaise.utiliser(this, actionCombat);
+                break;
+            case "damage+heal":
+                MoveDamageHeal.utiliser(this, actionCombat);
+                break;
+            case "ohko":
+                MoveOHKO.utiliser(this, actionCombat);
+                break;
+            case "whole-field-effect":
+                MoveWholeFieldEffect.utiliser(this, actionCombat);
+                break;
+            case "field-effect":
+                MoveFieldEffect.utiliser(this, actionCombat);
+                break;
+            case "force-switch":
+                MoveForceSwitch.utiliser(this, actionCombat);
+                break;
+            case "unique":
+                MoveUnique.utiliser(this, actionCombat);
+                break;
+            default:
+                logger.error("Catégorie d'attaque inconnue : " + attaqueSelectionnee.getMeta().getCategory().getName());
+                throw new IllegalStateException("Catégorie d'attaque inconnue");
         }
-//
-//        //en simulation, la précision est comptabilisée en ratio de dégats, alors qu'en vrai, c'est tout ou rien
-//        //aussi, on ne prend en compte la précision que si le move de bse a une précision =< 100, sinon, on considère le move inratable
-//        int movePrecision = selectedMove.getPrecision();
-//
-//        //précision modifiée de THUNDER, BLIZZARD et HURRICANE en fonction de la météo
-//        if (computeWeatherEffects()) {
-//            if (selectedMove.equals(Moves.THUNDER) || selectedMove.equals(Moves.HURRICANE)) {
-//                if (weather.equals(Weather.HARSH_SUNLIGHT)) {
-//                    movePrecision = 50;
-//                } else if (weather.equals(Weather.RAIN)) {
-//                    movePrecision = 999;
-//                }
-//            } else if (selectedMove.equals(Moves.BLIZZARD)) {
-//                if (weather.equals(Weather.HAIL)) {
-//                    movePrecision = 999;
-//                }
-//            }
-//        }
-//
-//        if (HeldItem.LAX_INCENSE.equals(targetPokemon.getHeldItem())) {
-//            movePrecision -= 10;
-//        }
-//
-//        boolean hit = movePrecision > 100 || accuracyCheck(launcherPokemon, targetPokemon, selectedMove, simulation);
-//
-//
-//        selectedMove.use(launcherPokemon, targetPokemon, simulation ? this.getCopy() : this, simulation);
     }
 
     public boolean tenirCompteDeLaMeteo() {
@@ -837,9 +965,9 @@ public class Combat {
         if (terrain.hasStatut(StatutsTerrain.TOXIC_SPIKES) && entree.isGrounded(terrain)) {
             long nb = terrain.getAlterations().get(StatutsTerrain.TOXIC_SPIKES);
             if (nb > 1) {
-                entree.applyStatus(AlterationEtat.POISON_GRAVE, 1, affichage);
+                entree.applyStatus(AlterationEtat.POISON_GRAVE, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN), 1, affichage);
             } else {
-                entree.applyStatus(AlterationEtat.POISON, 1, affichage);
+                entree.applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN), 1, affichage);
             }
             if (!affichage) {
                 game.getChannel().sendMessage(entree.getNomPresentation() + " est empoisonné par les picots au sol !").queue();
@@ -893,7 +1021,7 @@ public class Combat {
                 v = -v;
             }
 
-            if(k.getActionsCombat().get(turnCount).getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)){
+            if (k.getActionsCombat().get(turnCount).getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
                 if (k.getActionsCombat().get(turnCount) != null) {
                     v += k.getActionsCombat().get(turnCount).getAttaque().getMoveAPI().getPriority() * 1000;
                 }
@@ -916,32 +1044,121 @@ public class Combat {
         return sortedList.stream().map(Map.Entry::getKey).collect(Collectors.toList());
     }
 
+    private Terrain getTerrainAllie(Pokemon pokemon) {
+        return getDuellisteAllie(pokemon).equals(noir) ? terrainNoir : terrainBlanc;
+    }
+
     private void effetsDeFinDeTour() {
         //TODO effets des items (restes, etc)
-        //TODO effets des altérations (racines, poison, etc)
-        //TODO effets de la météo si pris en compte (càd pas de cloud nine ou air lock)
+        for (Pokemon pokemon : tousLesPokemonsEnJeu()) {
+            Terrain terrain = getTerrainAllie(pokemon);
+            if (pokemon.hasStatut(AlterationEtat.RACINES)) {
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + " restaure ses points de vie !").queue();
+                int heal = pokemon.getMaxHp() / 16;
+//            if (HeldItem.BIG_ROOT.equals(currentPokemonFirstTrainer.getHeldItem())) {
+//                heal = (int) (heal * 1.3);
+//            }
+                pokemon.soigner(heal, game);
+            }
 
-        //decrementation des tours restants des altérations
-        blanc.decrementerAlterations();
-        noir.decrementerAlterations();
+            if (pokemon.hasStatut(AlterationEtat.ANNEAU_HYDRO)) {
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + " restaure ses points de vie !").queue();
+                int heal = pokemon.getMaxHp() / 16;
+//            if (HeldItem.BIG_ROOT.equals(currentPokemonFirstTrainer.getHeldItem())) {
+//                heal = (int) (heal * 1.3);
+//            }
+                pokemon.soigner(heal, game);
+            }
 
+            if (pokemon.hasStatut(AlterationEtat.VAMPIGRAINE)) {
+
+                game.getChannel().sendMessage("Les points de vie de " + pokemon.getNomPresentation() + " sont drainés !").queue();
+                int drain = pokemon.getMaxHp() / 8;
+                pokemon.blesser(drain, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
+//            if (HeldItem.BIG_ROOT.equals(currentPokemonFirstTrainer.getHeldItem())) {
+//                drain = (int) (drain * 1.3);
+//            }
+                pokemon.getAlterations().stream().filter(a -> a.getAlterationEtat().equals(AlterationEtat.VAMPIGRAINE) && a.getSourceAlteration().getTypeSourceDegats().equals(TypeSourceDegats.POKEMON) && a.getSourceAlteration().getPokemonSource() != null).findAny().ifPresent(s -> {
+                    s.getSourceAlteration().getPokemonSource().soigner(drain, game);
+                });
+            }
+
+            if (pokemon.hasStatut(AlterationEtat.BRULURE)) {
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + " souffre de sa brulûre !").queue();
+                pokemon.blesser(pokemon.getMaxHp() / 8, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
+            }
+
+            if (pokemon.hasStatut(AlterationEtat.MALEDICTION)) {
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + " subit les effets de la malédiction !").queue();
+                pokemon.blesser(pokemon.getMaxHp() / 4, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
+            }
+
+            if (pokemon.hasStatut(AlterationEtat.POISON) || pokemon.hasStatut(AlterationEtat.POISON_GRAVE)) {
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + " souffre du poison !").queue();
+                if (pokemon.hasStatut(AlterationEtat.POISON_GRAVE)) {
+                    AlterationInstance ai = pokemon.getAlterationInstance(AlterationEtat.POISON_GRAVE);
+                    pokemon.blesser((pokemon.getMaxHp() / 16) * ai.getToursRestants(), new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
+                    ai.setToursRestants(ai.getToursRestants() + 1);
+                } else {
+                    pokemon.blesser(pokemon.getMaxHp() / 8, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
+                }
+            }
+
+            if (pokemon.hasStatut(AlterationEtat.REQUIEM)) {
+                AlterationInstance requiem = pokemon.getAlterationInstance(AlterationEtat.REQUIEM);
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + " tombera K.O. dans " + requiem.getToursRestants() + " tours !").queue();
+            }
+
+            if (tenirCompteDeLaMeteo()) {
+                //SAND STORM
+                if (terrain.hasStatut(StatutsTerrain.SANDSTORM)) {
+                    //si pokemon onn immunisé par type ou sand veil, lose 1/16 hp
+                    if (!pokemon.hasType(Type.GROUND)
+                            && !pokemon.hasType(Type.STEEL)
+                            && !pokemon.hasType(Type.ROCK)
+//                        && Talent.SAND_VEIL.equals(currentPokemonSecondTrainer.getTalent())
+                    ) {
+                        pokemon.blesser(pokemon.getMaxHp() / 16, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN));
+                    }
+                } else if (terrain.hasStatut(StatutsTerrain.HAIL)) {
+                    //si kemon non immunisé par type ou snow cloak, lose 1/16 hp
+                    if (!pokemon.hasType(Type.ICE)
+//                        && Talent.SNOW_CLOAK.equals(currentPokemonSecondTrainer.getTalent())
+                    ) {
+                        pokemon.blesser(pokemon.getMaxHp() / 16, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN));
+                    }
+                }
+            }
+
+            blanc.getPokemonActif().setaPerduDeLaVieCeTour(false);
+            noir.getPokemonActif().setaPerduDeLaVieCeTour(false);
+            blanc.getPokemonActif().setaDejaAttaque(false);
+            noir.getPokemonActif().setaDejaAttaque(false);
+            if (blanc.getPokemonActifBis() != null) {
+                blanc.getPokemonActifBis().setaPerduDeLaVieCeTour(false);
+                blanc.getPokemonActifBis().setaDejaAttaque(false);
+            }
+            if (noir.getPokemonActifBis() != null) {
+                noir.getPokemonActifBis().setaPerduDeLaVieCeTour(false);
+                noir.getPokemonActifBis().setaDejaAttaque(false);
+            }
+
+
+            pokemon.decrementerAlterations(game);
+
+        }
         //decrementation des tours restants des altérations terrain
         terrainBlanc.finDeTourMajStatus();
         terrainNoir.finDeTourMajStatus();
-
-        blanc.getPokemonActif().setaPerduDeLaVieCeTour(false);
-        noir.getPokemonActif().setaPerduDeLaVieCeTour(false);
-        blanc.getPokemonActif().setaDejaAttaque(false);
-        noir.getPokemonActif().setaDejaAttaque(false);
     }
 
     @NotNull
-    private MessageCreateBuilder getMcb(String imageCombat, String text) {
+    private MessageCreateBuilder getMcb(Pokemon courant, String imageCombat, String text) {
         MessageCreateBuilder mcb = new MessageCreateBuilder();
         List<Button> buttons = new ArrayList<>();
         List<Button> buttons2 = new ArrayList<>();
 
-        for (Attaque attaque : blanc.getPokemonActif().getMoveset()) {
+        for (Attaque attaque : courant.getMoveset()) {
             Move move = attaque.getMoveAPI();
             Type type = Type.getById(move.getType().getId());
             buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
@@ -972,28 +1189,23 @@ public class Combat {
         return mcb;
     }
 
-    private void updateImageCombat() throws IOException {
+    public void updateImageCombat() throws IOException {
+        List<ElementUI> elementUIS = new ArrayList<>();
+        Font font = new Font("Arial", Font.PLAIN, 10);
+        Map<TextAttribute, Object> attributes = new HashMap<TextAttribute, Object>();
+        attributes.put(TextAttribute.TRACKING, -0.1);
+        font = font.deriveFont(attributes);
+        Font fontGender = new Font("Arial", Font.PLAIN, 9);
+        Font fontHp = new Font("Arial", Font.PLAIN, 11);
 
-        /**
-         * merge le background
-         * les sprites des 2 à 4 pokémons
-         * les barres de points de vie et d'xp
-         * les pokéballs représentant l'équipe
-         * les noms, genres, shiny stars, et niveaux de chaque
-         */
+        FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+
         if (typeCombat.equals(TypeCombat.SIMPLE)) {
-            List<ElementUI> elementUIS = new ArrayList<>();
-            Font font = new Font("Arial", Font.PLAIN, 10);
-            Map<TextAttribute, Object> attributes = new HashMap<TextAttribute, Object>();
-            attributes.put(TextAttribute.TRACKING, -0.1);
-            font = font.deriveFont(attributes);
-            Font fontGender = new Font("Arial", Font.PLAIN, 9);
-            Font fontHp = new Font("Arial", Font.PLAIN, 11);
-
-            FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
 
             //pokemon allié
-            elementUIS.add(new ImageUI(-5, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
+            if (blanc.getPokemonActif().estEnVie() && !typeCombatResultat.equals(TypeCombatResultat.FUITE_JOUEUR)) {
+                elementUIS.add(new ImageUI(-5, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
+            }
             TextUI nomPokemonBlanc = new TextUI(91, 90, blanc.getPokemonActif().getNomPresentation(), font, Color.BLACK);
             TextUI genrePokemonBlanc = new TextUI(91 + (int) (font.getStringBounds(nomPokemonBlanc.getText(), frc).getWidth()), 90, " " + blanc.getPokemonActif().getGender().getEmoji(), fontGender, blanc.getPokemonActif().getGender().getColor());
             elementUIS.add(nomPokemonBlanc);
@@ -1027,8 +1239,9 @@ public class Combat {
             if (blanc.getPokemonActif().isShiny()) {
                 elementUIS.add(new ImageUI(genrePokemonBlanc.getX() + (int) (font.getStringBounds(genrePokemonBlanc.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
             }
-
-            elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
+            if (noir.getPokemonActif().estEnVie() && !typeCombatResultat.equals(TypeCombatResultat.FUITE_ADVERSAIRE)) {
+                elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
+            }
             TextUI nomPokemonNoir = new TextUI(16, 19, noir.getPokemonActif().getNomPresentation(), font, Color.BLACK);
             TextUI genrePokemonNoir = new TextUI(16 + (int) (font.getStringBounds(nomPokemonNoir.getText(), frc).getWidth()), 19, " " + noir.getPokemonActif().getGender().getEmoji(), fontGender, noir.getPokemonActif().getGender().getColor());
             elementUIS.add(nomPokemonNoir);
@@ -1051,7 +1264,117 @@ public class Combat {
 
             imageCombat = game.getImageManager().composeImageCombat(backImage, elementUIS, LARGEUR, HAUTEUR);
         } else if (typeCombat.equals(TypeCombat.DOUBLE)) {
-            //TODO update image pour double up
+            //pokemon allié
+            if (blanc.getPokemonActif().estEnVie()) {
+                elementUIS.add(new ImageUI(-20, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
+            }
+            TextUI nomPokemonBlanc = new TextUI(95, 90, blanc.getPokemonActif().getNomPresentation(), font, Color.BLACK);
+            TextUI genrePokemonBlanc = new TextUI(95 + (int) (font.getStringBounds(nomPokemonBlanc.getText(), frc).getWidth()), 90, " " + blanc.getPokemonActif().getGender().getEmoji(), fontGender, blanc.getPokemonActif().getGender().getColor());
+            elementUIS.add(nomPokemonBlanc);
+            elementUIS.add(genrePokemonBlanc);
+            int hpBarBlanc = (int) ((DOUBLE_MAX_X_HP_BAR_BLANC - DOUBLE_MIN_X_HP_BAR_BLANC) * ((double) blanc.getPokemonActif().getCurrentHp() / blanc.getPokemonActif().getMaxHp()));
+            if (blanc.getPokemonActif().getCurrentHp() > 0 && hpBarBlanc <= 0) {
+                hpBarBlanc = 1;
+            }
+            RectangleUI hpBlanc = new RectangleUI(DOUBLE_MIN_X_HP_BAR_BLANC, DOUBLE_MIN_Y_HP_BAR_BLANC, Color.GREEN, hpBarBlanc, DOUBLE_MAX_Y_HP_BAR_BLANC - DOUBLE_MIN_Y_HP_BAR_BLANC);
+            elementUIS.add(hpBlanc);
+
+            TextUI levelBlanc = new TextUI(168, 90, "Lv." + blanc.getPokemonActif().getLevel(), font, Color.BLACK);
+            elementUIS.add(levelBlanc);
+
+            int pokeY = 110;
+            for (Pokemon pokemon : blanc.getEquipe()) {
+                if (pokemon.getCurrentHp() <= 0) {
+                    elementUIS.add(new ImageUI(3, pokeY, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("empty"))))));
+                } else {
+                    elementUIS.add(new ImageUI(3, pokeY, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("pokeball"))))));
+                }
+                pokeY -= 12;
+            }
+
+            int pokeY2 = 2;
+            for (Pokemon pokemon : blanc.getEquipe()) {
+                if (pokemon.getCurrentHp() <= 0) {
+                    elementUIS.add(new ImageUI(190, pokeY2, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("empty"))))));
+                } else {
+                    elementUIS.add(new ImageUI(190, pokeY2, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("pokeball"))))));
+                }
+                pokeY2 += 12;
+            }
+
+            if (blanc.getPokemonActif().isShiny()) {
+                elementUIS.add(new ImageUI(genrePokemonBlanc.getX() + (int) (font.getStringBounds(genrePokemonBlanc.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
+            }
+
+            //blanc bis
+            if (blanc.getPokemonActifBis().estEnVie()) {
+                elementUIS.add(new ImageUI(10, 50, ImageIO.read(new URL(blanc.getPokemonActifBis().getBackSprite()))));
+            }
+            TextUI nomPokemonBlancBis = new TextUI(95, 110, blanc.getPokemonActifBis().getNomPresentation(), font, Color.BLACK);
+            TextUI genrePokemonBlancBis = new TextUI(95 + (int) (font.getStringBounds(nomPokemonBlancBis.getText(), frc).getWidth()), 110, " " + blanc.getPokemonActifBis().getGender().getEmoji(), fontGender, blanc.getPokemonActifBis().getGender().getColor());
+            elementUIS.add(nomPokemonBlancBis);
+            elementUIS.add(genrePokemonBlancBis);
+            int hpBarBlancBis = (int) ((DOUBLE_MAX_X_HP_BAR_BLANC_BIS - DOUBLE_MIN_X_HP_BAR_BLANC_BIS) * ((double) blanc.getPokemonActifBis().getCurrentHp() / blanc.getPokemonActifBis().getMaxHp()));
+            if (blanc.getPokemonActifBis().getCurrentHp() > 0 && hpBarBlancBis <= 0) {
+                hpBarBlancBis = 1;
+            }
+            RectangleUI hpBlancBis = new RectangleUI(DOUBLE_MIN_X_HP_BAR_BLANC_BIS, DOUBLE_MIN_Y_HP_BAR_BLANC_BIS, Color.GREEN, hpBarBlancBis, DOUBLE_MAX_Y_HP_BAR_BLANC_BIS - DOUBLE_MIN_Y_HP_BAR_BLANC_BIS);
+            elementUIS.add(hpBlancBis);
+
+            TextUI levelBlancBis = new TextUI(168, 110, "Lv." + blanc.getPokemonActifBis().getLevel(), font, Color.BLACK);
+            elementUIS.add(levelBlancBis);
+
+            if (blanc.getPokemonActifBis().isShiny()) {
+                elementUIS.add(new ImageUI(genrePokemonBlancBis.getX() + (int) (font.getStringBounds(genrePokemonBlancBis.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
+            }
+
+            //noir actif
+            if (noir.getPokemonActif().estEnVie()) {
+                elementUIS.add(new ImageUI(90, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
+            }
+            TextUI nomPokemonNoir = new TextUI(3, 11, noir.getPokemonActif().getNomPresentation(), font, Color.BLACK);
+            TextUI genrePokemonNoir = new TextUI(3 + (int) (font.getStringBounds(nomPokemonNoir.getText(), frc).getWidth()), 11, " " + noir.getPokemonActif().getGender().getEmoji(), fontGender, noir.getPokemonActif().getGender().getColor());
+            elementUIS.add(nomPokemonNoir);
+            elementUIS.add(genrePokemonNoir);
+            int hpBarNoir = (int) ((DOUBLE_MAX_X_HP_BAR_NOIR - DOUBLE_MIN_X_HP_BAR_NOIR) * ((double) noir.getPokemonActif().getCurrentHp() / noir.getPokemonActif().getMaxHp()));
+            if (noir.getPokemonActif().getCurrentHp() > 0 && hpBarNoir <= 0) {
+                hpBarNoir = 1;
+            }
+            RectangleUI hpNoir = new RectangleUI(DOUBLE_MIN_X_HP_BAR_NOIR, DOUBLE_MIN_Y_HP_BAR_NOIR, Color.GREEN, hpBarNoir, DOUBLE_MAX_Y_HP_BAR_NOIR - DOUBLE_MIN_Y_HP_BAR_NOIR);
+            elementUIS.add(hpNoir);
+
+            TextUI levelNoir = new TextUI(76, 11, "Lv." + noir.getPokemonActif().getLevel(), font, Color.BLACK);
+            elementUIS.add(levelNoir);
+
+            if (noir.getPokemonActif().isShiny()) {
+                elementUIS.add(new ImageUI(genrePokemonNoir.getX() + (int) (font.getStringBounds(genrePokemonNoir.getText(), frc).getWidth()) + 2, 1, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
+            }
+
+            //noir actif bis
+            if (noir.getPokemonActifBis().estEnVie()) {
+                elementUIS.add(new ImageUI(115, 0, ImageIO.read(new URL(noir.getPokemonActifBis().getFrontSprite()))));
+            }
+            TextUI nomPokemonNoirBis = new TextUI(3, 31, noir.getPokemonActifBis().getNomPresentation(), font, Color.BLACK);
+            TextUI genrePokemonNoirBis = new TextUI(3 + (int) (font.getStringBounds(nomPokemonNoirBis.getText(), frc).getWidth()), 31, " " + noir.getPokemonActifBis().getGender().getEmoji(), fontGender, noir.getPokemonActifBis().getGender().getColor());
+            elementUIS.add(nomPokemonNoirBis);
+            elementUIS.add(genrePokemonNoirBis);
+            int hpBarNoirBis = (int) ((DOUBLE_MAX_X_HP_BAR_NOIR_BIS - DOUBLE_MIN_X_HP_BAR_NOIR_BIS) * ((double) noir.getPokemonActifBis().getCurrentHp() / noir.getPokemonActifBis().getMaxHp())) + 1; // ?
+            if (noir.getPokemonActifBis().getCurrentHp() > 0 && hpBarNoirBis <= 0) {
+                hpBarNoirBis = 1;
+            }
+            RectangleUI hpNoirBis = new RectangleUI(DOUBLE_MIN_X_HP_BAR_NOIR_BIS, DOUBLE_MIN_Y_HP_BAR_NOIR_BIS, Color.GREEN, hpBarNoirBis, DOUBLE_MAX_Y_HP_BAR_NOIR_BIS - DOUBLE_MIN_Y_HP_BAR_NOIR_BIS);
+            elementUIS.add(hpNoirBis);
+
+            TextUI levelNoirBis = new TextUI(76, 31, "Lv." + noir.getPokemonActifBis().getLevel(), font, Color.BLACK);
+            elementUIS.add(levelNoirBis);
+
+            if (noir.getPokemonActifBis().isShiny()) {
+                elementUIS.add(new ImageUI(genrePokemonNoirBis.getX() + (int) (font.getStringBounds(genrePokemonNoirBis.getText(), frc).getWidth()) + 2, 21, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
+            }
+
+            BufferedImage backImage = ImageIO.read(new File(game.getFileManager().getFullPathToImage(background)));
+
+            imageCombat = game.getImageManager().composeImageCombat(backImage, elementUIS, LARGEUR, HAUTEUR);
         }
     }
 
@@ -1066,6 +1389,28 @@ public class Combat {
         StatutsTerrain statutsTerrain = StatutsTerrain.getStatutFromMeteo(meteo);
         if (statutsTerrain != null) {
             terrainBlanc.ajoutStatut(statutsTerrain, compteurToursMeteo);
+        }
+    }
+
+    public Duelliste getDuellisteAllie(Pokemon pokemon) {
+        if (blanc.estALui(pokemon)) {
+            return blanc;
+        } else if (noir.estALui(pokemon)) {
+            return noir;
+        } else {
+            logger.error("Le pokémon " + pokemon.getNomCompletPresentation() + " id " + pokemon.getId() + " n'a pas de propriétaire reconnu...");
+            throw new IllegalStateException("Le pokémon " + pokemon.getNomCompletPresentation() + " id " + pokemon.getId() + " n'a pas de propriétaire reconnu...");
+        }
+    }
+
+    public Duelliste getDuellisteAdverse(Pokemon pokemon) {
+        if (blanc.estALui(pokemon)) {
+            return noir;
+        } else if (noir.estALui(pokemon)) {
+            return blanc;
+        } else {
+            logger.error("Le pokémon " + pokemon.getNomCompletPresentation() + " id " + pokemon.getId() + " n'a pas de propriétaire reconnu...");
+            throw new IllegalStateException("Le pokémon " + pokemon.getNomCompletPresentation() + " id " + pokemon.getId() + " n'a pas de propriétaire reconnu...");
         }
     }
 
@@ -1171,5 +1516,46 @@ public class Combat {
 
     public void setPiecesEparpillees(int piecesEparpillees) {
         this.piecesEparpillees = piecesEparpillees;
+    }
+
+    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, Pokemon cible) {
+        //pas d'attaque si la cible est dead
+        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0) {
+            return false;
+        }
+        //pas d'attaque si la cible se protège
+        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().hasStatut(AlterationEtat.PROTECTION)) {
+            game.getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " se protège !").queue();
+            return false;
+        }
+
+        //en simulation, la précision est comptabilisée en ratio de dégats, alors qu'en vrai, c'est tout ou rien
+        //aussi, on ne prend en compte la précision que si l'attaque a une précision != null, sinon c'est qu'elle est inratable
+        int movePrecision = actionCombat.getAttaque().getMoveAPI().getAccuracy();
+        return false;//temp
+//        if (movePrecision != null) {
+//            //précision modifiée de THUNDER, BLIZZARD et HURRICANE en fonction de la météo
+//            if (computeWeatherEffects()) {
+//                if (selectedMove.equals(Moves.THUNDER) || selectedMove.equals(Moves.HURRICANE)) {
+//                    if (weather.equals(Weather.HARSH_SUNLIGHT)) {
+//                        movePrecision = 50;
+//                    } else if (weather.equals(Weather.RAIN)) {
+//                        movePrecision = 999;
+//                    }
+//                } else if (selectedMove.equals(Moves.BLIZZARD)) {
+//                    if (weather.equals(Weather.HAIL)) {
+//                        movePrecision = 999;
+//                    }
+//                }
+//            }
+//
+//            if (HeldItem.LAX_INCENSE.equals(targetPokemon.getHeldItem())) {
+//                movePrecision -= 10;
+//            }
+//
+//            return testPrecision(launcherPokemon, targetPokemon, selectedMove, simulation);
+//        }else{
+//            return true;
+//        }
     }
 }

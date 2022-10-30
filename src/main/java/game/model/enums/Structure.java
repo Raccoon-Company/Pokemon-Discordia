@@ -4,6 +4,7 @@ import game.Game;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.ImageManager;
+import utils.PropertiesManager;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -93,6 +94,6 @@ public enum Structure {
     }
 
     public String getBackground(ImageManager imageManager, String front) {
-        return imageManager.merge(background, front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
+        return imageManager.merge(background, PropertiesManager.getInstance().getImage(Meteo.NEUTRE.getFiltre()), front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
     }
 }

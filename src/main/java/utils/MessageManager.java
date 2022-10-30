@@ -3,6 +3,7 @@ package utils;
 import commands.CommandManager;
 import executable.MyBot;
 import game.Save;
+import game.model.enums.Dresseur;
 import game.model.enums.PNJ;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -62,16 +63,16 @@ public class MessageManager {
     }
 
     public void timeout(MessageChannelUnion channel, User user) {
-            bot.unlock(user);
-            channel.sendMessage("Délai de réponse dépassé ! Relancez la commande /start pour continuer").queue();
+        bot.unlock(user);
+        channel.sendMessage("Délai de réponse dépassé ! Relancez la commande /start pour continuer").queue();
     }
 
     public MessageCreateData createMessageThumbnail(Save save, PNJ pnj, String content, LayoutComponent lc) {
-        return createMessageThumbnailAndImage(save,pnj, content, lc, null);
+        return createMessageThumbnailAndImage(save, pnj, content, lc, null);
     }
 
     public MessageCreateData createMessageImage(Save save, String content, LayoutComponent lc, String image) {
-        return createMessageThumbnailAndImage(save,null, content, lc, image);
+        return createMessageThumbnailAndImage(save, null, content, lc, image);
     }
 
     public MessageCreateData createMessageThumbnailAndImage(Save save, PNJ pnj, String content, LayoutComponent lc, String image) {
@@ -81,7 +82,7 @@ public class MessageManager {
 
         List<FileUpload> files = new ArrayList<>();
 
-        if(pnj != null){
+        if (pnj != null) {
             embedBuilder.setAuthor(pnj.getNom(), null, "attachment://" + pnj.getIconPath());
             String thumbnailURL = fileManager.getFullPathToIcon(pnj.getIconPath());
             embedBuilder.setThumbnail("attachment://" + pnj.getIconPath());
@@ -110,5 +111,30 @@ public class MessageManager {
 
     public MessageCreateData createMessageData(MessageCreateBuilder mcb) {
         return mcb.build();
+    }
+
+    public MessageCreateData createMessageThumbnail(Save save, Dresseur dresseur, String texte) {
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(new Color(save.getColorRGB()))
+                .setDescription(texte);
+
+        List<FileUpload> files = new ArrayList<>();
+
+        embedBuilder.setAuthor(dresseur.getNom(), null, "attachment://" + dresseur.getIconPath());
+        String thumbnailURL = fileManager.getFullPathToIcon(dresseur.getIconPath());
+        embedBuilder.setThumbnail("attachment://" + dresseur.getIconPath());
+        File thumbnailFile = new File(thumbnailURL);
+        files.add(FileUpload.fromData(thumbnailFile, dresseur.getIconPath()));
+
+        MessageCreateBuilder mcb = new MessageCreateBuilder();
+        mcb.addFiles(files);
+
+        mcb.addEmbeds(embedBuilder.build());
+
+        return mcb.build();
+    }
+
+    public MessageCreateData createMessageThumbnail(Save save, Dresseur dresseur) {
+        return createMessageThumbnail(save, dresseur, dresseur.getTexteIntro());
     }
 }
