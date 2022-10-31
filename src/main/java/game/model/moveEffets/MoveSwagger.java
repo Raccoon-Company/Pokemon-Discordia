@@ -1,4 +1,4 @@
-package game.model.enums.moveEffets;
+package game.model.moveEffets;
 
 import game.Game;
 import game.model.ActionCombat;

@@ -1,5 +1,6 @@
 package game.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.oscar0812.pokeapi.models.locations.Location;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
@@ -14,7 +15,7 @@ import static game.model.enums.Regions.*;
 import static game.model.enums.ZoneTypes.*;
 
 public enum Zones {
-    BOURG_PALETTE(86, Meteo.NEUTRE, 0, Arrays.asList(2), VILLE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
+    BOURG_PALETTE(86, Meteo.PLUIE, 0, Arrays.asList(2,5), VILLE, Arrays.asList(PNJ.RAOULT), KANTO, "zones.bourg-palette", 80,50),
     ROUTE_1(88,  Meteo.TEMPETE_DE_SABLE, 0, Arrays.asList(),ROUTE, Arrays.asList(PNJ.ECOLIER), KANTO, "zones.route-1-kanto", 145,80 ),
     JADIELLE(154,  Meteo.GRELE, 0, Arrays.asList(3,4),VILLE, Arrays.asList(), KANTO, "zones.jadielle", 70,85),
     ROUTE_22(102,  Meteo.NEUTRE, 0, Arrays.asList(),ROUTE, Arrays.asList(), KANTO, "zones.route-22-kanto", 170,90),
@@ -117,9 +118,10 @@ public enum Zones {
     }
 
     public String getBackground(ImageManager imageManager, String front){
-        return imageManager.merge(background, PropertiesManager.getInstance().getImage(meteo.getFiltre()),front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
+        return imageManager.merge(background, PropertiesManager.getInstance().getImage(meteo.getFiltre()), true,front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
     }
 
+    @JsonIgnore
     public String getCombatBackground(){
         return "zones.combat." + background.split("\\.")[1];
     }

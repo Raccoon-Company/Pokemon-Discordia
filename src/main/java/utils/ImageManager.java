@@ -74,7 +74,7 @@ public class ImageManager {
         return "";
     }
 
-    public String merge(String imageBack, String meteo, String imageFront, int x, int y, int largeur, int hauteur) {
+    public String merge(String imageBack, String meteo, boolean meteoDevant, String imageFront, int x, int y, int largeur, int hauteur) {
         boolean drawMeteo = StringUtils.isNotEmpty(meteo);
         String pathBack = fileManager.getFullPathToImage(imageBack);
         String pathFront = fileManager.getFullPathToImage(imageFront);
@@ -86,7 +86,7 @@ public class ImageManager {
         try {
             background = ImageIO.read(new File(pathBack));
             overlay = ImageIO.read(new File(pathFront));
-            if(drawMeteo){
+            if (drawMeteo) {
                 overlayMeteo = ImageIO.read(new File(pathFrontMeteo));
             }
         } catch (
@@ -101,10 +101,13 @@ public class ImageManager {
         // paint both images, preserving the alpha channels
         Graphics g = combined.getGraphics();
         g.drawImage(background, 0, 0, null);
-        if(drawMeteo){
-            g.drawImage(overlayMeteo,0,0,null);
+        if (drawMeteo && !meteoDevant) {
+            g.drawImage(overlayMeteo, 0, 0, null);
         }
         g.drawImage(overlay, x, y, null);
+        if (drawMeteo && meteoDevant) {
+            g.drawImage(overlayMeteo, 0, 0, null);
+        }
 
         g.dispose();
 

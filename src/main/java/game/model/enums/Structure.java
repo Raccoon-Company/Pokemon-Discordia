@@ -1,5 +1,6 @@
 package game.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import game.Game;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,8 @@ import java.util.Collections;
 import java.util.List;
 
 public enum Structure {
-    CHAMBRE(1, "Ma chambre - 1er étage", "structures.chambre", 70, 40, Arrays.asList(), false),
+    CHAMBRE(1, "Ma chambre - 1er étage", "structures.chambre", 70, 40, Arrays.asList(PNJ.ORDINATEUR), false),
+    LABO(5,"Labo du Pr. Raoult", "structures.labo", 70,40,Arrays.asList(PNJ.RAOULT), true),
     MAISON_DEPART(2, "Chez moi - Rez de chaussée", "structures.maison-depart", 120, 24, Arrays.asList(PNJ.MOM), true),
     CENTRE_POKEMON(3, "Centre Pokémon", "structures.centre-pokemon", 90, 40, Arrays.asList(PNJ.INFIRMIERE), true),
     BOUTIQUE(4, "Boutique", "structures.boutique", 90, 40, Arrays.asList(PNJ.VENDEUSE), true),
@@ -57,6 +59,11 @@ public enum Structure {
         return Arrays.stream(values()).filter(s -> id == s.getId()).findAny().orElse(null);
     }
 
+    @JsonIgnore
+    public String getCombatBackground(){
+        return "structures.combat." + background.split("\\.")[1];
+    }
+
     public int getId() {
         return id;
     }
@@ -94,6 +101,6 @@ public enum Structure {
     }
 
     public String getBackground(ImageManager imageManager, String front) {
-        return imageManager.merge(background, PropertiesManager.getInstance().getImage(Meteo.NEUTRE.getFiltre()), front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
+        return imageManager.merge(background, PropertiesManager.getInstance().getImage(Meteo.NEUTRE.getFiltre()), true, front, x, y, Game.LARGEUR_FOND, Game.HAUTEUR_FOND);
     }
 }

@@ -5,7 +5,7 @@ import com.github.oscar0812.pokeapi.models.moves.MoveTarget;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
 import game.model.enums.*;
-import game.model.enums.moveEffets.*;
+import game.model.moveEffets.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -124,11 +124,14 @@ public class Combat {
 
     private void setUpBackground() {
         String bg = game.getSave().getCampaign().getCurrentZone().getCombatBackground();
+        if (game.getSave().getCampaign().getCurrentStructure() != null) {
+            bg = game.getSave().getCampaign().getCurrentStructure().getCombatBackground();
+        }
 
         if (typeCombat.equals(TypeCombat.DOUBLE)) {
-            this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg),PropertiesManager.getInstance().getImage(terrainBlanc.getMeteo().getFiltre()), PropertiesManager.getInstance().getImage("battle-double.ui"), 0, 0, LARGEUR, HAUTEUR);
+            this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg), PropertiesManager.getInstance().getImage(terrainBlanc.getMeteo().getFiltre()), false, PropertiesManager.getInstance().getImage("battle-double.ui"), 0, 0, LARGEUR, HAUTEUR);
         } else {
-            this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg),PropertiesManager.getInstance().getImage(terrainBlanc.getMeteo().getFiltre()) ,PropertiesManager.getInstance().getImage("battle.ui"), 0, 0, LARGEUR, HAUTEUR);
+            this.background = "temp/" + game.getImageManager().merge(PropertiesManager.getInstance().getImage(bg), PropertiesManager.getInstance().getImage(terrainBlanc.getMeteo().getFiltre()), false, PropertiesManager.getInstance().getImage("battle.ui"), 0, 0, LARGEUR, HAUTEUR);
         }
     }
 
@@ -138,10 +141,12 @@ public class Combat {
 
         blanc.getEquipe().forEach(p -> {
             p.setItemAutorise(true);
+            p.soinLegerCombat();
             p.setActionsCombat(new HashMap<>());
         });
         noir.getEquipe().forEach(p -> {
             p.setItemAutorise(true);
+            p.soinLegerCombat();
             p.setActionsCombat(new HashMap<>());
         });
 
@@ -707,16 +712,12 @@ public class Combat {
         }
 
         //TODO le pokémon adverse IA choisit ce qu'il fait
-        noir.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, new Attaque(1, 20, 20), TypeCibleCombat.RANDOM_OPPONENT, blanc.getPokemonActif()));
+        noir.getPokemonActif().getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, new Attaque(1, 20, 20), TypeCibleCombat.RANDOM_OPPONENT, noir.getPokemonActif(), blanc.getPokemonActif()));
 
         //attaque si sauvage
         //mais aussi eventuellement utiliser une potion ou changer de pokemon selon l'IA en face
 
         ordreDAction().forEach(this::effectuerAction);
-
-        //TODO suppr ca quand plus besoin
-        blanc.getPokemonActif().blesser(4, new SourceDegats(TypeSourceDegats.POKEMON, noir.getPokemonActif()));
-        noir.getPokemonActif().blesser(10, new SourceDegats(TypeSourceDegats.POKEMON, blanc.getPokemonActif()));
 
         effetsDeFinDeTour();
         turnCount++;
@@ -827,6 +828,8 @@ public class Combat {
                 return;
             }
         }
+
+        game.getChannel().sendMessage(lanceur.getNomPresentation() + " utilise " + APIUtils.getFrName(attaqueSelectionnee.getNames()) + " !").queue();
 
         switch (attaqueSelectionnee.getMeta().getCategory().getName()) {
             case "damage":
@@ -1239,7 +1242,7 @@ public class Combat {
             if (blanc.getPokemonActif().isShiny()) {
                 elementUIS.add(new ImageUI(genrePokemonBlanc.getX() + (int) (font.getStringBounds(genrePokemonBlanc.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
             }
-            if (noir.getPokemonActif().estEnVie() && !typeCombatResultat.equals(TypeCombatResultat.FUITE_ADVERSAIRE)) {
+            if (noir.getPokemonActif().estEnVie() && !typeCombatResultat.equals(TypeCombatResultat.FUITE_ADVERSAIRE) && !typeCombatResultat.equals(TypeCombatResultat.CAPTURE)) {
                 elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
             }
             TextUI nomPokemonNoir = new TextUI(16, 19, noir.getPokemonActif().getNomPresentation(), font, Color.BLACK);
@@ -1358,7 +1361,7 @@ public class Combat {
             TextUI genrePokemonNoirBis = new TextUI(3 + (int) (font.getStringBounds(nomPokemonNoirBis.getText(), frc).getWidth()), 31, " " + noir.getPokemonActifBis().getGender().getEmoji(), fontGender, noir.getPokemonActifBis().getGender().getColor());
             elementUIS.add(nomPokemonNoirBis);
             elementUIS.add(genrePokemonNoirBis);
-            int hpBarNoirBis = (int) ((DOUBLE_MAX_X_HP_BAR_NOIR_BIS - DOUBLE_MIN_X_HP_BAR_NOIR_BIS) * ((double) noir.getPokemonActifBis().getCurrentHp() / noir.getPokemonActifBis().getMaxHp())) + 1; // ?
+            int hpBarNoirBis = (int) ((DOUBLE_MAX_X_HP_BAR_NOIR_BIS - DOUBLE_MIN_X_HP_BAR_NOIR_BIS) * ((double) noir.getPokemonActifBis().getCurrentHp() / noir.getPokemonActifBis().getMaxHp())); // ?
             if (noir.getPokemonActifBis().getCurrentHp() > 0 && hpBarNoirBis <= 0) {
                 hpBarNoirBis = 1;
             }
@@ -1558,4 +1561,6 @@ public class Combat {
 //            return true;
 //        }
     }
+
+
 }

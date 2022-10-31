@@ -139,7 +139,7 @@ public class Game {
             buttons.add(Button.of(ButtonStyle.PRIMARY, "grass", "Hautes herbes", Emoji.fromFormatted("\uD83C\uDF3F")));
         }
         if ((currentStructure != null && currentStructure.getPnjs().size() > 0) || (currentStructure == null && currentZone.getPnjs().size() > 0)) {
-            buttons.add(Button.of(ButtonStyle.PRIMARY, "pnj", "Discuter", Emoji.fromFormatted("\uD83D\uDDE3")));
+            buttons.add(Button.of(ButtonStyle.PRIMARY, "pnj", "Interagir", Emoji.fromFormatted("\uD83D\uDDE3")));
         }
 //        Button.of(ButtonStyle.SUCCESS, "battle", "Combat de dresseur", Emoji.fromFormatted("\uD83D\uDCA5"));
 
@@ -147,23 +147,26 @@ public class Game {
         LayoutComponent lc = ActionRow.of(buttons);
 
         String background;
+        String filtreMeteo;
         String nom;
         int x;
         int y;
 
         if (currentStructure != null) {
             background = currentStructure.getBackground();
+            filtreMeteo = Meteo.NEUTRE.getFiltre();
             y = currentStructure.getY();
             x = currentStructure.getX();
             nom = currentStructure.getNom();
         } else {
             background = currentZone.getBackground();
+            filtreMeteo = currentZone.getMeteo().getFiltre();
             y = currentZone.getY();
             x = currentZone.getX();
             nom = currentZone.getNom();
         }
 
-        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), PropertiesManager.getInstance().getImage(save.getCampaign().getCurrentZone().getMeteo().getFiltre()), getPlayerSprite(), x, y, LARGEUR_FOND, HAUTEUR_FOND);
+        String combined = "temp/" + imageManager.merge(PropertiesManager.getInstance().getImage(background), PropertiesManager.getInstance().getImage(filtreMeteo),true, getPlayerSprite(), x, y, LARGEUR_FOND, HAUTEUR_FOND);
 
         bot.lock(user);
         channel.sendMessage(messageManager.createMessageImage(save, nom, lc, combined))
@@ -310,6 +313,7 @@ public class Game {
         channel.sendMessage(messageManager.createMessageImage(save, combat.getTypeCombatResultat().getDescription(), null, "temp/" + combat.getImageCombat())).queue();
         if (combat.getTypeCombatResultat().equals(TypeCombatResultat.DEFAITE)) {
             combat.getBlanc().getEquipe().forEach(Pokemon::soinComplet);
+            deplacementVersDernierCentrePokemon();
         }
         switch (combat.getNoir().getTypeDuelliste()) {
             case PNJ:
@@ -335,6 +339,15 @@ public class Game {
                 break;
         }
 
+    }
+
+    private void deplacementVersDernierCentrePokemon() {
+        getSave().getCampaign().setCurrentZone(getSave().getCampaign().getZoneCentrePokemon());
+        if(getSave().getCampaign().getZoneCentrePokemon().equals(Zones.BOURG_PALETTE)){
+            getSave().getCampaign().setCurrentStructure(Structure.CHAMBRE);
+        }else{
+            getSave().getCampaign().setCurrentStructure(Structure.CENTRE_POKEMON);
+        }
     }
 
     private void talkMenu() {
@@ -363,7 +376,6 @@ public class Game {
                                     e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
                                     //structure sélectionnée
                                     PNJ.getPNJById(e.getComponentId()).defaultTalk(this);
-                                    gameMenu();
                                 },
                                 1,
                                 TimeUnit.MINUTES,
@@ -731,6 +743,8 @@ public class Game {
                 Button.of(ButtonStyle.PRIMARY, "options", "Options", Emoji.fromFormatted("⚙")),
                 Button.of(ButtonStyle.PRIMARY, "back", "Retour", Emoji.fromFormatted("\uD83D\uDD19"))
         ));
+
+        //TODO ajouter carte et boussole(pour repérer l'empl. du prochain adversaire à battre)
 
         LayoutComponent lc = ActionRow.of(buttons);
 

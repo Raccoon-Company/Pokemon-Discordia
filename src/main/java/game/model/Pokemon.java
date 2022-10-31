@@ -31,10 +31,6 @@ public class Pokemon implements Serializable {
     private static final int MAX_FRIENDSHIP_VALUE = 255;
     public final static int BASE_FRIENDSHIP_VALUE = 70;
 
-    //%
-    @JsonIgnore
-    private final int critChance = 5;
-
     private long id;
 
     private Gender gender;
@@ -67,10 +63,8 @@ public class Pokemon implements Serializable {
 
     //valeurs de combat
     private int currentHp;
-
-    private int currentCritChance;
     @JsonIgnore
-    private double critChanceStage = 0;
+    private int critChanceStage = 0;
     private int hpIV;
     private int hpEV;
     @JsonIgnore
@@ -134,7 +128,7 @@ public class Pokemon implements Serializable {
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
         this.level = 0;
         this.xp = 0;
-        this.shiny = Utils.getRandom().nextInt(4096) == 1;
+        this.shiny = Utils.getRandom().nextInt(1) == 0;
         this.aPerduDeLaVieCeTour = false;
         this.aDejaAttaque = false;
         this.friendship = 0;
@@ -168,7 +162,6 @@ public class Pokemon implements Serializable {
 
         //talent random si disponible
 //        this.talent = species.getTalents().isEmpty() ? null : species.getTalents().get(Utils.getRandom().nextInt(species.getTalents().size()));
-        this.currentCritChance = critChance;
         this.currentAtkPhy = getMaxAtkPhy();
         this.currentDefPhy = getMaxDefPhy();
         this.currentAtkSpe = getMaxAtkSpe();
@@ -186,7 +179,7 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int currentCritChance, double critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean aPerduDeLaVieCeTour, boolean aDejaAttaque) {
+    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean aPerduDeLaVieCeTour, boolean aDejaAttaque, HashMap<Integer, ActionCombat> actionsCombat, boolean itemAutorise, List<PokemonMove> allMovesAPI, com.github.oscar0812.pokeapi.models.pokemon.Pokemon pokemonAPI, PokemonSpecies pokemonSpeciesAPI) {
         this.id = id;
         this.gender = gender;
         this.idSpecie = idSpecie;
@@ -203,7 +196,6 @@ public class Pokemon implements Serializable {
         this.type2 = type2;
         this.nature = nature;
         this.currentHp = currentHp;
-        this.currentCritChance = currentCritChance;
         this.critChanceStage = critChanceStage;
         this.hpIV = hpIV;
         this.hpEV = hpEV;
@@ -231,6 +223,11 @@ public class Pokemon implements Serializable {
         this.evasivenessStage = evasivenessStage;
         this.aPerduDeLaVieCeTour = aPerduDeLaVieCeTour;
         this.aDejaAttaque = aDejaAttaque;
+        this.actionsCombat = actionsCombat;
+        this.itemAutorise = itemAutorise;
+        this.allMovesAPI = allMovesAPI;
+        this.pokemonAPI = pokemonAPI;
+        this.pokemonSpeciesAPI = pokemonSpeciesAPI;
     }
 
     public PokemonSpecies getPokemonSpeciesAPI() {
@@ -627,10 +624,6 @@ public class Pokemon implements Serializable {
         this.idAbility = idAbility;
     }
 
-    public int getCritChance() {
-        return critChance;
-    }
-
     public boolean isShiny() {
         return shiny;
     }
@@ -687,21 +680,10 @@ public class Pokemon implements Serializable {
         this.currentHp = currentHp;
     }
 
-    public int getCurrentCritChance() {
-        return currentCritChance;
-    }
-
-    public void setCurrentCritChance(int currentCritChance) {
-        this.currentCritChance = currentCritChance;
-    }
-
-    public double getCritChanceStage() {
+    public int getCritChanceStage() {
         return critChanceStage;
     }
 
-    public void setCritChanceStage(double critChanceStage) {
-        this.critChanceStage = critChanceStage;
-    }
 
     public int getHpIV() {
         return hpIV;
@@ -1016,7 +998,6 @@ public class Pokemon implements Serializable {
         this.alterations.stream().filter(a -> a.getAlterationEtat().equals(AlterationEtat.POISON_GRAVE)).findAny().ifPresent(p -> {
             p.setToursRestants(1);
         });
-        this.currentCritChance = critChance;
         this.currentAtkPhy = getMaxAtkPhy();
         this.currentDefPhy = getMaxDefPhy();
         this.currentAtkSpe = getMaxAtkSpe();
@@ -1029,9 +1010,8 @@ public class Pokemon implements Serializable {
         this.alterations.removeIf(a -> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
         if (hasStatut(AlterationEtat.POISON_GRAVE)) {
             enleveStatut(AlterationEtat.POISON_GRAVE);
-            applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT),1, false);
+            applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), 1, false);
         }
-        this.currentCritChance = critChance;
         this.currentAtkPhy = getMaxAtkPhy();
         this.currentDefPhy = getMaxDefPhy();
         this.currentAtkSpe = getMaxAtkSpe();
@@ -1060,7 +1040,7 @@ public class Pokemon implements Serializable {
         }
 
         if (hasStatut(AlterationEtat.ANTISOIN)) {
-            game.getChannel().sendMessage(getNomPresentation()+" ne peut pas guérir !").queue();
+            game.getChannel().sendMessage(getNomPresentation() + " ne peut pas guérir !").queue();
             return 0;
         }
 
@@ -1082,16 +1062,16 @@ public class Pokemon implements Serializable {
 
     public void enleveAlterationsPerimees(Game game) {
         alterations.removeIf(a -> {
-            if(a.getToursRestants() <= 0){
+            if (a.getToursRestants() <= 0) {
                 //les altérations produisant des effets à la dissipation (compte à rebours) requiem etc
 
-                if(a.getAlterationEtat().equals(AlterationEtat.REQUIEM)){
-                    game.getChannel().sendMessage(getNomPresentation()+" tombe K.O. !").queue();
+                if (a.getAlterationEtat().equals(AlterationEtat.REQUIEM)) {
+                    game.getChannel().sendMessage(getNomPresentation() + " tombe K.O. !").queue();
                     setCurrentHp(0);
                 }
-                if(a.getAlterationEtat().equals(AlterationEtat.SOMNOLENCE)){
-                    game.getChannel().sendMessage(getNomPresentation()+" s'endort...").queue();
-                    applyStatus(AlterationEtat.SOMMEIL, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), Utils.getRandomNumber(1,3),false);
+                if (a.getAlterationEtat().equals(AlterationEtat.SOMNOLENCE)) {
+                    game.getChannel().sendMessage(getNomPresentation() + " s'endort...").queue();
+                    applyStatus(AlterationEtat.SOMMEIL, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), Utils.getRandomNumber(1, 3), false);
                 }
 
                 return true;
@@ -1111,8 +1091,8 @@ public class Pokemon implements Serializable {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().equals(alterationEtat));
     }
 
-    public AlterationInstance getAlterationInstance(AlterationEtat alterationEtat){
-       return alterations.stream().filter(a -> a.getAlterationEtat().equals(alterationEtat)).findAny().orElse(null);
+    public AlterationInstance getAlterationInstance(AlterationEtat alterationEtat) {
+        return alterations.stream().filter(a -> a.getAlterationEtat().equals(alterationEtat)).findAny().orElse(null);
 
     }
 
@@ -1120,7 +1100,7 @@ public class Pokemon implements Serializable {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
     }
 
-    public void applyStatus(AlterationEtat alterationEtat,SourceDegats source, int duree, boolean simulation) {
+    public void applyStatus(AlterationEtat alterationEtat, SourceDegats source, int duree, boolean simulation) {
 
         //altération déjà infligée
         if (hasStatut(alterationEtat)) {
@@ -1171,7 +1151,7 @@ public class Pokemon implements Serializable {
 //            return;
 //        }
 
-        alterations.add(new AlterationInstance(alterationEtat,source, duree));
+        alterations.add(new AlterationInstance(alterationEtat, source, duree));
 
 //        //DESTINY KNOT
 //        if (alterationEtat.equals(Status.INFATUATED) && HeldItem.DESTINY_KNOT.equals(getHeldItem())) {
@@ -1203,7 +1183,7 @@ public class Pokemon implements Serializable {
     public void choixSurnom(Game game, String origine) {
         game.getBot().lock(game.getUser());
         //demande d'entrée du prénom
-        game.getChannel().sendMessage(game.getMessageManager().createMessageThumbnail(game.getSave(), PNJ.SYSTEM, "Choix du surnom pour le " + getSpecieName() + ". Laissez vide pour passer.", null))
+        game.getChannel().sendMessage(game.getMessageManager().createMessageThumbnail(game.getSave(), PNJ.SYSTEM, "Choix du surnom pour le " + getSpecieName() + " (10 lettres max conseillé, à vos risques et périls sinon). Mettez un espace pour passer.", null))
                 .queue(message -> game.getBot().getEventWaiter().waitForEvent( // Setup Wait action once message was send
                                 MessageReceivedEvent.class,
                                 e -> game.getMessageManager().createPredicate(e, game.getSave()),
@@ -1211,17 +1191,22 @@ public class Pokemon implements Serializable {
                                 e -> {
                                     game.getBot().unlock(game.getUser());
                                     String choix = e.getMessage().getContentRaw();
-                                    this.surnom = StringUtils.isEmpty(choix) ? null : choix;
-                                    //en fonction d'où on vient, renvoie au bon endroit
-                                    switch (origine) {
-                                        case "mainmenu":
-                                            game.gameMenu();
-                                            break;
-                                        case "premiercombat":
-                                            game.combatDresseur();
-                                            break;
-                                        default:
-                                            game.gameMenu();
+                                    if (choix.length() > 32) {
+                                        game.getChannel().sendMessage("Trop long ! ("+choix.length()+")").queue();
+                                        choixSurnom(game, origine);
+                                    } else {
+                                        this.surnom = StringUtils.isEmpty(choix) ? null : choix;
+                                        //en fonction d'où on vient, renvoie au bon endroit
+                                        switch (origine) {
+                                            case "mainmenu":
+                                                game.gameMenu();
+                                                break;
+                                            case "premiercombat":
+                                                game.combatDresseur();
+                                                break;
+                                            default:
+                                                game.gameMenu();
+                                        }
                                     }
                                 },
                                 1, TimeUnit.MINUTES,
@@ -1232,5 +1217,62 @@ public class Pokemon implements Serializable {
 
     public boolean estEnVie() {
         return currentHp > 0;
+    }
+
+    public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat) {
+
+        //crit
+        int critRate = getCritChanceStage() + critChanceStage;
+        int denominateur;
+        if (critRate == 1) {
+            denominateur = 8;
+        } else if (critRate == 2) {
+            denominateur = 2;
+        } else if (critRate == 0) {
+            denominateur = 24;
+        } else {
+            denominateur = 1;
+        }
+        boolean crit = Utils.getRandomNumber(1, denominateur) == 1;
+
+        Move move = actionCombat.getAttaque().getMoveAPI();
+        Pokemon lanceur = actionCombat.getLanceur();
+        int attaque = (move.getDamageClass().getId() == 2 ? lanceur.getCurrentAtkPhy() : lanceur.getCurrentAtkSpe());
+        if (crit) {
+            attaque = Math.max((move.getDamageClass().getId() == 2 ? lanceur.getCurrentAtkPhy() : lanceur.getCurrentAtkSpe()), (move.getDamageClass().getId() == 2 ? lanceur.getMaxAtkPhy() : lanceur.getMaxAtkSpe()));
+        }
+        int def = (move.getDamageClass().getId() == 2 ? getCurrentDefPhy() : getCurrentDefSpe());
+        if (crit) {
+            def = Math.min((move.getDamageClass().getId() == 2 ? getCurrentDefPhy() : getCurrentDefSpe()), (move.getDamageClass().getId() == 2 ? getCurrentDefPhy() : getCurrentDefSpe()));
+        }
+        double pointsDeViePerdusPart1 = (Math.floor(Math.floor(lanceur.getLevel() * 0.4) + 2) * attaque * move.getPower());
+        double pointsDeViePerdusPart2 = def * 50;
+        double pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart1 / pointsDeViePerdusPart2) + 2;
+
+        //ratio type
+        if (move.getType() != null) {
+            pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 * Type.getById(move.getType().getId()).pourcentageDegatsAttaque(getPokemonAPI().getTypes()) / 100);
+        }
+
+        //STAB
+        if (getPokemonAPI().getTypes().stream().map(PokemonType::getType).collect(Collectors.toList()).contains(move.getType())) {
+            pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 * 1.5);
+        }
+
+        if (crit) {
+            //TODO talent sniper
+            combat.getGame().getChannel().sendMessage("Coup critique !").queue();
+            pointsDeViePerdusPart3 = pointsDeViePerdusPart3 * BASE_CRIT_MODIFIER;
+        }
+
+        //todo talent
+        //todo climat
+        //todo objets tenus
+
+        int random = Utils.getRandomNumber(85, 100);
+
+        pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 * random / 100);
+
+        return (int) pointsDeViePerdusPart3;
     }
 }

@@ -1,0 +1,400 @@
+1 : pound : Écras’Face : damage
+2 : karate-chop : Poing Karaté : damage
+3 : double-slap : Torgnoles : damage
+4 : comet-punch : Poing Comète : damage
+5 : mega-punch : Ultimapoing : damage
+6 : pay-day : Jackpot : damage
+7 : fire-punch : Poing Feu : damage+ailment
+8 : ice-punch : Poing Glace : damage+ailment
+9 : thunder-punch : Poing Éclair : damage+ailment
+10 : scratch : Griffe : damage
+11 : vice-grip : Force Poigne : damage
+12 : guillotine : Guillotine : ohko
+13 : razor-wind : Coupe-Vent : damage
+14 : swords-dance : Danse Lames : net-good-stats
+15 : cut : Coupe : damage
+16 : gust : Tornade : damage
+17 : wing-attack : Cru-Ailes : damage
+18 : whirlwind : Cyclone : force-switch
+19 : fly : Vol : damage
+20 : bind : Étreinte : damage+ailment
+21 : slam : Souplesse : damage
+22 : vine-whip : Fouet Lianes : damage
+23 : stomp : Écrasement : damage
+24 : double-kick : Double Pied : damage
+25 : mega-kick : Ultimawashi : damage
+26 : jump-kick : Pied Sauté : damage
+27 : rolling-kick : Mawashi Geri : damage
+28 : sand-attack : Jet de Sable : net-good-stats
+29 : headbutt : Coup d’Boule : damage
+30 : horn-attack : Koud’Korne : damage
+31 : fury-attack : Furie : damage
+32 : horn-drill : Empal’Korne : ohko
+33 : tackle : Charge : damage
+34 : body-slam : Plaquage : damage+ailment
+35 : wrap : Ligotage : damage+ailment
+36 : take-down : Bélier : damage
+37 : thrash : Mania : damage
+38 : double-edge : Damoclès : damage
+39 : tail-whip : Mimi-Queue : net-good-stats
+40 : poison-sting : Dard-Venin : damage+ailment
+41 : twineedle : Double Dard : damage+ailment
+42 : pin-missile : Dard-Nuée : damage
+43 : leer : Groz’Yeux : net-good-stats
+44 : bite : Morsure : damage
+45 : growl : Rugissement : net-good-stats
+46 : roar : Hurlement : force-switch
+47 : sing : Berceuse : ailment
+48 : supersonic : Ultrason : ailment
+49 : sonic-boom : Sonic Boom : damage
+50 : disable : Entrave : unique
+51 : acid : Acide : damage+lower
+52 : ember : Flammèche : damage+ailment
+53 : flamethrower : Lance-Flammes : damage+ailment
+54 : mist : Brume : field-effect
+55 : water-gun : Pistolet à O : damage
+56 : hydro-pump : Hydrocanon : damage
+57 : surf : Surf : damage
+58 : ice-beam : Laser Glace : damage+ailment
+59 : blizzard : Blizzard : damage+ailment
+60 : psybeam : Rafale Psy : damage+ailment
+61 : bubble-beam : Bulles d’O : damage+lower
+62 : aurora-beam : Onde Boréale : damage+lower
+63 : hyper-beam : Ultralaser : damage
+64 : peck : Picpic : damage
+65 : drill-peck : Bec Vrille : damage
+66 : submission : Sacrifice : damage
+67 : low-kick : Balayage : damage
+68 : counter : Riposte : damage
+69 : seismic-toss : Frappe Atlas : damage
+70 : strength : Force : damage
+71 : absorb : Vole-Vie : damage+heal
+72 : mega-drain : Méga-Sangsue : damage+heal
+73 : leech-seed : Vampigraine : ailment
+74 : growth : Croissance : net-good-stats
+75 : razor-leaf : Tranch’Herbe : damage
+76 : solar-beam : Lance-Soleil : damage
+77 : poison-powder : Poudre Toxik : ailment
+78 : stun-spore : Para-Spore : ailment
+79 : sleep-powder : Poudre Dodo : ailment
+80 : petal-dance : Danse Fleurs : damage
+81 : string-shot : Sécrétion : net-good-stats
+82 : dragon-rage : Draco-Rage : damage
+83 : fire-spin : Danse Flammes : damage+ailment
+84 : thunder-shock : Éclair : damage+ailment
+85 : thunderbolt : Tonnerre : damage+ailment
+86 : thunder-wave : Cage Éclair : ailment
+87 : thunder : Fatal-Foudre : damage+ailment
+88 : rock-throw : Jet-Pierres : damage
+89 : earthquake : Séisme : damage
+90 : fissure : Abîme : ohko
+91 : dig : Tunnel : damage
+92 : toxic : Toxik : ailment
+93 : confusion : Choc Mental : damage+ailment
+94 : psychic : Psyko : damage+lower
+95 : hypnosis : Hypnose : ailment
+96 : meditate : Yoga : net-good-stats
+97 : agility : Hâte : net-good-stats
+98 : quick-attack : Vive-Attaque : damage
+99 : rage : Frénésie : damage
+100 : teleport : Téléport : unique
+101 : night-shade : Ombre Nocturne : damage
+102 : mimic : Copie : unique
+103 : screech : Grincement : net-good-stats
+104 : double-team : Reflet : net-good-stats
+105 : recover : Soin : heal
+106 : harden : Armure : net-good-stats
+107 : minimize : Lilliput : net-good-stats
+108 : smokescreen : Brouillard : net-good-stats
+109 : confuse-ray : Onde Folie : ailment
+110 : withdraw : Repli : net-good-stats
+111 : defense-curl : Boul’Armure : net-good-stats
+112 : barrier : Bouclier : net-good-stats
+113 : light-screen : Mur Lumière : field-effect
+114 : haze : Buée Noire : whole-field-effect
+115 : reflect : Protection : field-effect
+116 : focus-energy : Puissance : unique
+117 : bide : Patience : damage
+118 : metronome : Métronome : unique
+119 : mirror-move : Mimique : unique
+120 : self-destruct : Destruction : damage
+121 : egg-bomb : Bombe Œuf : damage
+122 : lick : Léchouille : damage+ailment
+123 : smog : Purédpois : damage+ailment
+124 : sludge : Détritus : damage+ailment
+125 : bone-club : Massd’Os : damage
+126 : fire-blast : Déflagration : damage+ailment
+127 : waterfall : Cascade : damage
+128 : clamp : Claquoir : damage+ailment
+129 : swift : Météores : damage
+130 : skull-bash : Coud’Krâne : damage
+131 : spike-cannon : Picanon : damage
+132 : constrict : Constriction : damage+lower
+133 : amnesia : Amnésie : net-good-stats
+134 : kinesis : Télékinésie : net-good-stats
+135 : soft-boiled : E-Coque : heal
+136 : high-jump-kick : Pied Voltige : damage
+137 : glare : Regard Médusant : ailment
+138 : dream-eater : Dévorêve : damage+heal
+139 : poison-gas : Gaz Toxik : ailment
+140 : barrage : Pilonnage : damage
+141 : leech-life : Vampirisme : damage+heal
+142 : lovely-kiss : Grobisou : ailment
+143 : sky-attack : Piqué : damage
+144 : transform : Morphing : unique
+145 : bubble : Écume : damage+lower
+146 : dizzy-punch : Uppercut : damage+ailment
+147 : spore : Spore : ailment
+148 : flash : Flash : net-good-stats
+149 : psywave : Vague Psy : damage
+150 : splash : Trempette : unique
+151 : acid-armor : Acidarmure : net-good-stats
+152 : crabhammer : Pince-Masse : damage
+153 : explosion : Explosion : damage
+154 : fury-swipes : Combo-Griffe : damage
+155 : bonemerang : Osmerang : damage
+156 : rest : Repos : unique
+157 : rock-slide : Éboulement : damage
+158 : hyper-fang : Croc de Mort : damage
+159 : sharpen : Affûtage : net-good-stats
+160 : conversion : Conversion : unique
+161 : tri-attack : Triplattaque : damage+ailment
+162 : super-fang : Croc Fatal : damage
+163 : slash : Tranche : damage
+164 : substitute : Clonage : unique
+165 : struggle : Lutte : damage
+166 : sketch : Gribouille : unique
+167 : triple-kick : Triple Pied : damage
+168 : thief : Larcin : damage
+169 : spider-web : Toile : unique
+170 : mind-reader : Lire-Esprit : unique
+171 : nightmare : Cauchemar : ailment
+172 : flame-wheel : Roue de Feu : damage+ailment
+173 : snore : Ronflement : damage
+174 : curse : Malédiction : unique
+175 : flail : Gigotage : damage
+176 : conversion-2 : Conversion 2 : unique
+177 : aeroblast : Aéroblast : damage
+178 : cotton-spore : Spore Coton : net-good-stats
+179 : reversal : Contre : damage
+180 : spite : Dépit : unique
+181 : powder-snow : Poudreuse : damage+ailment
+182 : protect : Abri : unique
+183 : mach-punch : Mach Punch : damage
+184 : scary-face : Grimace : net-good-stats
+185 : feint-attack : Feinte : damage
+186 : sweet-kiss : Doux Baiser : ailment
+187 : belly-drum : Cognobidon : unique
+188 : sludge-bomb : Bombe Beurk : damage+ailment
+189 : mud-slap : Coud’Boue : damage+lower
+190 : octazooka : Octazooka : damage+lower
+191 : spikes : Picots : field-effect
+192 : zap-cannon : Élecanon : damage+ailment
+193 : foresight : Clairvoyance : ailment
+194 : destiny-bond : Lien du Destin : unique
+195 : perish-song : Requiem : ailment
+196 : icy-wind : Vent Glace : damage+lower
+197 : detect : Détection : unique
+198 : bone-rush : Charge Os : damage
+199 : lock-on : Verrouillage : unique
+200 : outrage : Colère : damage
+201 : sandstorm : Tempête de Sable : whole-field-effect
+202 : giga-drain : Giga-Sangsue : damage+heal
+203 : endure : Ténacité : unique
+204 : charm : Charme : net-good-stats
+205 : rollout : Roulade : damage
+206 : false-swipe : Faux-Chage : damage
+207 : swagger : Vantardise : swagger
+208 : milk-drink : Lait à Boire : heal
+209 : spark : Étincelle : damage+ailment
+210 : fury-cutter : Taillade : damage
+211 : steel-wing : Ailes d’Acier : damage+raise
+212 : mean-look : Regard Noir : unique
+213 : attract : Attraction : ailment
+214 : sleep-talk : Blabla Dodo : unique
+215 : heal-bell : Glas de Soin : unique
+216 : return : Retour : damage
+217 : present : Cadeau : damage
+218 : frustration : Frustration : damage
+219 : safeguard : Rune Protect : field-effect
+220 : pain-split : Balance : unique
+221 : sacred-fire : Feu Sacré : damage+ailment
+222 : magnitude : Ampleur : damage
+223 : dynamic-punch : Dynamo-Poing : damage+ailment
+224 : megahorn : Mégacorne : damage
+225 : dragon-breath : Draco-Souffle : damage+ailment
+226 : baton-pass : Relais : unique
+227 : encore : Encore : unique
+228 : pursuit : Poursuite : damage
+229 : rapid-spin : Tour Rapide : damage+raise
+230 : sweet-scent : Doux Parfum : net-good-stats
+231 : iron-tail : Queue de Fer : damage+lower
+232 : metal-claw : Griffe Acier : damage+raise
+233 : vital-throw : Corps Perdu : damage
+234 : morning-sun : Aurore : heal
+235 : synthesis : Synthèse : heal
+236 : moonlight : Rayon Lune : heal
+237 : hidden-power : Puissance Cachée : damage
+238 : cross-chop : Coup Croix : damage
+239 : twister : Ouragan : damage
+240 : rain-dance : Danse Pluie : whole-field-effect
+241 : sunny-day : Zénith : whole-field-effect
+242 : crunch : Mâchouille : damage+lower
+243 : mirror-coat : Voile Miroir : damage
+244 : psych-up : Boost : unique
+245 : extreme-speed : Vitesse Extrême : damage
+246 : ancient-power : Pouvoir Antique : damage+raise
+247 : shadow-ball : Ball’Ombre : damage+lower
+248 : future-sight : Prescience : unique
+249 : rock-smash : Éclate-Roc : damage+lower
+250 : whirlpool : Siphon : damage+ailment
+251 : beat-up : Baston : damage
+252 : fake-out : Bluff : damage
+253 : uproar : Brouhaha : damage
+254 : stockpile : Stockage : unique
+255 : spit-up : Relâche : damage
+256 : swallow : Avale : heal
+257 : heat-wave : Canicule : damage+ailment
+258 : hail : Grêle : whole-field-effect
+259 : torment : Tourmente : ailment
+260 : flatter : Flatterie : swagger
+261 : will-o-wisp : Feu Follet : ailment
+262 : memento : Souvenir : unique
+263 : facade : Façade : damage
+264 : focus-punch : Mitra-Poing : damage
+265 : smelling-salts : Stimulant : damage
+266 : follow-me : Par Ici : unique
+267 : nature-power : Force Nature : unique
+268 : charge : Chargeur : net-good-stats
+269 : taunt : Provoc : unique
+270 : helping-hand : Coup d’Main : unique
+271 : trick : Tour de Magie : unique
+272 : role-play : Imitation : unique
+273 : wish : Vœu : unique
+274 : assist : Assistance : unique
+275 : ingrain : Racines : ailment
+276 : superpower : Surpuissance : damage+raise
+277 : magic-coat : Reflet Magik : unique
+278 : recycle : Recyclage : unique
+279 : revenge : Vendetta : damage
+280 : brick-break : Casse-Brique : damage
+281 : yawn : Bâillement : ailment
+282 : knock-off : Sabotage : damage
+283 : endeavor : Effort : damage
+284 : eruption : Éruption : damage
+285 : skill-swap : Échange : unique
+286 : imprison : Possessif : unique
+287 : refresh : Régénération : unique
+288 : grudge : Rancune : unique
+289 : snatch : Saisie : unique
+290 : secret-power : Force Cachée : damage
+291 : dive : Plongée : damage
+292 : arm-thrust : Cogne : damage
+293 : camouflage : Camouflage : unique
+294 : tail-glow : Lumi-Queue : net-good-stats
+295 : luster-purge : Lumi-Éclat : damage+lower
+296 : mist-ball : Ball’Brume : damage+lower
+297 : feather-dance : Danse Plumes : net-good-stats
+298 : teeter-dance : Danse Folle : ailment
+299 : blaze-kick : Pied Brûleur : damage+ailment
+300 : mud-sport : Lance-Boue : whole-field-effect
+301 : ice-ball : Ball’Glace : damage
+302 : needle-arm : Poing Dard : damage
+303 : slack-off : Paresse : heal
+304 : hyper-voice : Mégaphone : damage
+305 : poison-fang : Crochet Venin : damage+ailment
+306 : crush-claw : Éclate Griffe : damage+lower
+307 : blast-burn : Rafale Feu : damage
+308 : hydro-cannon : Hydroblast : damage
+309 : meteor-mash : Poing Météore : damage+raise
+310 : astonish : Étonnement : damage
+311 : weather-ball : Ball’Météo : damage
+312 : aromatherapy : Aromathérapie : unique
+313 : fake-tears : Croco Larme : net-good-stats
+314 : air-cutter : Tranch’Air : damage
+315 : overheat : Surchauffe : damage+raise
+316 : odor-sleuth : Flair : ailment
+317 : rock-tomb : Tomberoche : damage+lower
+318 : silver-wind : Vent Argenté : damage+raise
+319 : metal-sound : Strido-Son : net-good-stats
+320 : grass-whistle : Siffl’Herbe : ailment
+321 : tickle : Chatouille : net-good-stats
+322 : cosmic-power : Force Cosmique : net-good-stats
+323 : water-spout : Giclédo : damage
+324 : signal-beam : Rayon Signal : damage+ailment
+325 : shadow-punch : Poing Ombre : damage
+326 : extrasensory : Extrasenseur : damage
+327 : sky-uppercut : Stratopercut : damage
+328 : sand-tomb : Tourbi-Sable : damage+ailment
+329 : sheer-cold : Glaciation : ohko
+330 : muddy-water : Ocroupi : damage+lower
+331 : bullet-seed : Balle Graine : damage
+332 : aerial-ace : Aéropique : damage
+333 : icicle-spear : Stalactite : damage
+334 : iron-defense : Mur de Fer : net-good-stats
+335 : block : Barrage : unique
+336 : howl : Grondement : net-good-stats
+337 : dragon-claw : Draco-Griffe : damage
+338 : frenzy-plant : Végé-Attaque : damage
+339 : bulk-up : Gonflette : net-good-stats
+340 : bounce : Rebond : damage+ailment
+341 : mud-shot : Tir de Boue : damage+lower
+342 : poison-tail : Queue-Poison : damage+ailment
+343 : covet : Implore : damage
+344 : volt-tackle : Électacle : damage+ailment
+345 : magical-leaf : Feuille Magik : damage
+346 : water-sport : Tourniquet : whole-field-effect
+347 : calm-mind : Plénitude : net-good-stats
+348 : leaf-blade : Lame Feuille : damage
+349 : dragon-dance : Danse Draco : net-good-stats
+350 : rock-blast : Boule Roc : damage
+351 : shock-wave : Onde de Choc : damage
+352 : water-pulse : Vibraqua : damage+ailment
+353 : doom-desire : Vœu Destructeur : unique
+354 : psycho-boost : Psycho-Boost : damage+raise
+355 : roost : Atterrissage : heal
+356 : gravity : Gravité : whole-field-effect
+357 : miracle-eye : Œil Miracle : ailment
+358 : wake-up-slap : Réveil Forcé : damage
+359 : hammer-arm : Marto-Poing : damage+raise
+360 : gyro-ball : Gyroballe : damage
+361 : healing-wish : Vœu Soin : unique
+362 : brine : Saumure : damage
+363 : natural-gift : Don Naturel : damage
+364 : feint : Ruse : damage
+365 : pluck : Picore : damage
+366 : tailwind : Vent Arrière : field-effect
+367 : acupressure : Acupression : unique
+368 : metal-burst : Fulmifer : damage
+369 : u-turn : Demi-Tour : damage
+370 : close-combat : Close Combat : damage+raise
+371 : payback : Représailles : damage
+372 : assurance : Assurance : damage
+373 : embargo : Embargo : ailment
+374 : fling : Dégommage : damage
+375 : psycho-shift : Échange Psy : unique
+376 : trump-card : Atout : damage
+377 : heal-block : Anti-Soin : ailment
+378 : wring-out : Essorage : damage
+379 : power-trick : Astuce Force : unique
+380 : gastro-acid : Suc Digestif : unique
+381 : lucky-chant : Air Veinard : field-effect
+382 : me-first : Moi d’Abord : damage
+383 : copycat : Photocopie : unique
+384 : power-swap : Permuforce : unique
+385 : guard-swap : Permugarde : unique
+386 : punishment : Punition : damage
+387 : last-resort : Dernier Recours : damage
+388 : worry-seed : Soucigraine : unique
+389 : sucker-punch : Coup Bas : damage
+390 : toxic-spikes : Pics Toxik : field-effect
+391 : heart-swap : Permucœur : unique
+392 : aqua-ring : Anneau Hydro : unique
+393 : magnet-rise : Vol Magnétik : unique
+394 : flare-blitz : Boutefeu : damage+ailment
+395 : force-palm : Forte-Paume : damage+ailment
+396 : aura-sphere : Aurasphère : damage
+397 : rock-polish : Poliroche : net-good-stats
+398 : poison-jab : Direct Toxik : damage+ailment
+399 : dark-pulse : Vibrobscur : damage
+400 : night-slash : Tranche-Nuit : damage

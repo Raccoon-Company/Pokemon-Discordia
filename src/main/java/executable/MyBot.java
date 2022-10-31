@@ -2,6 +2,7 @@ package executable;
 
 import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.moves.MoveCategory;
+import com.github.oscar0812.pokeapi.models.utility.NamedAPIResource;
 import com.github.oscar0812.pokeapi.utils.Client;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import game.Launcher;
@@ -19,6 +20,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.APIUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -74,15 +76,9 @@ public class MyBot {
                 GatewayIntent.GUILD_MESSAGE_REACTIONS,
                 GatewayIntent.GUILD_MEMBERS);
 
-//        List<String> used = new ArrayList<>();
-//        for (Move move : Client.getMoveCategoryById(0).getMoves()) {
-//           Move m = Client.getMoveByName(move.getName());
-//            if(!used.contains(m.getTarget().getName())){
-//                used.add(m.getTarget().getName());
-//                if(m.getTarget().getId()== TypeCibleCombat.SPECIFIC_MOVE.getIdApi() ||m.getTarget().getId()== TypeCibleCombat.USER.getIdApi() ||m.getTarget().getId()== TypeCibleCombat.SELECTED_POKEMON_ME_FIRST.getIdApi()){
-//                    System.out.println(m.getName() +" -> "+m.getTarget().getName());
-//                }
-//            }
+//        for (NamedAPIResource result : Client.getMoveList(400, 0).getResults()) {
+//            Move m = Client.getMoveByName(result.getName());
+//            System.out.println(m.getId() + " : "+m.getName() +" : "+ APIUtils.getFrName(m.getNames())+ " : "+m.getMeta().getCategory().getName());
 //        }
 
         this.jda = builder.build();

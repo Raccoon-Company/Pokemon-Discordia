@@ -7,10 +7,10 @@ import java.util.List;
 
 public enum Dresseur {
     RIVAL_0(0, "Rival", NiveauIA.RANDOM, new ArrayList<>(),
-            "J'ai toujours rêvé de faire ça !",
+            "Moi aussi j'ai eu un pokémon !!",
             "WOAAA C'ETAIT INCROYABLE !",
             "rival.png",
-            Zones.BOURG_PALETTE,Structure.CHAMBRE, TypeCombat.SIMPLE),
+            Zones.BOURG_PALETTE,Structure.LABO, TypeCombat.SIMPLE),
 
     TEST(1, "TEST", NiveauIA.RANDOM, Arrays.asList(new SimpleEntry<>(1, 3), new SimpleEntry<>(151, 2)),
             "J'ai capturé un pokémon super rare !",

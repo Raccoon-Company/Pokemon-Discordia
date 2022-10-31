@@ -39,6 +39,8 @@ public class Campaign implements Serializable {
     private int progress;
     private Zones currentZone;
 
+    private Zones zoneCentrePokemon;
+
     @Nullable
     private Structure currentStructure;
     private Meteo currentMeteo;
@@ -52,13 +54,14 @@ public class Campaign implements Serializable {
         this.pokedollars = ARGENT_DEPART;
         this.nomRival = nomRival;
         this.currentZone = Zones.BOURG_PALETTE;
-        this.currentStructure = Structure.CHAMBRE;
+        this.currentStructure = Structure.LABO;
         this.idStarter = idStarter;
         this.reserve = new ArrayList<>();
         this.equipe = new ArrayList<>();
         this.progress = 0;
         this.pokedex = new Pokedex();
         this.pokedex.captured(idStarter);
+        this.zoneCentrePokemon = Zones.BOURG_PALETTE;
         this.inventaire = new Inventaire();
         inventaire.ajoutItem(Item.POKEBALL, 10);
         inventaire.ajoutItem(Item.POTION,2);
@@ -172,6 +175,14 @@ public class Campaign implements Serializable {
 
     public void setCurrentStructure(@Nullable Structure currentStructure) {
         this.currentStructure = currentStructure;
+    }
+
+    public Zones getZoneCentrePokemon() {
+        return zoneCentrePokemon;
+    }
+
+    public void setZoneCentrePokemon(Zones zoneCentrePokemon) {
+        this.zoneCentrePokemon = zoneCentrePokemon;
     }
 
     public Pokemon getTeamPokemonById(long id) {

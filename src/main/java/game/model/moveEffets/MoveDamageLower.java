@@ -1,11 +1,11 @@
-package game.model.enums.moveEffets;
+package game.model.moveEffets;
 
 import game.Game;
 import game.model.ActionCombat;
 import game.model.Combat;
 import game.model.enums.TypeActionCombat;
 
-public class MoveDamageHeal {
+public class MoveDamageLower {
     public static void utiliser(Combat combat, ActionCombat actionCombat) {
         if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;

@@ -2,6 +2,7 @@ package game.model.enums;
 
 import game.Game;
 import game.model.Pokemon;
+import game.model.SessionPC;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 
 import java.util.Arrays;
@@ -13,7 +14,7 @@ public enum PNJ {
     ECOLIER(4, "Écolier Timothée", "kid.png", "\uD83E\uDDD2\uD83C\uDFFC"),
     INFIRMIERE(5, "Infirmière Joëlle", "infirmiere.jpg", "\uD83D\uDC69\uD83C\uDFFC\u200D⚕️"),
     VENDEUSE(6, "Vendeuse", "vendeuse.png", "👩🏼"),
-    ;
+    ORDINATEUR(7, "Ordinateur", "ordi.jpg", "\uD83D\uDDA5");
 
     private final int id;
     //nom du pnj
@@ -60,8 +61,11 @@ public enum PNJ {
         switch (this) {
             case SYSTEM:
                 break;
+            case ORDINATEUR:
+                message = "Ouverture de la session...";
+                break;
             case RAOULT:
-                message = "Allez "+game.getSave().getCampaign().getNom()+", au boulot ! Montre moi que je ne t'ai pas filé ce pokémon pour rien !";
+                message = "Allez " + game.getSave().getCampaign().getNom() + ", au boulot ! Montre moi que je ne t'ai pas filé ce pokémon pour rien !";
                 break;
             case MOM:
                 message = "Bonjour mon lapin ! Fais attention aux rattatas sur la route !";
@@ -83,13 +87,30 @@ public enum PNJ {
 
         //suite éventuelle pour certains PNJs
         switch (this) {
+            case ORDINATEUR:
+                new SessionPC(game).ouvrir();
+                game.gameMenu();
+                break;
             case INFIRMIERE:
-                game.getSave().getCampaign().getEquipe().forEach(Pokemon::soinComplet);
                 message = "Et voilà, vos pokémons sont complètements soignés ! À bientôt !";
+                game.getSave().getCampaign().getEquipe().forEach(Pokemon::soinComplet);
                 game.getChannel().sendMessage(
                         game.getMessageManager().createMessageThumbnail(game.getSave(), this, message, lc)
                 ).queue();
+                game.getSave().getCampaign().setZoneCentrePokemon(game.getSave().getCampaign().getCurrentZone());
+                game.gameMenu();
                 break;
+            case MOM:
+                message = "J'en profite pour m'occuper de tes petits pokémons ! Ils sont en pleine forme maintenant !";
+                game.getSave().getCampaign().getEquipe().forEach(Pokemon::soinComplet);
+                game.getChannel().sendMessage(
+                        game.getMessageManager().createMessageThumbnail(game.getSave(), this, message, lc)
+                ).queue();
+                game.getSave().getCampaign().setZoneCentrePokemon(Zones.BOURG_PALETTE);
+                game.gameMenu();
+                break;
+            default:
+                game.gameMenu();
         }
     }
 }

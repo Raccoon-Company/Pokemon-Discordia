@@ -49,6 +49,9 @@ public enum StatutsTerrain {
     }
 
     public static StatutsTerrain getStatutFromMeteo(Meteo meteo) {
+        if(meteo == null){
+            return null;
+        }
         switch (meteo){
             case FORT_SOLEIL:
                 return SUNNY_DAY;

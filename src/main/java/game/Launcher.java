@@ -163,8 +163,12 @@ public class Launcher extends ListenerAdapter {
         MessageChannelUnion channel = discordManager.getChannelById(save.getPrivilegedChannelId());
         User user = discordManager.getUserById(save.getUserId());
 
-        profIntro(channel, user, save);
-
+//        profIntro(channel, user, save);
+save.getCampaign().setGender(true);
+save.getCampaign().setNom("placeholder");
+save.getCampaign().setNomRival("ph2");
+save.getCampaign().setIdStarter(7);
+validationSave(save, channel);
     }
 
 
