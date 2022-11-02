@@ -1,14 +1,17 @@
 package game.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import game.Game;
 import game.Save;
 import game.model.enums.*;
+import org.apache.commons.lang.SerializationUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Duelliste {
+public class Duelliste implements Serializable {
 
     private long id;
 
@@ -75,6 +78,11 @@ public class Duelliste {
         if (dresseur.getTypeCombat().equals(TypeCombat.DOUBLE)) {
             this.pokemonActifBis = equipe.stream().filter(a -> a.estEnVie() && !a.equals(pokemonActif)).findFirst().orElse(null);
         }
+    }
+
+    @JsonIgnore
+    public Duelliste getCopy() {
+        return (Duelliste) SerializationUtils.clone(this);
     }
 
     /**

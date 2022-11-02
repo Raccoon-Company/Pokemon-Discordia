@@ -31,6 +31,7 @@
 31 : fury-attack : Furie : damage
 32 : horn-drill : Empal’Korne : ohko
 33 : tackle : Charge : damage
+
 34 : body-slam : Plaquage : damage+ailment
 35 : wrap : Ligotage : damage+ailment
 36 : take-down : Bélier : damage

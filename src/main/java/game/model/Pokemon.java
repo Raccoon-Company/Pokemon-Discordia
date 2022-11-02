@@ -8,11 +8,10 @@ import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
-import game.model.enums.Gender;
-import game.model.enums.Nature;
-import game.model.enums.Type;
 import game.model.enums.*;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
 import utils.APIUtils;
 import utils.Utils;
@@ -23,12 +22,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Pokemon implements Serializable {
-    private static final double BASE_CRIT_MODIFIER = 1.5;
-    private static final double CRIT_MODIFIER_SNIPER = 2.25;
+    public static final double BASE_CRIT_MODIFIER = 1.5;
+    public static final double CRIT_MODIFIER_SNIPER = 2.25;
 
-    private final static int MAX_EV_PER_STAT = 255;
-    private final static int MAX_EV_TOTAL = 510;
-    private static final int MAX_FRIENDSHIP_VALUE = 255;
+    public final static int MAX_EV_PER_STAT = 255;
+    public final static int MAX_EV_TOTAL = 510;
+    public static final int MAX_FRIENDSHIP_VALUE = 255;
     public final static int BASE_FRIENDSHIP_VALUE = 70;
 
     private long id;
@@ -930,6 +929,11 @@ public class Pokemon implements Serializable {
     }
 
     @JsonIgnore
+    public Pokemon getCopy() {
+        return (Pokemon) SerializationUtils.clone(this);
+    }
+
+    @JsonIgnore
     public String getNomPresentation() {
         return StringUtils.isEmpty(surnom) ? getSpecieName() : surnom;
     }
@@ -959,6 +963,240 @@ public class Pokemon implements Serializable {
 
     public void setActionsCombat(HashMap<Integer, ActionCombat> actionsCombat) {
         this.actionsCombat = actionsCombat;
+    }
+
+    public void updateStage(MessageChannelUnion channel, Stats stat, int val, boolean affichage) {
+//        if (val < 0 && Talent.CLEAR_BODY.equals(talent)) {
+//            if (!simulation) {
+//                Utils.println("CLEAR BODY empêche la baisse de stats !");
+//            }
+//            return;
+//        }
+        switch (stat) {
+            case ATTACK:
+//                if (Talent.HYPER_CUTTER.equals(talent) && val < 0) {
+//                    if (!simulation) {
+//                        Utils.println(Talent.HYPER_CUTTER.getLibelle() + " empêche l'attaque de " + getLibelleColorized() + " de baisser !");
+//                    }
+//                } else {
+                updateAtkPhyStage(val, channel, affichage);
+//                }
+                break;
+            case DEFENSE:
+                updateDefPhyStage(val, channel, affichage);
+                break;
+            case SPECIAL_ATTACK:
+                updateAtkSpeStage(val, channel, affichage);
+                break;
+            case SPECIAL_DEFENSE:
+                updateDefSpeStage(val, channel, affichage);
+                break;
+            case SPEED:
+                updateSpeedStage(val, channel, affichage);
+                break;
+            case ACCURACY:
+//                if (Talent.KEEN_EYES.equals(talent) && val < 0) {
+//                    if (!simulation) {
+//                        Utils.println(Talent.KEEN_EYES.getLibelle() + " empêche la précision de " + getLibelleColorized() + " de baisser !");
+//                    }
+//                } else {
+                updateAccuracyStage(val, channel, affichage);
+//                }
+                break;
+            case EVASION:
+                updateEvasionStage(val, channel, affichage);
+                break;
+        }
+//        if (val < 0 && Talent.COMPETITIVE.equals(talent)) {
+//            if (!simulation) {
+//                Utils.println(Talent.COMPETITIVE.getLibelle() + " booste l'attaque spéciale de " + getLibelleColorized() + " !");
+//            }
+//        }
+    }
+
+    private void updateAtkSpeStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.atkSpeStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("L'attaque spéciale de " + getNomPresentation() + " augmente.").queue();
+            } else if (val > 1) {
+                channel.sendMessage("L'attaque spéciale de " + getNomPresentation() + " augmente fortement !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("L'attaque spéciale de " + getNomPresentation() + " baisse.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("L'attaque spéciale de " + getNomPresentation() + " diminue fortement !").queue();
+            }
+        }
+
+        if (atkSpeStage > 6) {
+            atkSpeStage = 6;
+            if (!simulation) {
+                channel.sendMessage("L'attaque spéciale de "+getNomPresentation()+" n'ira pas plus haut !").queue();            }
+        }
+        if (atkSpeStage < -6) {
+            atkSpeStage = -6;
+            if (!simulation) {
+                channel.sendMessage("L'attaque spéciale de "+getNomPresentation()+" n'ira pas plus bas !").queue();            }
+        }
+    }
+
+    private void updateAtkPhyStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.atkPhyStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("L'attaque de "+getNomPresentation()+" augmente.").queue();
+            } else if (val > 1) {
+                channel.sendMessage("L'attaque de "+getNomPresentation()+" augmente fortement !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("L'attaque de "+getNomPresentation()+" baisse.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("L'attaque de "+getNomPresentation()+" diminue fortement !").queue();            }
+        }
+        if (atkPhyStage > 6) {
+            atkPhyStage = 6;
+            if (!simulation) {
+                channel.sendMessage("L'attaque de "+getNomPresentation()+" n'ira pas plus haut !").queue();            }
+        }
+        if (atkPhyStage < -6) {
+            atkPhyStage = -6;
+            if (!simulation) {
+                channel.sendMessage("L'attaque de "+getNomPresentation()+" n'ira pas plus bas !").queue();            }
+        }
+    }
+
+    private void updateDefSpeStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.defSpeStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" augmente .").queue();
+            } else if (val > 1) {
+                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" augmente beaucoup !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" baisse.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" diminue fortement !").queue();
+            }
+        }
+        if (defSpeStage > 6) {
+            defSpeStage = 6;
+            if (!simulation) {
+                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+            }
+        }
+        if (defSpeStage < -6) {
+            defSpeStage = -6;
+            if (!simulation) {
+                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+            }
+        }
+    }
+
+    private void updateDefPhyStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.defPhyStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("La défense de "+getNomPresentation()+" augmente .").queue();
+            } else if (val > 1) {
+                channel.sendMessage("La défense de "+getNomPresentation()+" augmente beaucoup !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("La défense de "+getNomPresentation()+" baisse.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("La défense de "+getNomPresentation()+" diminue fortement !").queue();
+            }
+        }
+        if (defPhyStage > 6) {
+            defPhyStage = 6;
+            if (!simulation) {
+                channel.sendMessage("La défense de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+            }
+        }
+        if (defPhyStage < -6) {
+            defPhyStage = -6;
+            if (!simulation) {
+                channel.sendMessage("La défense de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+            }
+        }
+    }
+
+    private void updateSpeedStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.speedStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("La vitesse de "+getNomPresentation()+" augmente.").queue();
+            } else if (val > 1) {
+                channel.sendMessage("La vitesse de "+getNomPresentation()+" augmente fortement !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("La vitesse de "+getNomPresentation()+" diminue.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("La vitesse de "+getNomPresentation()+" baisse beaucoup !").queue();
+            }
+        }
+        if (speedStage > 6) {
+            speedStage = 6;
+            if (!simulation) {
+                channel.sendMessage("La vitesse de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+            }
+        }
+        if (speedStage < -6) {
+            speedStage = -6;
+            if (!simulation) {
+                channel.sendMessage("La vitesse de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+            }
+        }
+    }
+
+    private void updateAccuracyStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.accuracyStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("La précision de "+getNomPresentation()+" augmente.").queue();
+            } else if (val > 1) {
+                channel.sendMessage("La précision de "+getNomPresentation()+" augmente fortement !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("La précision de "+getNomPresentation()+" baisse.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("La précision de "+getNomPresentation()+" diminue fortement !").queue();
+            }
+        }
+        if (accuracyStage > 6) {
+            accuracyStage = 6;
+            if (!simulation) {
+                channel.sendMessage("La précision de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+            }
+        }
+        if (accuracyStage < -6) {
+            accuracyStage = -6;
+            if (!simulation) {
+                channel.sendMessage("La précision de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+            }
+        }
+    }
+
+    private void updateEvasionStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.evasivenessStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("L'esquive de "+getNomPresentation()+" augmente.").queue();
+            } else if (val > 1) {
+                channel.sendMessage("L'esquive de "+getNomPresentation()+" augmente beaucoup !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("L'esquive de "+getNomPresentation()+" baisse.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("L'esquive de "+getNomPresentation()+" baisse fortement !").queue();
+            }
+        }
+        if (evasivenessStage > 6) {
+            evasivenessStage = 6;
+            if (!simulation) {
+                channel.sendMessage("L'esquive de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+            }
+        }
+        if (evasivenessStage < -6) {
+            evasivenessStage = -6;
+            if (!simulation) {
+                channel.sendMessage("L'esquive de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+            }
+        }
     }
 
     @JsonIgnore
@@ -1192,7 +1430,7 @@ public class Pokemon implements Serializable {
                                     game.getBot().unlock(game.getUser());
                                     String choix = e.getMessage().getContentRaw();
                                     if (choix.length() > 32) {
-                                        game.getChannel().sendMessage("Trop long ! ("+choix.length()+")").queue();
+                                        game.getChannel().sendMessage("Trop long ! (" + choix.length() + ")").queue();
                                         choixSurnom(game, origine);
                                     } else {
                                         this.surnom = StringUtils.isEmpty(choix) ? null : choix;
@@ -1219,10 +1457,9 @@ public class Pokemon implements Serializable {
         return currentHp > 0;
     }
 
-    public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat) {
-
+    public int getDenominateurCritChance(){
         //crit
-        int critRate = getCritChanceStage() + critChanceStage;
+        int critRate = critChanceStage;
         int denominateur;
         if (critRate == 1) {
             denominateur = 8;
@@ -1233,7 +1470,11 @@ public class Pokemon implements Serializable {
         } else {
             denominateur = 1;
         }
-        boolean crit = Utils.getRandomNumber(1, denominateur) == 1;
+        return denominateur;
+    }
+
+    public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, double modificateurPuissance) {
+        boolean crit = Utils.getRandomNumber(1, getDenominateurCritChance()) == 1;
 
         Move move = actionCombat.getAttaque().getMoveAPI();
         Pokemon lanceur = actionCombat.getLanceur();
@@ -1264,6 +1505,8 @@ public class Pokemon implements Serializable {
             combat.getGame().getChannel().sendMessage("Coup critique !").queue();
             pointsDeViePerdusPart3 = pointsDeViePerdusPart3 * BASE_CRIT_MODIFIER;
         }
+
+        pointsDeViePerdusPart3 = modificateurPuissance * pointsDeViePerdusPart3;
 
         //todo talent
         //todo climat

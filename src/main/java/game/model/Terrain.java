@@ -1,11 +1,14 @@
 package game.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import game.model.enums.Meteo;
 import game.model.enums.StatutsTerrain;
+import org.apache.commons.lang.SerializationUtils;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
-public class Terrain {
+public class Terrain implements Serializable {
 
     //liste des status du terrain
     /**
@@ -41,6 +44,11 @@ public class Terrain {
                 return false;
             }
         });
+    }
+
+    @JsonIgnore
+    public Terrain getCopy() {
+        return (Terrain) SerializationUtils.clone(this);
     }
 
     public boolean hasStatut(StatutsTerrain statutsTerrain){

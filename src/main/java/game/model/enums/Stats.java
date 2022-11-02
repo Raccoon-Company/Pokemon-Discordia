@@ -1,5 +1,7 @@
 package game.model.enums;
 
+import java.util.Arrays;
+
 public enum Stats {
     HP(1),
     ATTACK(2),
@@ -15,6 +17,10 @@ public enum Stats {
     Stats(long id) {
 
         this.id = id;
+    }
+
+    public static Stats getById(int idApi) {
+        return Arrays.stream(values()).filter(s -> s.getId() == idApi).findAny().orElse(null);
     }
 
     public long getId() {

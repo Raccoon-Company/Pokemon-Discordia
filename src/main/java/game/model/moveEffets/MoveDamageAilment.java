@@ -1,8 +1,8 @@
 package game.model.moveEffets;
 
-import com.github.oscar0812.pokeapi.models.moves.MoveAilment;
 import game.model.*;
 import game.model.enums.MoveAilmentAPI;
+import game.model.enums.Type;
 import game.model.enums.TypeActionCombat;
 import game.model.enums.TypeSourceDegats;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,26 @@ public class MoveDamageAilment {
         }
 
         switch (actionCombat.getAttaque().getIdMoveAPI()) {
-            case 7 : //fire punch
+            case 250: // whirlpool
+                if(actionCombat.getPokemonCible().hasType(Type.GHOST)){
+                    combat.getGame().getChannel().sendMessage("L'attaque est sans effet !").queue();
+                    return;
+                }
+                //TODO item grip claw + 1 tour
+                combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
+                //TODO doubler la puissance si pendant dive
+                attaqueParDefaut(combat, actionCombat, Utils.getRandomNumber(4, 5), 1);
+                break;
+            case 20: // bind
+                if(actionCombat.getPokemonCible().hasType(Type.GHOST)){
+                    combat.getGame().getChannel().sendMessage("L'attaque est sans effet !").queue();
+                    return;
+                }
+                //TODO item grip claw + 1 tour
+                combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
+                attaqueParDefaut(combat, actionCombat, Utils.getRandomNumber(4, 5),1);
+                break;
+            case 7: //fire punch
             case 8://ice punch
             case 9://thunder punch
                 attaqueParDefaut(combat, actionCombat);
@@ -28,23 +47,27 @@ public class MoveDamageAilment {
         }
     }
 
-    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat) {
+    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat, int dureeAlteration, int modificateurPuissance) {
         List<Pokemon> cibles = ciblesAffectees(combat, actionCombat);
 
         for (Pokemon cible : cibles) {
-            int degats = cible.calculerDegatsAttaque(actionCombat,combat);
+            int degats = cible.calculerDegatsAttaque(actionCombat, combat, modificateurPuissance);
             cible.blesser(degats, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
-            MoveAilment ma =  actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
+            MoveAilment ma = actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
             MoveAilmentAPI localMoveAilmentAPI = MoveAilmentAPI.getById(ma.getId());
-            if(localMoveAilmentAPI.getAlterationEtat() != null){
-                if(actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1,100)){
-                    cible.applyStatus(localMoveAilmentAPI.getAlterationEtat(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, false);
+            if (localMoveAilmentAPI.getAlterationEtat() != null) {
+                if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
+                    cible.applyStatus(localMoveAilmentAPI.getAlterationEtat(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), dureeAlteration, false);
                 }
-            }else{
+            } else {
                 System.out.println(localMoveAilmentAPI);
             }
 
         }
+    }
+
+    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat) {
+        attaqueParDefaut(combat, actionCombat, 1,1);
     }
 
     @NotNull
@@ -91,10 +114,10 @@ public class MoveDamageAilment {
 //            case ALL_POKEMON:
 //                break;
             default:
-                throw new IllegalStateException("Cible inconnue : MoveDamage");
+                throw new IllegalStateException("Cible inconnue : MoveDamageAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, false));
         return cibles;
     }
 }

@@ -48,6 +48,15 @@ public class ActionCombat {
         this.lanceur = lanceur;
     }
 
+    public ActionCombat(ActionCombat actionCombat) {
+        this.typeActionCombat = actionCombat.getTypeActionCombat();
+        this.attaque = actionCombat.getAttaque();
+        this.typeCibleCombat = actionCombat.getTypeCibleCombat();
+        this.pokemonCible = actionCombat.getPokemonCible();
+        this.lanceur = actionCombat.getLanceur();
+        this.terrainCible = actionCombat.getTerrainCible();
+    }
+
     public Pokemon getLanceur() {
         return lanceur;
     }
