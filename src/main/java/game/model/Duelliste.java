@@ -65,6 +65,10 @@ public class Duelliste implements Serializable {
         if (rival) {
             EquipesRival.obtenir(game.getSave().getCampaign().getProgress(), game.getSave().getCampaign().getIdStarter()).getEquipe().forEach(k -> {
                 Pokemon pokemon = new Pokemon(k.getKey(), k.getValue(), false, game);
+                //Cas particulier, on supprime le move stabbé pour le premier fight, sinon ca va chauffer
+                if(game.getSave().getCampaign().getProgress() == 0){
+                    pokemon.getMoveset().removeIf(a -> a.getIdMoveAPI() == 22 || a.getIdMoveAPI() == 55 || a.getIdMoveAPI() == -1 );
+                }
                 this.equipe.add(pokemon);
             });
         } else {

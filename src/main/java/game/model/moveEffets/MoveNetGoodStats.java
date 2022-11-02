@@ -31,7 +31,7 @@ public class MoveNetGoodStats {
 
         for (Pokemon cible : cibles) {
             actionCombat.getAttaque().getMoveAPI().getStatChanges().forEach(s -> {
-                Stats stat = Stats.getById(s.getId());
+                Stats stat = Stats.getById(s.getStat().getId());
                 cible.updateStage(combat.getGame().getChannel() , stat, s.getChange(), simulation);
             });
         }
@@ -84,7 +84,7 @@ public class MoveNetGoodStats {
                 throw new IllegalStateException("Cible inconnue : MoveDamage");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, false));
         return cibles;
     }
 

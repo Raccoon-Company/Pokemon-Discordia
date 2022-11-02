@@ -1,6 +1,7 @@
 package game.model.enums;
 
 import com.github.oscar0812.pokeapi.models.pokemon.PokemonType;
+import com.github.oscar0812.pokeapi.utils.Client;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,11 +64,11 @@ public enum Type {
         int ratio = 100;
 
         for (PokemonType type : types) {
-            if (type.getType().getDamageRelations().getDoubleDamageFrom().stream().map(com.github.oscar0812.pokeapi.models.pokemon.Type::getId).collect(Collectors.toList()).contains(id)) {
+            if (type.getType().getDamageRelations().getDoubleDamageFrom().stream().map(d -> Client.getTypeByName(d.getName()).getId()).collect(Collectors.toList()).contains(id)) {
                 ratio = ratio * 2;
-            } else if (type.getType().getDamageRelations().getHalfDamageFrom().stream().map(com.github.oscar0812.pokeapi.models.pokemon.Type::getId).collect(Collectors.toList()).contains(id)) {
+            } else if (type.getType().getDamageRelations().getHalfDamageFrom().stream().map(d -> Client.getTypeByName(d.getName()).getId()).collect(Collectors.toList()).contains(id)) {
                 ratio = ratio / 2;
-            } else if (type.getType().getDamageRelations().getNoDamageFrom().stream().map(com.github.oscar0812.pokeapi.models.pokemon.Type::getId).collect(Collectors.toList()).contains(id)) {
+            } else if (type.getType().getDamageRelations().getNoDamageFrom().stream().map(d -> Client.getTypeByName(d.getName()).getId()).collect(Collectors.toList()).contains(id)) {
                 ratio = 0;
             }
         }

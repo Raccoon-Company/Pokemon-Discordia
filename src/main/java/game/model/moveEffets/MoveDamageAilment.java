@@ -1,5 +1,6 @@
 package game.model.moveEffets;
 
+import com.github.oscar0812.pokeapi.models.moves.MoveAilment;
 import game.model.*;
 import game.model.enums.MoveAilmentAPI;
 import game.model.enums.Type;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MoveDamageAilment {
-    public static void utiliser(Combat combat, ActionCombat actionCombat) {
+    public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
         if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;
         }
@@ -26,7 +27,7 @@ public class MoveDamageAilment {
                 //TODO item grip claw + 1 tour
                 combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
                 //TODO doubler la puissance si pendant dive
-                attaqueParDefaut(combat, actionCombat, Utils.getRandomNumber(4, 5), 1);
+                attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5), 1);
                 break;
             case 20: // bind
                 if(actionCombat.getPokemonCible().hasType(Type.GHOST)){
@@ -35,23 +36,23 @@ public class MoveDamageAilment {
                 }
                 //TODO item grip claw + 1 tour
                 combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
-                attaqueParDefaut(combat, actionCombat, Utils.getRandomNumber(4, 5),1);
+                attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5),1);
                 break;
             case 7: //fire punch
             case 8://ice punch
             case 9://thunder punch
-                attaqueParDefaut(combat, actionCombat);
+                attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }
     }
 
-    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat, int dureeAlteration, int modificateurPuissance) {
+    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat,boolean simulation, int dureeAlteration, int modificateurPuissance) {
         List<Pokemon> cibles = ciblesAffectees(combat, actionCombat);
 
         for (Pokemon cible : cibles) {
-            int degats = cible.calculerDegatsAttaque(actionCombat, combat, modificateurPuissance);
+            int degats = cible.calculerDegatsAttaque(actionCombat, combat, simulation, modificateurPuissance);
             cible.blesser(degats, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
             MoveAilment ma = actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
             MoveAilmentAPI localMoveAilmentAPI = MoveAilmentAPI.getById(ma.getId());
@@ -66,8 +67,8 @@ public class MoveDamageAilment {
         }
     }
 
-    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat) {
-        attaqueParDefaut(combat, actionCombat, 1,1);
+    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat, boolean simulation) {
+        attaqueParDefaut(combat, actionCombat,simulation, 1,1);
     }
 
     @NotNull

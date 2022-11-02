@@ -9,6 +9,9 @@ import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
 import game.Game;
 import game.model.enums.*;
+import game.model.enums.Gender;
+import game.model.enums.Nature;
+import game.model.enums.Type;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.apache.commons.lang.SerializationUtils;
@@ -132,7 +135,7 @@ public class Pokemon implements Serializable {
         this.aDejaAttaque = false;
         this.friendship = 0;
 
-        this.gender = Gender.getById(getPokemonSpeciesAPI().getGenderRate() == -1 ? 2 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 1 : 0);
+        this.gender = Gender.getById(getPokemonSpeciesAPI().getGenderRate() == -1 ? 3 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 2 : 1);
         //détermination des IVs
         this.atkSpeIV = Utils.getRandom().nextInt(32);
         this.atkPhyIV = Utils.getRandom().nextInt(32);
@@ -381,13 +384,11 @@ public class Pokemon implements Serializable {
         HashMap<Move, Integer> availables = new HashMap<>();
 
         for (PokemonMove pokemonMove : pokemonMoves) {
-            pokemonMove.getVersionGroupDetails().stream().map(PokemonMoveVersion::getVersionGroup).filter(p -> !APIUtils.FAUSSES_VERSIONS.contains(p.getName())).max(Comparator.comparing(VersionGroup::getOrder)).ifPresent(v -> {
-                pokemonMove.getVersionGroupDetails().stream().filter(p -> p.getVersionGroup().equals(v)).findAny().ifPresent(d -> {
-                    //vérifie que le move s'apprenne bien en level up
-                    if (d.getMoveLearnMethod().getName().equals("level-up") && d.getLevelLearnedAt() <= level) {
-                        availables.put(pokemonMove.getMove(), d.getLevelLearnedAt());
-                    }
-                });
+            pokemonMove.getVersionGroupDetails().stream().map(PokemonMoveVersion::getVersionGroup).filter(p -> !APIUtils.FAUSSES_VERSIONS.contains(p.getName())).max(Comparator.comparing(VersionGroup::getOrder)).flatMap(v -> pokemonMove.getVersionGroupDetails().stream().filter(p -> p.getVersionGroup().equals(v)).findAny()).ifPresent(d -> {
+                //vérifie que le move s'apprenne bien en level up
+                if (d.getMoveLearnMethod().getName().equals("level-up") && d.getLevelLearnedAt() <= level) {
+                    availables.put(pokemonMove.getMove(), d.getLevelLearnedAt());
+                }
             });
         }
         //TODO eventuellement filtrer certains moves en doublons dans es nivaux éléeves hyperbeam etc
@@ -1434,6 +1435,9 @@ public class Pokemon implements Serializable {
                                         choixSurnom(game, origine);
                                     } else {
                                         this.surnom = StringUtils.isEmpty(choix) ? null : choix;
+                                        if(StringUtils.isNotEmpty(surnom)){
+                                            surnom = StringUtils.capitalize(surnom.toLowerCase());
+                                        }
                                         //en fonction d'où on vient, renvoie au bon endroit
                                         switch (origine) {
                                             case "mainmenu":
@@ -1457,6 +1461,7 @@ public class Pokemon implements Serializable {
         return currentHp > 0;
     }
 
+    @JsonIgnore
     public int getDenominateurCritChance(){
         //crit
         int critRate = critChanceStage;
@@ -1473,7 +1478,7 @@ public class Pokemon implements Serializable {
         return denominateur;
     }
 
-    public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, double modificateurPuissance) {
+    public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, boolean simulation, double modificateurPuissance) {
         boolean crit = Utils.getRandomNumber(1, getDenominateurCritChance()) == 1;
 
         Move move = actionCombat.getAttaque().getMoveAPI();
@@ -1492,7 +1497,17 @@ public class Pokemon implements Serializable {
 
         //ratio type
         if (move.getType() != null) {
-            pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 * Type.getById(move.getType().getId()).pourcentageDegatsAttaque(getPokemonAPI().getTypes()) / 100);
+            int ratio = Type.getById(move.getType().getId()).pourcentageDegatsAttaque(getPokemonAPI().getTypes());
+            pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 *  ratio / 100);
+            if(!simulation){
+                if(ratio == 50){
+                    combat.getGame().getChannel().sendMessage("Ce n'est pas très efficace...").queue();
+                }else if(ratio == 200){
+                    combat.getGame().getChannel().sendMessage("C'est super efficace !").queue();
+                }else if(ratio == 0){
+                    combat.getGame().getChannel().sendMessage("Cela n'a aucun effet.").queue();
+                }
+            }
         }
 
         //STAB
@@ -1502,7 +1517,9 @@ public class Pokemon implements Serializable {
 
         if (crit) {
             //TODO talent sniper
-            combat.getGame().getChannel().sendMessage("Coup critique !").queue();
+            if(!simulation){
+                combat.getGame().getChannel().sendMessage("Coup critique !").queue();
+            }
             pointsDeViePerdusPart3 = pointsDeViePerdusPart3 * BASE_CRIT_MODIFIER;
         }
 

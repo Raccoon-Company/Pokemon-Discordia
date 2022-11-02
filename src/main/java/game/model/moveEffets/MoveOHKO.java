@@ -1,6 +1,5 @@
 package game.model.moveEffets;
 
-import game.Game;
 import game.model.ActionCombat;
 import game.model.Combat;
 import game.model.Pokemon;
@@ -10,7 +9,7 @@ import game.model.enums.TypeSourceDegats;
 import utils.Utils;
 
 public class MoveOHKO {
-    public static void utiliser(Combat combat, ActionCombat actionCombat) {
+    public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
         if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;
         }

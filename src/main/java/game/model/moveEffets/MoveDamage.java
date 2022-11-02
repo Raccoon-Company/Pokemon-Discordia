@@ -31,7 +31,7 @@ public class MoveDamage {
                 //TODO check interactions : focus sash focus band sturdyweak armor stamina rocky helmet
                 if(combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false)) {
                     //TODO clone, riposte, patience
-                    int degats = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, 1);
+                    int degats = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation,1);
                     int ran = Utils.getRandomNumber(1, 8);
                     int n;
                     if (ran <= 3) {
@@ -50,7 +50,7 @@ public class MoveDamage {
                 break;
             case 24://double pied
                 if(combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false)){
-                    int degatsDoublePied = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, 1);
+                    int degatsDoublePied = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation,1);
                     actionCombat.getPokemonCible().blesser(degatsDoublePied, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                     actionCombat.getPokemonCible().blesser(degatsDoublePied, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
@@ -100,7 +100,7 @@ public class MoveDamage {
                     return;
                 }
                 if(combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false)){
-                    int degatsPiedSaute = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, 1);
+                    int degatsPiedSaute = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation,1);
                     actionCombat.getPokemonCible().blesser(degatsPiedSaute, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }else{
                     combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation()+ " rate son attaque et se blesse !").queue();
@@ -137,11 +137,11 @@ public class MoveDamage {
         List<Pokemon> cibles = ciblesAffectees(combat, actionCombat);
 
         for (Pokemon cible : cibles) {
-            if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMetaData().getFlinchChance()) {
+            if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMeta().getFlinchChance()) {
                 cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation);
             }
 
-            int degats = cible.calculerDegatsAttaque(actionCombat, combat, modificateurPuissance);
+            int degats = cible.calculerDegatsAttaque(actionCombat, combat,simulation, modificateurPuissance);
             cible.blesser(degats, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
         }
     }

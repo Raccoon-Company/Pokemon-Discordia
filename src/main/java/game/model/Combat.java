@@ -203,7 +203,7 @@ public class Combat implements Serializable {
             text += "Tour " + turnCount;
         }
 
-        if (blanc.getPokemonChoixCourant(turnCount).getActionsCombat().containsKey(turnCount)) {
+        if (!blanc.getPokemonChoixCourant(turnCount).getActionsCombat().containsKey(turnCount)) {
 
             text += "\nQue dois-faire " + blanc.getPokemonChoixCourant(turnCount).getNomPresentation() + " ?";
 
@@ -743,7 +743,7 @@ public class Combat implements Serializable {
         //attaque si sauvage
         //mais aussi eventuellement utiliser une potion ou changer de pokemon selon l'IA en face
 
-        ordreDAction().forEach(this::effectuerAction);
+        ordreDAction().forEach(p -> effectuerAction(p, false));
 
         effetsDeFinDeTour();
         turnCount++;
@@ -779,7 +779,7 @@ public class Combat implements Serializable {
         }
 
         if (noir.getNiveauIA() == NiveauIA.RANDOM) {
-            Pokemon cible = ciblesPotentielles.get(Utils.getRandom().nextInt(ciblesPotentielles.size()-1));
+            Pokemon cible = ciblesPotentielles.get(Utils.getRandom().nextInt(ciblesPotentielles.size()));
             pokemon.getActionsCombat().put(turnCount, new ActionCombat(TypeActionCombat.ATTAQUE, availables.get(Utils.getRandom().nextInt(availables.size())), TypeCibleCombat.RANDOM_OPPONENT, noir.getPokemonActif(), cible));
             return;
         }
@@ -799,7 +799,7 @@ public class Combat implements Serializable {
 
             for (ActionCombat action : listeActions) {
                 Combat copie = getCopy();
-                copie.effectuerAction(pokemonLauncherCopy);
+                copie.effectuerAction(pokemonLauncherCopy, true);
                 double foeEvaluation = copie.evaluer(copie.getBlanc());
                 double newScoreFight = copie.evaluer(copie.getNoir()) - foeEvaluation;
 
@@ -825,7 +825,7 @@ public class Combat implements Serializable {
         Terrain terrainNoirCopie = terrainNoir.getCopy();
 
         //choix cible(s)
-        Move move = Client.getMoveById(Integer.parseInt(idMove));
+        Move move = Client.getMoveById(attaque.getIdMoveAPI());
         MoveTarget target = move.getTarget();
         TypeCibleCombat typeCibleCombat = TypeCibleCombat.getById(target.getId());
 
@@ -907,7 +907,7 @@ public class Combat implements Serializable {
         }
     }
 
-    private void effectuerAction(Pokemon lanceur) {
+    private void effectuerAction(Pokemon lanceur, boolean simulation) {
         lanceur.setaDejaAttaque(true);
 
         ActionCombat actionCombat = lanceur.getActionsCombat().get(turnCount);
@@ -1007,31 +1007,31 @@ public class Combat implements Serializable {
                 MoveDamage.utiliser(this, actionCombat, simulation);
                 break;
             case "ailment":
-                MoveAilment.utiliser(this, actionCombat);
+                MoveAilment.utiliser(this, actionCombat,simulation);
                 break;
             case "net-good-stats":
                 MoveNetGoodStats.utiliser(this, actionCombat, simulation);
                 break;
             case "heal":
-                MoveHeal.utiliser(this, actionCombat);
+                MoveHeal.utiliser(this, actionCombat,simulation);
                 break;
             case "damage+ailment":
-                MoveDamageAilment.utiliser(this, actionCombat);
+                MoveDamageAilment.utiliser(this, actionCombat,simulation);
                 break;
             case "swagger":
-                MoveSwagger.utiliser(this, actionCombat);
+                MoveSwagger.utiliser(this, actionCombat,simulation);
                 break;
             case "damage+lower":
-                MoveDamageLower.utiliser(this, actionCombat);
+                MoveDamageLower.utiliser(this, actionCombat,simulation);
                 break;
             case "damage+raise":
-                MoveDamageRaise.utiliser(this, actionCombat);
+                MoveDamageRaise.utiliser(this, actionCombat,simulation);
                 break;
             case "damage+heal":
-                MoveDamageHeal.utiliser(this, actionCombat);
+                MoveDamageHeal.utiliser(this, actionCombat,simulation);
                 break;
             case "ohko":
-                MoveOHKO.utiliser(this, actionCombat);
+                MoveOHKO.utiliser(this, actionCombat,simulation);
                 break;
             case "whole-field-effect":
                 MoveWholeFieldEffect.utiliser(this, actionCombat);
@@ -1369,7 +1369,7 @@ public class Combat implements Serializable {
         List<ElementUI> elementUIS = new ArrayList<>();
         Font font = new Font("Arial", Font.PLAIN, 10);
         Map<TextAttribute, Object> attributes = new HashMap<TextAttribute, Object>();
-        attributes.put(TextAttribute.TRACKING, -0.1);
+//        attributes.put(TextAttribute.TRACKING, -0.1);
         font = font.deriveFont(attributes);
         Font fontGender = new Font("Arial", Font.PLAIN, 9);
         Font fontHp = new Font("Arial", Font.PLAIN, 11);
