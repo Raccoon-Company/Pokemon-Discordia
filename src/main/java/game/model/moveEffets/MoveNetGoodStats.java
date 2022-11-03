@@ -20,7 +20,11 @@ public class MoveNetGoodStats {
         switch (actionCombat.getAttaque().getIdMoveAPI()) {
 
             case 14://swords dance
+            case 39://mimi queue
+            case 43: //groz yeux
+            case 45: //rugissement
                 attaqueParDefaut(combat, actionCombat, simulation);
+                break;
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }

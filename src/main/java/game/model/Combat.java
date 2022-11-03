@@ -109,6 +109,8 @@ public class Combat implements Serializable {
     private int tentativesDeFuite = 0;
     private int piecesEparpillees = 0;
 
+    private HashMap<Attaque, Integer> attaquesEntravees;
+
     public Combat(Game game, Duelliste blanc, Duelliste noir, TypeCombat typeCombat, boolean objetsAutorises) {
         this.game = game;
         this.typeCombat = typeCombat;
@@ -118,6 +120,7 @@ public class Combat implements Serializable {
         this.noir = noir;
         this.turnCount = 0;
         this.objetsAutorises = objetsAutorises;
+        this.attaquesEntravees = new HashMap<>();
         //set up meteo et background
         StatutsTerrain statutFromMeteo = StatutsTerrain.getStatutFromMeteo(game.getSave().getCampaign().getCurrentMeteo());
         if (statutFromMeteo != null) {
@@ -770,7 +773,7 @@ public class Combat implements Serializable {
     private void choixAttaqueAuto(Pokemon pokemon) {
         List<Pokemon> ciblesPotentielles = new ArrayList<>(blanc.getPokemonsActifsEnVie());
 
-        List<Attaque> availables = pokemon.getMoveset().stream().filter(m -> m.getPpLeft() > 0).collect(Collectors.toList());
+        List<Attaque> availables = pokemon.getMoveset().stream().filter(m -> m.getPpLeft() > 0 && !attaquesEntravees.containsKey(m)).collect(Collectors.toList());
         if (pokemon.hasStatut(AlterationEtat.PROVOCATION)) {
             availables = availables.stream().filter(a -> a.getMoveAPI().getDamageClass().getId() != 1).collect(Collectors.toList());
         }
@@ -859,7 +862,7 @@ public class Combat implements Serializable {
                 break;
             case USER_OR_ALLY:
                 if (typeCombat.equals(TypeCombat.SIMPLE)) {
-                    listeActions.add(new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur,lanceur));
+                    listeActions.add(new ActionCombat(TypeActionCombat.ATTAQUE, attaque, typeCibleCombat, lanceur, lanceur));
                 } else {
                     List<Pokemon> cibles = new ArrayList<>();
                     cibles.add(blancCopie.getPokemonActif());
@@ -1007,31 +1010,31 @@ public class Combat implements Serializable {
                 MoveDamage.utiliser(this, actionCombat, simulation);
                 break;
             case "ailment":
-                MoveAilment.utiliser(this, actionCombat,simulation);
+                MoveAilment.utiliser(this, actionCombat, simulation);
                 break;
             case "net-good-stats":
                 MoveNetGoodStats.utiliser(this, actionCombat, simulation);
                 break;
             case "heal":
-                MoveHeal.utiliser(this, actionCombat,simulation);
+                MoveHeal.utiliser(this, actionCombat, simulation);
                 break;
             case "damage+ailment":
-                MoveDamageAilment.utiliser(this, actionCombat,simulation);
+                MoveDamageAilment.utiliser(this, actionCombat, simulation);
                 break;
             case "swagger":
-                MoveSwagger.utiliser(this, actionCombat,simulation);
+                MoveSwagger.utiliser(this, actionCombat, simulation);
                 break;
             case "damage+lower":
-                MoveDamageLower.utiliser(this, actionCombat,simulation);
+                MoveDamageLower.utiliser(this, actionCombat, simulation);
                 break;
             case "damage+raise":
-                MoveDamageRaise.utiliser(this, actionCombat,simulation);
+                MoveDamageRaise.utiliser(this, actionCombat, simulation);
                 break;
             case "damage+heal":
-                MoveDamageHeal.utiliser(this, actionCombat,simulation);
+                MoveDamageHeal.utiliser(this, actionCombat, simulation);
                 break;
             case "ohko":
-                MoveOHKO.utiliser(this, actionCombat,simulation);
+                MoveOHKO.utiliser(this, actionCombat, simulation);
                 break;
             case "whole-field-effect":
                 MoveWholeFieldEffect.utiliser(this, actionCombat);
@@ -1257,7 +1260,14 @@ public class Combat implements Serializable {
                 });
             }
 
-            //TODO bind
+            if (pokemon.hasStatut(AlterationEtat.LIEN)) {
+                AlterationInstance ai = pokemon.getAlterationInstance(AlterationEtat.LIEN);
+                if (ai.getSourceAlteration().getPokemonSource() != null) {
+                    game.getChannel().sendMessage(pokemon.getNomPresentation() + " subit des dégâts de l'étreinte de " + ai.getSourceAlteration().getPokemonSource().getNomPresentation() + " !").queue();
+                }
+                //if holding binding band 1/6
+                pokemon.blesser(pokemon.getMaxHp() / 8, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
+            }
 
             if (pokemon.hasStatut(AlterationEtat.BRULURE)) {
                 game.getChannel().sendMessage(pokemon.getNomPresentation() + " souffre de sa brulûre !").queue();
@@ -1306,23 +1316,19 @@ public class Combat implements Serializable {
                 }
             }
 
-            blanc.getPokemonActif().setaPerduDeLaVieCeTour(false);
-            noir.getPokemonActif().setaPerduDeLaVieCeTour(false);
-            blanc.getPokemonActif().setaDejaAttaque(false);
-            noir.getPokemonActif().setaDejaAttaque(false);
-            if (blanc.getPokemonActifBis() != null) {
-                blanc.getPokemonActifBis().setaPerduDeLaVieCeTour(false);
-                blanc.getPokemonActifBis().setaDejaAttaque(false);
-            }
-            if (noir.getPokemonActifBis() != null) {
-                noir.getPokemonActifBis().setaPerduDeLaVieCeTour(false);
-                noir.getPokemonActifBis().setaDejaAttaque(false);
+            if (pokemon.hasStatut(AlterationEtat.THRASHING)) {
+                ActionCombat ac = pokemon.getActionsCombat().get(turnCount);
+                pokemon.getActionsCombat().put(turnCount + 1, new ActionCombat(ac));
             }
 
+            pokemon.setaPerduDeLaVieCeTour(false);
+            pokemon.setaDejaAttaque(false);
 
             pokemon.decrementerAlterations(game);
-
         }
+
+        decrementerEntraves();
+
         //decrementation des tours restants des altérations terrain
         terrainBlanc.finDeTourMajStatus();
         terrainNoir.finDeTourMajStatus();
@@ -1337,7 +1343,12 @@ public class Combat implements Serializable {
         for (Attaque attaque : courant.getMoveset()) {
             Move move = attaque.getMoveAPI();
             Type type = Type.getById(move.getType().getId());
-            buttons.add(Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false)));
+            Button button = Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false));
+            //désactivation du bouton si attaque entravée
+            if(attaquesEntravees.containsKey(attaque)){
+                button = button.asDisabled();
+            }
+            buttons.add(button);
         }
 
         buttons2 = new ArrayList<>(Arrays.asList(
@@ -1662,6 +1673,26 @@ public class Combat implements Serializable {
         this.background = background;
     }
 
+    public HashMap<Attaque, Integer> getAttaquesEntravees() {
+        return attaquesEntravees;
+    }
+
+    public void setAttaquesEntravees(HashMap<Attaque, Integer> attaquesEntravees) {
+        this.attaquesEntravees = attaquesEntravees;
+    }
+
+    @JsonIgnore
+    public boolean isAttaqueEntravee(Attaque attaque) {
+        return attaquesEntravees.containsKey(attaque);
+    }
+
+    public void decrementerEntraves() {
+        attaquesEntravees.entrySet().forEach(a -> {
+            a.setValue(a.getValue() - 1);
+        });
+        attaquesEntravees.entrySet().removeIf(e -> e.getValue() <= 0);
+    }
+
     public TypeCombat getTypeCombat() {
         return typeCombat;
     }
@@ -1744,18 +1775,19 @@ public class Combat implements Serializable {
 //        }
     }
 
-    public double evaluer(Duelliste duelliste){
+    public double evaluer(Duelliste duelliste) {
         return duelliste.getPokemonsActifsEnVie().stream().map(this::evaluer).reduce(0.0, Double::sum);
     }
 
-    public double evaluer(Pokemon pokemon){
+    public double evaluer(Pokemon pokemon) {
         double critMultiplier = 1 + (Pokemon.BASE_CRIT_MODIFIER * (1.0 / pokemon.getDenominateurCritChance()));
-        double atkScore = pokemon.getMaxAtkPhy() > pokemon.getMaxAtkSpe() ? (pokemon.getCurrentAtkPhy() * critMultiplier * 1.5) + (pokemon.getCurrentAtkSpe() * critMultiplier * 0.5) : (pokemon.getCurrentAtkSpe() * critMultiplier * 1.5) +  (pokemon.getCurrentAtkPhy() * critMultiplier * 0.5);
+        double atkScore = pokemon.getMaxAtkPhy() > pokemon.getMaxAtkSpe() ? (pokemon.getCurrentAtkPhy() * critMultiplier * 1.5) + (pokemon.getCurrentAtkSpe() * critMultiplier * 0.5) : (pokemon.getCurrentAtkSpe() * critMultiplier * 1.5) + (pokemon.getCurrentAtkPhy() * critMultiplier * 0.5);
         double note = ((pokemon.getCurrentHp() / 2.25) * (atkScore + pokemon.getCurrentSpeed() + pokemon.getCurrentDefPhy() + pokemon.getCurrentDefSpe() + pokemon.getEvasivenessStage() + pokemon.getAccuracyStage()));
         double ratio = pokemon.getAlterations().stream().distinct().map(a -> {
             int val = Math.min(Math.max(1, a.getToursRestants()), 3);
             return a.getAlterationEtat().getRatio() * val;
-        }).reduce(1f, (subtotal, element) -> subtotal * element);;
+        }).reduce(1f, (subtotal, element) -> subtotal * element);
+        ;
         return note * ratio;
     }
 

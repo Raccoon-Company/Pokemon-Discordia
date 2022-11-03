@@ -26,21 +26,40 @@ public class MoveDamageAilment {
                 }
                 //TODO item grip claw + 1 tour
                 combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
-                //TODO doubler la puissance si pendant dive
-                attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5), 1);
+                int id = actionCombat.getPokemonCible().getActionsCombat().get(combat.getTurnCount()).getAttaque().getIdMoveAPI();
+                if(id == 291){
+                    attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5), 2,false);
+                }else{
+                    attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5), 1,false);
+                }
                 break;
             case 20: // bind
+            case 35://wrap
                 if(actionCombat.getPokemonCible().hasType(Type.GHOST)){
                     combat.getGame().getChannel().sendMessage("L'attaque est sans effet !").queue();
                     return;
                 }
                 //TODO item grip claw + 1 tour
                 combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
-                attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5),1);
+                attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5),1,false);
+                break;
+            case 34://stomp
+                //puissance doublée si la cible a utilisé minimize
+                if (actionCombat.getPokemonCible().getActionsCombat().values().stream().anyMatch(a -> a.getAttaque().getIdMoveAPI() == 107)) {
+                    attaqueParDefaut(combat, actionCombat, simulation, 1,2, true);
+                } else {
+                    attaqueParDefaut(combat, actionCombat, simulation, 1,1, false);
+                }
+
+                break;
+            case 41://doubledard
+                attaqueParDefaut(combat, actionCombat, simulation, 1,1, false);
+                attaqueParDefaut(combat, actionCombat, simulation, 1,1, false);
                 break;
             case 7: //fire punch
             case 8://ice punch
             case 9://thunder punch
+            case 40: //dard-venin
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:
@@ -48,8 +67,8 @@ public class MoveDamageAilment {
         }
     }
 
-    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat,boolean simulation, int dureeAlteration, int modificateurPuissance) {
-        List<Pokemon> cibles = ciblesAffectees(combat, actionCombat);
+    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat,boolean simulation, int dureeAlteration, int modificateurPuissance, boolean alwaysHit) {
+        List<Pokemon> cibles = ciblesAffectees(combat, actionCombat, alwaysHit);
 
         for (Pokemon cible : cibles) {
             int degats = cible.calculerDegatsAttaque(actionCombat, combat, simulation, modificateurPuissance);
@@ -68,11 +87,11 @@ public class MoveDamageAilment {
     }
 
     private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat, boolean simulation) {
-        attaqueParDefaut(combat, actionCombat,simulation, 1,1);
+        attaqueParDefaut(combat, actionCombat,simulation, 1,1,false);
     }
 
     @NotNull
-    public static List<Pokemon> ciblesAffectees(Combat combat, ActionCombat actionCombat) {
+    public static List<Pokemon> ciblesAffectees(Combat combat, ActionCombat actionCombat, boolean alwaysHit) {
         List<Pokemon> cibles = new ArrayList<>();
         Duelliste allie = combat.getDuellisteAllie(actionCombat.getLanceur());
         Duelliste adverse = combat.getDuellisteAdverse(actionCombat.getLanceur());
@@ -118,7 +137,7 @@ public class MoveDamageAilment {
                 throw new IllegalStateException("Cible inconnue : MoveDamageAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit));
         return cibles;
     }
 }

@@ -1,5 +1,7 @@
 package game.model.enums;
 
+import utils.Utils;
+
 import static game.model.enums.TypeAlteration.*;
 
 public enum AlterationEtat {
@@ -84,5 +86,9 @@ public enum AlterationEtat {
 
     public String getIcone() {
         return icone;
+    }
+
+    public static int getToursConfusion(){
+        return Utils.getRandomNumber(2,5);
     }
 }
