@@ -959,7 +959,7 @@ public class Pokemon implements Serializable {
         if (allMovesAPI == null || allMovesAPI.isEmpty()) {
             allMovesAPI = getPokemonAPI().getMoves();
         }
-        return allMovesAPI;
+        return allMovesAPI.stream().filter(m -> m.getId()<=MAX_MOVE_ID_IMPLEMENTED).collect(Collectors.toList());
     }
 
     public HashMap<Integer, ActionCombat> getActionsCombat() {

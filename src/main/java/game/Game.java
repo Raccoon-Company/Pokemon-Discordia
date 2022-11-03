@@ -55,6 +55,8 @@ public class Game {
     public final static int HAUTEUR_FOND = 120;
     public final static int LARGEUR_FOND = 200;
 
+    public final static int MAX_MOVE_ID_IMPLEMENTED = 100;//TODO changer le chiffre au fur et à mesure d el'implémentation des nouvelles attaques
+
     private User user;
 
     public Game(MyBot bot, Save save) {
