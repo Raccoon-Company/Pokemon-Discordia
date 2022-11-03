@@ -753,6 +753,8 @@ public class Combat implements Serializable {
         effetsDeFinDeTour();
         turnCount++;
 
+        //TODO remplacer pokemons ko
+
         //vérif combat terminé
         if (!blanc.getPokemonsActifsEnVie().isEmpty() && !noir.getPokemonsActifsEnVie().isEmpty()) {
             if (typeCombatResultat.equals(TypeCombatResultat.EN_COURS)) {
@@ -1153,9 +1155,9 @@ public class Combat implements Serializable {
         if (terrain.hasStatut(StatutsTerrain.TOXIC_SPIKES) && entree.isGrounded(terrain)) {
             long nb = terrain.getAlterations().get(StatutsTerrain.TOXIC_SPIKES);
             if (nb > 1) {
-                entree.applyStatus(AlterationEtat.POISON_GRAVE, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN), 1, affichage);
+                entree.applyStatus(AlterationEtat.POISON_GRAVE, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN), 1, affichage, game);
             } else {
-                entree.applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN), 1, affichage);
+                entree.applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN), 1, affichage, game);
             }
             if (!affichage) {
                 game.getChannel().sendMessage(entree.getNomPresentation() + " est empoisonné par les picots au sol !").queue();
@@ -1241,7 +1243,7 @@ public class Combat implements Serializable {
         for (Pokemon pokemon : tousLesPokemonsEnJeu()) {
             Terrain terrain = getTerrainAllie(pokemon);
             if (pokemon.hasStatut(AlterationEtat.RACINES)) {
-                game.getChannel().sendMessage(pokemon.getNomPresentation() + " restaure ses points de vie !").queue();
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + AlterationEtat.RACINES.getAfflictionText()).queue();
                 int heal = pokemon.getMaxHp() / 16;
 //            if (HeldItem.BIG_ROOT.equals(currentPokemonFirstTrainer.getHeldItem())) {
 //                heal = (int) (heal * 1.3);
@@ -1250,7 +1252,7 @@ public class Combat implements Serializable {
             }
 
             if (pokemon.hasStatut(AlterationEtat.ANNEAU_HYDRO)) {
-                game.getChannel().sendMessage(pokemon.getNomPresentation() + " restaure ses points de vie !").queue();
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + AlterationEtat.ANNEAU_HYDRO.getAfflictionText()).queue();
                 int heal = pokemon.getMaxHp() / 16;
 //            if (HeldItem.BIG_ROOT.equals(currentPokemonFirstTrainer.getHeldItem())) {
 //                heal = (int) (heal * 1.3);
@@ -1281,17 +1283,17 @@ public class Combat implements Serializable {
             }
 
             if (pokemon.hasStatut(AlterationEtat.BRULURE)) {
-                game.getChannel().sendMessage(pokemon.getNomPresentation() + " souffre de sa brulûre !").queue();
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + AlterationEtat.BRULURE.getAfflictionText()).queue();
                 pokemon.blesser(pokemon.getMaxHp() / 8, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
             }
 
             if (pokemon.hasStatut(AlterationEtat.MALEDICTION)) {
-                game.getChannel().sendMessage(pokemon.getNomPresentation() + " subit les effets de la malédiction !").queue();
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + AlterationEtat.MALEDICTION.getAfflictionText()).queue();
                 pokemon.blesser(pokemon.getMaxHp() / 4, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
             }
 
             if (pokemon.hasStatut(AlterationEtat.POISON) || pokemon.hasStatut(AlterationEtat.POISON_GRAVE)) {
-                game.getChannel().sendMessage(pokemon.getNomPresentation() + " souffre du poison !").queue();
+                game.getChannel().sendMessage(pokemon.getNomPresentation() + AlterationEtat.POISON.getAfflictionText()).queue();
                 if (pokemon.hasStatut(AlterationEtat.POISON_GRAVE)) {
                     AlterationInstance ai = pokemon.getAlterationInstance(AlterationEtat.POISON_GRAVE);
                     pokemon.blesser((pokemon.getMaxHp() / 16) * ai.getToursRestants(), new SourceDegats(TypeSourceDegats.ALTERATION_ETAT));
@@ -1315,6 +1317,7 @@ public class Combat implements Serializable {
                             && !pokemon.hasType(Type.ROCK)
 //                        && Talent.SAND_VEIL.equals(currentPokemonSecondTrainer.getTalent())
                     ) {
+                        game.getChannel().sendMessage(pokemon.getNomPresentation() + " est blessé par la tempête de sable !").queue();
                         pokemon.blesser(pokemon.getMaxHp() / 16, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN));
                     }
                 } else if (terrain.hasStatut(StatutsTerrain.HAIL)) {
@@ -1322,6 +1325,7 @@ public class Combat implements Serializable {
                     if (!pokemon.hasType(Type.ICE)
 //                        && Talent.SNOW_CLOAK.equals(currentPokemonSecondTrainer.getTalent())
                     ) {
+                        game.getChannel().sendMessage(pokemon.getNomPresentation() + " est blessé par la grêle !").queue();
                         pokemon.blesser(pokemon.getMaxHp() / 16, new SourceDegats(TypeSourceDegats.STATUT_TERRAIN));
                     }
                 }
@@ -1434,6 +1438,16 @@ public class Combat implements Serializable {
                 pokeY -= 12;
             }
 
+            int pokeY2 = 2;
+            for (Pokemon pokemon : noir.getEquipe()) {
+                if (pokemon.getCurrentHp() <= 0) {
+                    elementUIS.add(new ImageUI(190, pokeY2, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("empty"))))));
+                } else {
+                    elementUIS.add(new ImageUI(190, pokeY2, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("pokeball"))))));
+                }
+                pokeY2 += 12;
+            }
+
             if (blanc.getPokemonActif().isShiny()) {
                 elementUIS.add(new ImageUI(genrePokemonBlanc.getX() + (int) (font.getStringBounds(genrePokemonBlanc.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
             }
@@ -1491,7 +1505,7 @@ public class Combat implements Serializable {
             }
 
             int pokeY2 = 2;
-            for (Pokemon pokemon : blanc.getEquipe()) {
+            for (Pokemon pokemon : noir.getEquipe()) {
                 if (pokemon.getCurrentHp() <= 0) {
                     elementUIS.add(new ImageUI(190, pokeY2, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("empty"))))));
                 } else {

@@ -42,7 +42,7 @@ public class MoveDamageLower {
             int degats = cible.calculerDegatsAttaque(actionCombat, combat, simulation, modificateurPuissance);
             cible.blesser(degats, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
             if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMeta().getFlinchChance()) {
-                cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation);
+                cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation, combat.getGame());
             }
             if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMeta().getStatChance()) {
                 actionCombat.getAttaque().getMoveAPI().getStatChanges().forEach(s -> {

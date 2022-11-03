@@ -37,7 +37,7 @@ public class MoveDamageHeal {
         int heal = 0;
         for (Pokemon cible : cibles) {
             if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMeta().getFlinchChance()) {
-                cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation);
+                cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation, combat.getGame());
             }
 
             int degats = cible.calculerDegatsAttaque(actionCombat, combat, simulation, modificateurPuissance);

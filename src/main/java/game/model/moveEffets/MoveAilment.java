@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import utils.Utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -51,7 +50,7 @@ public class MoveAilment {
             MoveAilmentAPI localMoveAilmentAPI = MoveAilmentAPI.getById(ma.getId());
             if (localMoveAilmentAPI.getAlterationEtat() != null) {
                 if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() == 0 || actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
-                    cible.applyStatus(localMoveAilmentAPI.getAlterationEtat(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), dureeAlteration, false);
+                    cible.applyStatus(localMoveAilmentAPI.getAlterationEtat(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), dureeAlteration, false, combat.getGame());
                 }
             } else {
                 System.out.println(localMoveAilmentAPI);

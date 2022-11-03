@@ -7,7 +7,6 @@ import com.github.oscar0812.pokeapi.models.games.VersionGroup;
 import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
-import executable.MyBot;
 import game.Game;
 import game.model.enums.*;
 import game.model.enums.Gender;
@@ -1254,7 +1253,7 @@ public class Pokemon implements Serializable {
         this.alterations.removeIf(a -> !a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
         if (hasStatut(AlterationEtat.POISON_GRAVE)) {
             enleveStatut(AlterationEtat.POISON_GRAVE);
-            applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), 1, false);
+            applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), 1, true, null);
         }
         this.currentAtkPhy = getMaxAtkPhy();
         this.currentDefPhy = getMaxDefPhy();
@@ -1319,7 +1318,7 @@ public class Pokemon implements Serializable {
                 }
                 if (a.getAlterationEtat().equals(AlterationEtat.SOMNOLENCE)) {
                     game.getChannel().sendMessage(getNomPresentation() + " s'endort...").queue();
-                    applyStatus(AlterationEtat.SOMMEIL, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), Utils.getRandomNumber(1, 3), false);
+                    applyStatus(AlterationEtat.SOMMEIL, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), Utils.getRandomNumber(1, 3), false, game);
                 }
 
                 return true;
@@ -1348,7 +1347,7 @@ public class Pokemon implements Serializable {
         return alterations.stream().anyMatch(a -> a.getAlterationEtat().getTypeAlteration().equals(TypeAlteration.NON_VOLATILE));
     }
 
-    public void applyStatus(AlterationEtat alterationEtat, SourceDegats source, int duree, boolean simulation) {
+    public void applyStatus(AlterationEtat alterationEtat, SourceDegats source, int duree, boolean simulation, Game game) {
 
         //altération déjà infligée
         if (hasStatut(alterationEtat)) {
@@ -1400,6 +1399,9 @@ public class Pokemon implements Serializable {
 //        }
 
         alterations.add(new AlterationInstance(alterationEtat, source, duree));
+        if(!simulation){
+            game.getChannel().sendMessage(getNomPresentation()+alterationEtat.getApplicationText()).queue();
+        }
 
 //        //DESTINY KNOT
 //        if (alterationEtat.equals(Status.INFATUATED) && HeldItem.DESTINY_KNOT.equals(getHeldItem())) {

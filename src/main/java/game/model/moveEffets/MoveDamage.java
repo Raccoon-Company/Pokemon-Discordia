@@ -104,7 +104,7 @@ public class MoveDamage {
                 } else {
                     //s'envole
                     combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " s'envole !").queue();
-                    actionCombat.getLanceur().applyStatus(AlterationEtat.SEMI_INVULNERABLE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation);
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.SEMI_INVULNERABLE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation, combat.getGame());
                     actionCombat.getLanceur().getActionsCombat().put(combat.getTurnCount() + 1, new ActionCombat(actionCombat));
                 }
                 break;
@@ -142,7 +142,7 @@ public class MoveDamage {
                 attaqueParDefaut(combat, actionCombat, simulation);
                 //TODO notif thrash
                 int nbTurn = Utils.getRandomNumber(2, 3);
-                actionCombat.getLanceur().applyStatus(AlterationEtat.THRASHING, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), nbTurn, simulation);
+                actionCombat.getLanceur().applyStatus(AlterationEtat.THRASHING, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), nbTurn, simulation, combat.getGame());
                 break;
             case 49: //sonic boom
                 if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
@@ -151,7 +151,7 @@ public class MoveDamage {
                 break;
             case 63: //ultralaser
                 attaqueParDefaut(combat, actionCombat, simulation);
-                actionCombat.getLanceur().applyStatus(AlterationEtat.RECHARGE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation);
+                actionCombat.getLanceur().applyStatus(AlterationEtat.RECHARGE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation, combat.getGame());
                 break;
             case 67://balayage
                 if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
@@ -204,7 +204,7 @@ public class MoveDamage {
                 } else {
                     //charge attaque
                     combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " s'envole !").queue();
-                    actionCombat.getLanceur().applyStatus(AlterationEtat.CHARGING_TURN, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation);
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.CHARGING_TURN, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation, combat.getGame());
                     actionCombat.getLanceur().getActionsCombat().put(combat.getTurnCount() + 1, new ActionCombat(actionCombat));
                 }
                 break;
@@ -221,7 +221,7 @@ public class MoveDamage {
                 } else {
                     //creuse
                     combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " creuse un tunnel !").queue();
-                    actionCombat.getLanceur().applyStatus(AlterationEtat.SEMI_INVULNERABLE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation);
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.SEMI_INVULNERABLE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation, combat.getGame());
                     actionCombat.getLanceur().getActionsCombat().put(combat.getTurnCount() + 1, new ActionCombat(actionCombat));
                 }
                 break;
@@ -289,7 +289,7 @@ public class MoveDamage {
 
         for (Pokemon cible : cibles) {
             if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMeta().getFlinchChance()) {
-                cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation);
+                cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation, combat.getGame());
             }
 
             int degats = cible.calculerDegatsAttaque(actionCombat, combat, simulation, modificateurPuissance);
