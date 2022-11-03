@@ -17,6 +17,7 @@ public class MoveOHKO {
         switch (actionCombat.getAttaque().getIdMoveAPI()) {
             case 12://guillotine
             case 32://empalkorne
+            case 90://fissure
                 attaqueParDefaut(combat, actionCombat);
                 break;
             default:
@@ -35,7 +36,7 @@ public class MoveOHKO {
         Pokemon lanceur = actionCombat.getLanceur();
         Pokemon cible = actionCombat.getPokemonCible();
 
-        if(combat.verificationsCibleIndividuelle(actionCombat, cible, true, false)){
+        if(combat.verificationsCibleIndividuelle(actionCombat, true, false)){
             if (lanceur.getLevel() < cible.getLevel()) {
                 combat.fail();
             } else {

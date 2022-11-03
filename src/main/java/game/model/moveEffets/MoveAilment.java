@@ -19,21 +19,28 @@ public class MoveAilment {
 
         switch (actionCombat.getAttaque().getIdMoveAPI()) {
             case 48://supersonic
-                attaqueParDefaut(combat,actionCombat,simulation, AlterationEtat.getToursConfusion(), false);
+                attaqueParDefaut(combat, actionCombat, simulation, AlterationEtat.getToursConfusion(), false);
                 break;
-                case 47://berceuse
+            case 47://berceuse
                 //TODO sweet veil, throat chop, throat spray, insomnia ,soundproof, vital spirit
-                attaqueParDefaut(combat,actionCombat,simulation,1,false);
+            case 79://poudre dodo
+            case 95://hypnose
+                //TODO insomnia vital spirit sap sipper overcoat sweet veil safety goggles
+                attaqueParDefaut(combat, actionCombat, simulation, AlterationEtat.getToursSommeil(), false);
                 break;
             case 73://vampigraine
-                attaqueParDefaut(combat,actionCombat,simulation,1,false);
-            break;
+            case 77://poudre toxik
+            case 78://paraspore
+            case 86://cagéclair
+            case 92://toxik
+                attaqueParDefaut(combat, actionCombat, simulation, 1, false);
+                break;
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }
     }
 
-    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat,boolean simulation, int dureeAlteration, boolean alwaysHit) {
+    private static void attaqueParDefaut(Combat combat, ActionCombat actionCombat, boolean simulation, int dureeAlteration, boolean alwaysHit) {
         List<Pokemon> cibles = ciblesAffectees(combat, actionCombat, alwaysHit);
 
         for (Pokemon cible : cibles) {
@@ -49,6 +56,7 @@ public class MoveAilment {
 
         }
     }
+
     @NotNull
     public static List<Pokemon> ciblesAffectees(Combat combat, ActionCombat actionCombat, boolean alwaysHit) {
         List<Pokemon> cibles = new ArrayList<>();
@@ -96,7 +104,7 @@ public class MoveAilment {
                 throw new IllegalStateException("Cible inconnue : MoveAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
         return cibles;
     }
 }

@@ -48,7 +48,6 @@
 48 : supersonic : Ultrason : ailment
 49 : sonic-boom : Sonic Boom : damage
 50 : disable : Entrave : unique
-
 51 : acid : Acide : damage+lower
 52 : ember : Flammèche : damage+ailment
 53 : flamethrower : Lance-Flammes : damage+ailment
@@ -99,6 +98,7 @@
 98 : quick-attack : Vive-Attaque : damage
 99 : rage : Frénésie : damage
 100 : teleport : Téléport : unique
+
 101 : night-shade : Ombre Nocturne : damage
 102 : mimic : Copie : unique
 103 : screech : Grincement : net-good-stats

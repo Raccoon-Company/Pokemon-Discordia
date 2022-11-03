@@ -21,6 +21,9 @@ public class MoveNetGoodStats {
             case 43: //groz yeux
             case 45: //rugissement
             case 74://croissance
+            case 81://secrétion
+            case 96://yoga
+            case 97://hâte
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:
@@ -86,7 +89,7 @@ public class MoveNetGoodStats {
                 throw new IllegalStateException("Cible inconnue : MoveDamage");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, false, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, false, false));
         return cibles;
     }
 

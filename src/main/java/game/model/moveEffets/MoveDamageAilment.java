@@ -35,13 +35,18 @@ public class MoveDamageAilment {
                 break;
             case 20: // bind
             case 35://wrap
-                if(actionCombat.getPokemonCible().hasType(Type.GHOST)){
-                    combat.getGame().getChannel().sendMessage("L'attaque est sans effet !").queue();
-                    return;
-                }
+            case 83://danse flammes
                 //TODO item grip claw + 1 tour
-                combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
-                attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5),1,false);
+                if(!actionCombat.getPokemonCible().hasType(Type.GHOST)){
+                    combat.getGame().getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " est pris dans l'étreinte de "+actionCombat.getLanceur().getNomPresentation()+ " !").queue();
+                    attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5),1,false);
+                }else{
+                    //pas de binding si type fantome
+                    if(combat.verificationsCibleIndividuelle(actionCombat, false,false)){
+                        int degats = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
+                        actionCombat.getPokemonCible().blesser(degats, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
+                    }
+                }
                 break;
             case 34://stomp
                 //puissance doublée si la cible a utilisé minimize
@@ -65,6 +70,10 @@ public class MoveDamageAilment {
             case 58://laser glace
             case 59://blizzard
             case 60://rafale psy
+            case 84://éclair
+            case 85://tonnerre
+            case 87://fatal foudre
+            case 93://choc mental
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:
@@ -142,7 +151,7 @@ public class MoveDamageAilment {
                 throw new IllegalStateException("Cible inconnue : MoveDamageAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
         return cibles;
     }
 }

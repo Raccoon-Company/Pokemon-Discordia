@@ -21,6 +21,7 @@ public class MoveDamageLower {
             case 51://acide
             case 61://bulles d'o
             case 62://onde boréale
+            case 94://psyko
                 attaqueParDefaut(combat,actionCombat,simulation);
                 break;
             default:
@@ -98,7 +99,7 @@ public class MoveDamageLower {
                 throw new IllegalStateException("Cible inconnue : MoveDamageLower");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
         return cibles;
     }
 }

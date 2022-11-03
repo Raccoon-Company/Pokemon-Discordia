@@ -81,6 +81,8 @@ public class Combat implements Serializable {
     private final static int DOUBLE_MAX_Y_HP_BAR_NOIR_BIS = 39;
 
     private final static List<Integer> listeAttaquesTouchantVol = Arrays.asList(16, 87, 239, 18, 327, 542, 479, 614);
+    private final static List<Integer> listeAttaquesTouchantTunnel = Arrays.asList(89, 90, 222);
+
 
     private Game game;
 
@@ -753,8 +755,12 @@ public class Combat implements Serializable {
 
         //vérif combat terminé
         if (!blanc.getPokemonsActifsEnVie().isEmpty() && !noir.getPokemonsActifsEnVie().isEmpty()) {
-            //tour suivant
-            roundPhase0();
+            if(typeCombatResultat.equals(TypeCombatResultat.EN_COURS)){
+                //tour suivant
+                roundPhase0();
+            }else{
+                game.apresCombat(this);
+            }
         } else {
             if (blanc.getPokemonsActifsEnVie().isEmpty()) {
                 typeCombatResultat = TypeCombatResultat.DEFAITE;
@@ -915,6 +921,11 @@ public class Combat implements Serializable {
 
         ActionCombat actionCombat = lanceur.getActionsCombat().get(turnCount);
 
+        //si le combat n'est plus en cours, on n'effectue pas d'action supplémentaire
+        if(!typeCombatResultat.equals(TypeCombatResultat.EN_COURS)){
+            return;
+        }
+
         //on n'effectue des actions qu'en mode ATTAQUE ici
         if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;
@@ -1037,16 +1048,16 @@ public class Combat implements Serializable {
                 MoveOHKO.utiliser(this, actionCombat, simulation);
                 break;
             case "whole-field-effect":
-                MoveWholeFieldEffect.utiliser(this, actionCombat);
+                MoveWholeFieldEffect.utiliser(this, actionCombat, simulation);
                 break;
             case "field-effect":
-                MoveFieldEffect.utiliser(this, actionCombat);
+                MoveFieldEffect.utiliser(this, actionCombat, simulation);
                 break;
             case "force-switch":
-                MoveForceSwitch.utiliser(this, actionCombat);
+                MoveForceSwitch.utiliser(this, actionCombat, simulation);
                 break;
             case "unique":
-                MoveUnique.utiliser(this, actionCombat);
+                MoveUnique.utiliser(this, actionCombat, simulation);
                 break;
             default:
                 logger.error("Catégorie d'attaque inconnue : " + attaqueSelectionnee.getMeta().getCategory().getName());
@@ -1221,7 +1232,7 @@ public class Combat implements Serializable {
         return sortedList.stream().map(Map.Entry::getKey).collect(Collectors.toList());
     }
 
-    private Terrain getTerrainAllie(Pokemon pokemon) {
+    public Terrain getTerrainAllie(Pokemon pokemon) {
         return getDuellisteAllie(pokemon).equals(noir) ? terrainNoir : terrainBlanc;
     }
 
@@ -1725,7 +1736,7 @@ public class Combat implements Serializable {
         this.piecesEparpillees = piecesEparpillees;
     }
 
-    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, Pokemon cible, boolean ignorerPrecision, boolean ignorerImmunite) {
+    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, boolean ignorerPrecision, boolean ignorerImmunite) {
         //pas d'attaque si la cible est dead
         if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0) {
             return false;
@@ -1738,7 +1749,12 @@ public class Combat implements Serializable {
 
         //pas d'attaque si cible semi-invulnérable sauf exceptions...
         if (actionCombat.getPokemonCible().hasStatut(AlterationEtat.SEMI_INVULNERABLE) && !actionCombat.getLanceur().hasStatut(AlterationEtat.VISEE)) {
-            if (!listeAttaquesTouchantVol.contains(actionCombat.getAttaque().getIdMoveAPI())) {
+            if(!(actionCombat.getPokemonCible().getActionsCombat().get(turnCount-1).getAttaque().getIdMoveAPI() == 19 && listeAttaquesTouchantVol.contains(actionCombat.getAttaque().getIdMoveAPI()))){
+                    //TODO no guard empe^che les esquives
+                    return false;
+            }
+
+            if(!(actionCombat.getPokemonCible().getActionsCombat().get(turnCount-1).getAttaque().getIdMoveAPI() == 91 && listeAttaquesTouchantTunnel.contains(actionCombat.getAttaque().getIdMoveAPI()))){
                 //TODO no guard empe^che les esquives
                 return false;
             }

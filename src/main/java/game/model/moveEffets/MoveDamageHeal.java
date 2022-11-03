@@ -92,7 +92,7 @@ public class MoveDamageHeal {
                 throw new IllegalStateException("Cible inconnue : MoveDamageHeal");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
         return cibles;
     }
 }

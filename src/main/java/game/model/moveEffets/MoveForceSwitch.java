@@ -10,7 +10,7 @@ import game.model.enums.TypeCombatResultat;
 import game.model.enums.TypeDuelliste;
 
 public abstract class MoveForceSwitch {
-    public static void utiliser(Combat combat, ActionCombat actionCombat) {
+    public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
         if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;
         }

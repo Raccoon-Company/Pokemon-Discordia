@@ -6,7 +6,7 @@ import game.model.Combat;
 import game.model.enums.TypeActionCombat;
 
 public class MoveWholeFieldEffect {
-    public static void utiliser(Combat combat, ActionCombat actionCombat) {
+    public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
         if (!actionCombat.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)) {
             return;
         }

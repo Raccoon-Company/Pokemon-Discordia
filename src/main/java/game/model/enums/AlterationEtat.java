@@ -68,6 +68,10 @@ public enum AlterationEtat {
         this.ratio = ratio;
     }
 
+    public static int getToursSommeil() {
+        return Utils.getRandomNumber(2,4);
+    }
+
     public String getApplicationText() {
         return applicationText;
     }
