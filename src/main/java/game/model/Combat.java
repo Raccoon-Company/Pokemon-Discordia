@@ -1321,7 +1321,7 @@ public class Combat implements Serializable {
                 pokemon.getActionsCombat().put(turnCount + 1, new ActionCombat(ac));
             }
 
-            pokemon.setaPerduDeLaVieCeTour(false);
+            pokemon.setDernierMontantDePVsPerdus(0);
             pokemon.setaDejaAttaque(false);
 
             pokemon.decrementerAlterations(game);
@@ -1725,7 +1725,7 @@ public class Combat implements Serializable {
         this.piecesEparpillees = piecesEparpillees;
     }
 
-    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, Pokemon cible, boolean ignorerPrecision) {
+    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, Pokemon cible, boolean ignorerPrecision, boolean ignorerImmunite) {
         //pas d'attaque si la cible est dead
         if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0) {
             return false;
@@ -1742,6 +1742,11 @@ public class Combat implements Serializable {
                 //TODO no guard empe^che les esquives
                 return false;
             }
+        }
+
+        if(!ignorerImmunite && Type.getById(actionCombat.getAttaque().getMoveAPI().getType().getId()).pourcentageDegatsAttaque(getPokemonAPI().getTypes()) == 0){
+            game.getChannel().sendMessage("Cela n'affecte pas "+actionCombat.getPokemonCible().getNomPresentation() + " !").queue();
+return false;
         }
 
         //en simulation, la précision est comptabilisée en ratio de dégats, alors qu'en vrai, c'est tout ou rien

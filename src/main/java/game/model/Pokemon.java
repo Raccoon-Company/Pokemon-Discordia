@@ -105,7 +105,7 @@ public class Pokemon implements Serializable {
     private double evasivenessStage = 0;
 
     @JsonIgnore
-    private boolean aPerduDeLaVieCeTour;
+    private int dernierMontantDePVsPerdus = 0;
     @JsonIgnore
     private boolean aDejaAttaque;
     @JsonIgnore
@@ -131,7 +131,7 @@ public class Pokemon implements Serializable {
         this.level = 0;
         this.xp = 0;
         this.shiny = Utils.getRandom().nextInt(1) == 0;
-        this.aPerduDeLaVieCeTour = false;
+        this.dernierMontantDePVsPerdus = 0;
         this.aDejaAttaque = false;
         this.friendship = 0;
 
@@ -181,7 +181,7 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, boolean aPerduDeLaVieCeTour, boolean aDejaAttaque, HashMap<Integer, ActionCombat> actionsCombat, boolean itemAutorise, List<PokemonMove> allMovesAPI, com.github.oscar0812.pokeapi.models.pokemon.Pokemon pokemonAPI, PokemonSpecies pokemonSpeciesAPI) {
+    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, int dernierMontantDePVsPerdus, boolean aDejaAttaque, HashMap<Integer, ActionCombat> actionsCombat, boolean itemAutorise, List<PokemonMove> allMovesAPI, com.github.oscar0812.pokeapi.models.pokemon.Pokemon pokemonAPI, PokemonSpecies pokemonSpeciesAPI) {
         this.id = id;
         this.gender = gender;
         this.idSpecie = idSpecie;
@@ -223,7 +223,7 @@ public class Pokemon implements Serializable {
         this.speedStage = speedStage;
         this.accuracyStage = accuracyStage;
         this.evasivenessStage = evasivenessStage;
-        this.aPerduDeLaVieCeTour = aPerduDeLaVieCeTour;
+        this.dernierMontantDePVsPerdus = dernierMontantDePVsPerdus;
         this.aDejaAttaque = aDejaAttaque;
         this.actionsCombat = actionsCombat;
         this.itemAutorise = itemAutorise;
@@ -885,12 +885,16 @@ public class Pokemon implements Serializable {
         this.itemAutorise = itemAutorise;
     }
 
-    public boolean isaPerduDeLaVieCeTour() {
-        return aPerduDeLaVieCeTour;
+    public void setCritChanceStage(int critChanceStage) {
+        this.critChanceStage = critChanceStage;
     }
 
-    public void setaPerduDeLaVieCeTour(boolean aPerduDeLaVieCeTour) {
-        this.aPerduDeLaVieCeTour = aPerduDeLaVieCeTour;
+    public int getDernierMontantDePVsPerdus() {
+        return dernierMontantDePVsPerdus;
+    }
+
+    public void setDernierMontantDePVsPerdus(int dernierMontantDePVsPerdus) {
+        this.dernierMontantDePVsPerdus = dernierMontantDePVsPerdus;
     }
 
     public boolean isaDejaAttaque() {
@@ -1264,7 +1268,7 @@ public class Pokemon implements Serializable {
         int degatsFinaux = Math.min(currentHp, valeur);
         if (degatsFinaux > 0) {
             currentHp -= degatsFinaux;
-            aPerduDeLaVieCeTour = true;
+            dernierMontantDePVsPerdus = degatsFinaux;
         }
 
         //TODO notif degats
@@ -1275,6 +1279,10 @@ public class Pokemon implements Serializable {
     public int soigner(int valeur, Game game) {
         //on ne peut pas heal les morts !
         if (!estEnVie()) {
+            return 0;
+        }
+
+        if(valeur <= 0){
             return 0;
         }
 
@@ -1479,6 +1487,11 @@ public class Pokemon implements Serializable {
     }
 
     public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, boolean simulation, double modificateurPuissance) {
+        Move move = actionCombat.getAttaque().getMoveAPI();
+        return calculerDegatsAttaque(actionCombat,combat,simulation,modificateurPuissance, move.getPower());
+    }
+
+    public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, boolean simulation, double modificateurPuissance, int puissanceBase) {
         boolean crit = Utils.getRandomNumber(1, getDenominateurCritChance()) == 1;
 
         Move move = actionCombat.getAttaque().getMoveAPI();
@@ -1491,7 +1504,7 @@ public class Pokemon implements Serializable {
         if (crit) {
             def = Math.min((move.getDamageClass().getId() == 2 ? getCurrentDefPhy() : getCurrentDefSpe()), (move.getDamageClass().getId() == 2 ? getCurrentDefPhy() : getCurrentDefSpe()));
         }
-        double pointsDeViePerdusPart1 = (Math.floor(Math.floor(lanceur.getLevel() * 0.4) + 2) * attaque * move.getPower());
+        double pointsDeViePerdusPart1 = (Math.floor(Math.floor(lanceur.getLevel() * 0.4) + 2) * attaque * puissanceBase);
         double pointsDeViePerdusPart2 = def * 50;
         double pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart1 / pointsDeViePerdusPart2) + 2;
 

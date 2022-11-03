@@ -1,6 +1,5 @@
 package game.model.moveEffets;
 
-import game.Game;
 import game.model.*;
 import game.model.enums.AlterationEtat;
 import game.model.enums.MoveAilmentAPI;
@@ -19,13 +18,16 @@ public class MoveAilment {
         }
 
         switch (actionCombat.getAttaque().getIdMoveAPI()) {
-            case 47://berceuse
-                //TODO sweet veil, throat chop, throat spray, insomnia ,soundproof, vital spirit
-                attaqueParDefaut(combat,actionCombat,simulation,1,false);
-                break;
             case 48://supersonic
                 attaqueParDefaut(combat,actionCombat,simulation, AlterationEtat.getToursConfusion(), false);
                 break;
+                case 47://berceuse
+                //TODO sweet veil, throat chop, throat spray, insomnia ,soundproof, vital spirit
+                attaqueParDefaut(combat,actionCombat,simulation,1,false);
+                break;
+            case 73://vampigraine
+                attaqueParDefaut(combat,actionCombat,simulation,1,false);
+            break;
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }
@@ -38,7 +40,7 @@ public class MoveAilment {
             MoveAilment ma = actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
             MoveAilmentAPI localMoveAilmentAPI = MoveAilmentAPI.getById(ma.getId());
             if (localMoveAilmentAPI.getAlterationEtat() != null) {
-                if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
+                if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() == 0 || actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
                     cible.applyStatus(localMoveAilmentAPI.getAlterationEtat(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), dureeAlteration, false);
                 }
             } else {
@@ -94,7 +96,7 @@ public class MoveAilment {
                 throw new IllegalStateException("Cible inconnue : MoveAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
         return cibles;
     }
 }

@@ -1,12 +1,9 @@
 package game.model.moveEffets;
 
 import game.model.*;
-import game.model.enums.AlterationEtat;
 import game.model.enums.Stats;
 import game.model.enums.TypeActionCombat;
-import game.model.enums.TypeSourceDegats;
 import org.jetbrains.annotations.NotNull;
-import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +20,7 @@ public class MoveNetGoodStats {
             case 39://mimi queue
             case 43: //groz yeux
             case 45: //rugissement
+            case 74://croissance
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:
@@ -88,7 +86,7 @@ public class MoveNetGoodStats {
                 throw new IllegalStateException("Cible inconnue : MoveDamage");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, false, false));
         return cibles;
     }
 

@@ -60,6 +60,11 @@ public class MoveDamageAilment {
             case 8://ice punch
             case 9://thunder punch
             case 40: //dard-venin
+            case 52://flammeche
+            case 53: //lance flammes
+            case 58://laser glace
+            case 59://blizzard
+            case 60://rafale psy
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:
@@ -76,7 +81,7 @@ public class MoveDamageAilment {
             MoveAilment ma = actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
             MoveAilmentAPI localMoveAilmentAPI = MoveAilmentAPI.getById(ma.getId());
             if (localMoveAilmentAPI.getAlterationEtat() != null) {
-                if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
+                if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() == 0 || actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
                     cible.applyStatus(localMoveAilmentAPI.getAlterationEtat(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), dureeAlteration, false);
                 }
             } else {
@@ -137,7 +142,7 @@ public class MoveDamageAilment {
                 throw new IllegalStateException("Cible inconnue : MoveDamageAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
         return cibles;
     }
 }
