@@ -7,6 +7,8 @@ import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MoveDamage {
 
@@ -26,7 +28,7 @@ public class MoveDamage {
             case 4: //poing comète
             case 31://fury attack
                 //TODO check interactions : focus sash focus band sturdyweak armor stamina rocky helmet
-                if (combat.verificationsCibleIndividuelle(actionCombat, false, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false, false)) {
                     //TODO clone, riposte, patience
                     int degats = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
                     int ran = Utils.getRandomNumber(1, 8);
@@ -65,7 +67,7 @@ public class MoveDamage {
 
                 break;
             case 24://double pied
-                if (combat.verificationsCibleIndividuelle(actionCombat, false, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false, false)) {
                     int degatsDoublePied = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
                     actionCombat.getPokemonCible().blesser(degatsDoublePied, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                     actionCombat.getPokemonCible().blesser(degatsDoublePied, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
@@ -120,7 +122,7 @@ public class MoveDamage {
                     combat.fail();
                     return;
                 }
-                if (combat.verificationsCibleIndividuelle(actionCombat, false, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false, false)) {
                     int degatsPiedSaute = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
                     actionCombat.getPokemonCible().blesser(degatsPiedSaute, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 } else {
@@ -143,7 +145,7 @@ public class MoveDamage {
                 actionCombat.getLanceur().applyStatus(AlterationEtat.THRASHING, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), nbTurn, simulation);
                 break;
             case 49: //sonic boom
-                if (combat.verificationsCibleIndividuelle(actionCombat, simulation, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
                     actionCombat.getPokemonCible().blesser(20, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
                 break;
@@ -152,8 +154,8 @@ public class MoveDamage {
                 actionCombat.getLanceur().applyStatus(AlterationEtat.RECHARGE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation);
                 break;
             case 67://balayage
-                if (combat.verificationsCibleIndividuelle(actionCombat, simulation, false)) {
-                    int poids = actionCombat.getPokemonCible().getPokemonAPI().getWeigth();
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
+                    int poids = actionCombat.getPokemonCible().getPokemonAPI().getWeight();
                     int puissanceBalayage;
                     if (poids >= 441) {
                         puissanceBalayage = 120;
@@ -174,7 +176,7 @@ public class MoveDamage {
                 break;
             case 68://riposte
                 if(actionCombat.getLanceur().getDernierMontantDePVsPerdus() > 0){
-                    if (combat.verificationsCibleIndividuelle(actionCombat, simulation, false)) {
+                    if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
                         actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getDernierMontantDePVsPerdus() * 2, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                     }
                 }else{
@@ -183,7 +185,7 @@ public class MoveDamage {
                 }
                 break;
             case 69://frappe atlas
-                if (combat.verificationsCibleIndividuelle(actionCombat, simulation, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
                     actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getLevel(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
                 break;
@@ -207,7 +209,7 @@ public class MoveDamage {
                 }
                 break;
             case 82://dracorage
-                if (combat.verificationsCibleIndividuelle(actionCombat, simulation, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
                     actionCombat.getPokemonCible().blesser(40, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
                 break;
@@ -231,7 +233,7 @@ public class MoveDamage {
                         rageCounter++;
                     }
                 }
-                if (combat.verificationsCibleIndividuelle(actionCombat, false, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false, false)) {
                     int degatsRage = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, rageCounter);
                     actionCombat.getPokemonCible().blesser(degatsRage, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
@@ -270,7 +272,7 @@ public class MoveDamage {
     }
 
     private static void attaqueRecul(Combat combat, ActionCombat actionCombat, boolean simulation, int denominateur) {
-        if (combat.verificationsCibleIndividuelle(actionCombat, false, false)) {
+        if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false, false)) {
             int degatsTakeDown = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
             actionCombat.getPokemonCible().blesser(degatsTakeDown, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
             combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " subit le contrecoup de son attaque !").queue();
@@ -342,7 +344,8 @@ public class MoveDamage {
                 throw new IllegalStateException("Cible inconnue : MoveDamage");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
+        cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c,alwaysHit, false));
         return cibles;
     }
 

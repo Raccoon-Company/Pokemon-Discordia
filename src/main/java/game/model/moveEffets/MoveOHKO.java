@@ -36,7 +36,7 @@ public class MoveOHKO {
         Pokemon lanceur = actionCombat.getLanceur();
         Pokemon cible = actionCombat.getPokemonCible();
 
-        if(combat.verificationsCibleIndividuelle(actionCombat, true, false)){
+        if(combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),true, false)){
             if (lanceur.getLevel() < cible.getLevel()) {
                 combat.fail();
             } else {

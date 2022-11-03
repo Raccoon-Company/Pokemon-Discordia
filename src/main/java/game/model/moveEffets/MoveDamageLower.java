@@ -10,6 +10,8 @@ import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MoveDamageLower {
     public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
@@ -43,7 +45,7 @@ public class MoveDamageLower {
                 cible.applyStatus(AlterationEtat.APEURE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 1, simulation);
             }
             if (Utils.getRandomNumber(1, 100) < actionCombat.getAttaque().getMoveAPI().getMeta().getStatChance()) {
-                actionCombat.getAttaque().getMoveAPI().getStatsChange().forEach(s -> {
+                actionCombat.getAttaque().getMoveAPI().getStatChanges().forEach(s -> {
                     Stats stat = Stats.getById(s.getStat().getId());
                     cible.updateStage(combat.getGame().getChannel() , stat, s.getChange(), simulation);
                 });
@@ -99,7 +101,8 @@ public class MoveDamageLower {
                 throw new IllegalStateException("Cible inconnue : MoveDamageLower");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
+        cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat,c, alwaysHit, false));
         return cibles;
     }
 }

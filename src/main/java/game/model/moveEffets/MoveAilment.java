@@ -9,7 +9,10 @@ import org.jetbrains.annotations.NotNull;
 import utils.Utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MoveAilment {
     public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
@@ -44,7 +47,7 @@ public class MoveAilment {
         List<Pokemon> cibles = ciblesAffectees(combat, actionCombat, alwaysHit);
 
         for (Pokemon cible : cibles) {
-            MoveAilment ma = actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
+            com.github.oscar0812.pokeapi.models.moves.MoveAilment ma = actionCombat.getAttaque().getMoveAPI().getMeta().getAilment();
             MoveAilmentAPI localMoveAilmentAPI = MoveAilmentAPI.getById(ma.getId());
             if (localMoveAilmentAPI.getAlterationEtat() != null) {
                 if (actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() == 0 || actionCombat.getAttaque().getMoveAPI().getMeta().getAilmentChance() >= Utils.getRandomNumber(1, 100)) {
@@ -104,7 +107,8 @@ public class MoveAilment {
                 throw new IllegalStateException("Cible inconnue : MoveAilment");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
+        cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat,c, alwaysHit, false));
         return cibles;
     }
 }

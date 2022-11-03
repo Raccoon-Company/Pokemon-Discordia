@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MoveNetGoodStats {
     public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
@@ -89,7 +91,8 @@ public class MoveNetGoodStats {
                 throw new IllegalStateException("Cible inconnue : MoveDamage");
         }
 
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, false, false));
+        cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c,false, false));
         return cibles;
     }
 

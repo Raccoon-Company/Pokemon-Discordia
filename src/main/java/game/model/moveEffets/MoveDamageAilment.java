@@ -11,6 +11,8 @@ import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MoveDamageAilment {
     public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
@@ -42,7 +44,7 @@ public class MoveDamageAilment {
                     attaqueParDefaut(combat, actionCombat,simulation, Utils.getRandomNumber(4, 5),1,false);
                 }else{
                     //pas de binding si type fantome
-                    if(combat.verificationsCibleIndividuelle(actionCombat, false,false)){
+                    if(combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false,false)){
                         int degats = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
                         actionCombat.getPokemonCible().blesser(degats, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                     }
@@ -150,8 +152,8 @@ public class MoveDamageAilment {
             default:
                 throw new IllegalStateException("Cible inconnue : MoveDamageAilment");
         }
-
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
+        cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat,c, alwaysHit, false));
         return cibles;
     }
 }

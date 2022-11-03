@@ -29,7 +29,7 @@ public final class MoveUnique {
                 if(actionCible.getTypeActionCombat().equals(TypeActionCombat.ATTAQUE)){
                     attaque = actionCible.getAttaque();
                     if(attaque.getIdMoveAPI() != 165){
-                        combat.
+                        combat.getAttaquesEntravees().put(attaque,4);
                     }else{
                         combat.fail();
                         return;

@@ -755,10 +755,10 @@ public class Combat implements Serializable {
 
         //vérif combat terminé
         if (!blanc.getPokemonsActifsEnVie().isEmpty() && !noir.getPokemonsActifsEnVie().isEmpty()) {
-            if(typeCombatResultat.equals(TypeCombatResultat.EN_COURS)){
+            if (typeCombatResultat.equals(TypeCombatResultat.EN_COURS)) {
                 //tour suivant
                 roundPhase0();
-            }else{
+            } else {
                 game.apresCombat(this);
             }
         } else {
@@ -922,7 +922,7 @@ public class Combat implements Serializable {
         ActionCombat actionCombat = lanceur.getActionsCombat().get(turnCount);
 
         //si le combat n'est plus en cours, on n'effectue pas d'action supplémentaire
-        if(!typeCombatResultat.equals(TypeCombatResultat.EN_COURS)){
+        if (!typeCombatResultat.equals(TypeCombatResultat.EN_COURS)) {
             return;
         }
 
@@ -1356,7 +1356,7 @@ public class Combat implements Serializable {
             Type type = Type.getById(move.getType().getId());
             Button button = Button.of(ButtonStyle.PRIMARY, String.valueOf(attaque.getIdMoveAPI()), APIUtils.getFrName(move.getNames()) + " " + attaque.getPpLeft() + "/" + (move.getPp() + attaque.getBonusPp()), Emoji.fromCustom(type.getEmoji(), type.getIdDiscordEmoji(), false));
             //désactivation du bouton si attaque entravée
-            if(attaquesEntravees.containsKey(attaque)){
+            if (attaquesEntravees.containsKey(attaque)) {
                 button = button.asDisabled();
             }
             buttons.add(button);
@@ -1736,33 +1736,36 @@ public class Combat implements Serializable {
         this.piecesEparpillees = piecesEparpillees;
     }
 
-    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, boolean ignorerPrecision, boolean ignorerImmunite) {
+    public boolean verificationsCibleIndividuelle(ActionCombat actionCombat, Pokemon cible, boolean ignorerPrecision, boolean ignorerImmunite) {
+        if (cible == null) {
+            return false;
+        }
         //pas d'attaque si la cible est dead
-        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().getCurrentHp() <= 0) {
+        if (cible.getCurrentHp() <= 0) {
             return false;
         }
         //pas d'attaque si la cible se protège
-        if (actionCombat.getPokemonCible() != null && actionCombat.getPokemonCible().hasStatut(AlterationEtat.PROTECTION)) {
+        if (cible.hasStatut(AlterationEtat.PROTECTION)) {
             game.getChannel().sendMessage(actionCombat.getPokemonCible().getNomPresentation() + " se protège !").queue();
             return false;
         }
 
         //pas d'attaque si cible semi-invulnérable sauf exceptions...
-        if (actionCombat.getPokemonCible().hasStatut(AlterationEtat.SEMI_INVULNERABLE) && !actionCombat.getLanceur().hasStatut(AlterationEtat.VISEE)) {
-            if(!(actionCombat.getPokemonCible().getActionsCombat().get(turnCount-1).getAttaque().getIdMoveAPI() == 19 && listeAttaquesTouchantVol.contains(actionCombat.getAttaque().getIdMoveAPI()))){
-                    //TODO no guard empe^che les esquives
-                    return false;
+        if (cible.hasStatut(AlterationEtat.SEMI_INVULNERABLE) && !actionCombat.getLanceur().hasStatut(AlterationEtat.VISEE)) {
+            if (!(cible.getActionsCombat().get(turnCount - 1).getAttaque().getIdMoveAPI() == 19 && listeAttaquesTouchantVol.contains(actionCombat.getAttaque().getIdMoveAPI()))) {
+                //TODO no guard empe^che les esquives
+                return false;
             }
 
-            if(!(actionCombat.getPokemonCible().getActionsCombat().get(turnCount-1).getAttaque().getIdMoveAPI() == 91 && listeAttaquesTouchantTunnel.contains(actionCombat.getAttaque().getIdMoveAPI()))){
+            if (!(cible.getActionsCombat().get(turnCount - 1).getAttaque().getIdMoveAPI() == 91 && listeAttaquesTouchantTunnel.contains(actionCombat.getAttaque().getIdMoveAPI()))) {
                 //TODO no guard empe^che les esquives
                 return false;
             }
         }
 
-        if(!ignorerImmunite && Type.getById(actionCombat.getAttaque().getMoveAPI().getType().getId()).pourcentageDegatsAttaque(getPokemonAPI().getTypes()) == 0){
-            game.getChannel().sendMessage("Cela n'affecte pas "+actionCombat.getPokemonCible().getNomPresentation() + " !").queue();
-return false;
+        if (!ignorerImmunite && Type.getById(actionCombat.getAttaque().getMoveAPI().getType().getId()).pourcentageDegatsAttaque(cible.getPokemonAPI().getTypes()) == 0) {
+            game.getChannel().sendMessage("Cela n'affecte pas " + actionCombat.getPokemonCible().getNomPresentation() + " !").queue();
+            return false;
         }
 
         //en simulation, la précision est comptabilisée en ratio de dégats, alors qu'en vrai, c'est tout ou rien

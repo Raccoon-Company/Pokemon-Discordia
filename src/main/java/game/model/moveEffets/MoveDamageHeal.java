@@ -9,6 +9,8 @@ import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MoveDamageHeal {
     public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
@@ -91,8 +93,8 @@ public class MoveDamageHeal {
             default:
                 throw new IllegalStateException("Cible inconnue : MoveDamageHeal");
         }
-
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, alwaysHit, false));
+        cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c,alwaysHit, false));
         return cibles;
     }
 }
