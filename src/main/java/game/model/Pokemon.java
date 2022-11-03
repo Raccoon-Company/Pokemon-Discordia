@@ -7,6 +7,7 @@ import com.github.oscar0812.pokeapi.models.games.VersionGroup;
 import com.github.oscar0812.pokeapi.models.moves.Move;
 import com.github.oscar0812.pokeapi.models.pokemon.*;
 import com.github.oscar0812.pokeapi.utils.Client;
+import executable.MyBot;
 import game.Game;
 import game.model.enums.*;
 import game.model.enums.Gender;
@@ -959,7 +960,7 @@ public class Pokemon implements Serializable {
         if (allMovesAPI == null || allMovesAPI.isEmpty()) {
             allMovesAPI = getPokemonAPI().getMoves();
         }
-        return allMovesAPI.stream().filter(m -> m.getId()<=MAX_MOVE_ID_IMPLEMENTED).collect(Collectors.toList());
+        return allMovesAPI.stream().filter(m -> m.getId()<= Game.MAX_MOVE_ID_IMPLEMENTED).collect(Collectors.toList());
     }
 
     public HashMap<Integer, ActionCombat> getActionsCombat() {
