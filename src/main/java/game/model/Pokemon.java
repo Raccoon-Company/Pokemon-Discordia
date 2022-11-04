@@ -881,6 +881,8 @@ public class Pokemon implements Serializable {
         this.evasivenessStage = evasivenessStage;
     }
 
+
+
     public boolean isItemAutorise() {
         return itemAutorise;
     }

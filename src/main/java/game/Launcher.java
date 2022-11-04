@@ -167,7 +167,7 @@ public class Launcher extends ListenerAdapter {
 save.getCampaign().setGender(true);
 save.getCampaign().setNom("placeholder");
 save.getCampaign().setNomRival("ph2");
-save.getCampaign().setIdStarter(4);
+save.getCampaign().setIdStarter(1);
 validationSave(save, channel);
     }
 

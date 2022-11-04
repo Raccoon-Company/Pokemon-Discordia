@@ -421,6 +421,7 @@ public class Combat implements Serializable {
         if (dispos.size() == 0) {
             game.getChannel().sendMessage("Vous n'avez pas d'autres pokémons en état de se battre").queue();
             roundPhase1();
+            return;
         }
 
         //equipe sauf actif
@@ -569,6 +570,7 @@ public class Combat implements Serializable {
         //sinon retour à l'étape 1
         if (!fuiteAutorisee(blanc.getPokemonChoixCourant(turnCount), noir, false)) {
             roundPhase1();
+            return;
         }
 
         //up le nm de tentatives de fuite
@@ -786,9 +788,7 @@ public class Combat implements Serializable {
      * Cette dernière phase consiste à vérifier si le combat est terminé et à agir en conséquence
      */
     private void roundPhase4() {
-        if (!noir.aPerdu()) {
-            remplacementPokemonAuto();
-        }
+        remplacementPokemonAuto();
 
         //vérif combat terminé
         if (!blanc.aPerdu() && !noir.aPerdu()) {
@@ -849,12 +849,12 @@ public class Combat implements Serializable {
 
     private int dangerCoeff(Pokemon pokemon, Duelliste opponent) {
         List<Type> typesAdversaires = opponent.getPokemonsActifsEnVie().stream().map(Pokemon::getTypes).flatMap(Collection::stream).collect(Collectors.toList());
-        return typesAdversaires.stream().max(t -> t.pourcentageDegatsAttaque(pokemon.getPokemonAPI().getTypes()));
+        return typesAdversaires.stream().map(t -> t.pourcentageDegatsAttaque(pokemon.getPokemonAPI().getTypes())).max(Integer::compare).orElse(100);
     }
 
     private int advantageCoeff(Pokemon pokemon, Duelliste opponent) {
         int advRatio = 0;
-        List<Type> typeAv = pokemon.getMoveset().stream().filter(m -> m.getMoveAPI().getDamageClass() != 1).map(m -> m.getMoveAPI().getType()).collect(Collectors.toList());
+        List<Type> typeAv = pokemon.getMoveset().stream().filter(m -> m.getMoveAPI().getDamageClass().getId() != 1).map(m -> Type.getById(m.getMoveAPI().getType().getId())).collect(Collectors.toList());
         if (typeAv.isEmpty()) {
             typeAv.add(Type.NORMAL);
         }
@@ -865,18 +865,18 @@ public class Combat implements Serializable {
     }
 
     private int calculerXp(Pokemon v, Pokemon sortant, boolean aParticipe) {
-        //TODO calculer xp du
         int s = aParticipe ? 1 : 2;
         int level = sortant.getLevel();
-        double tradeMultiplier = v.aEteTrade() ? 1.5 : 1;
+        int xpValue = sortant.getPokemonAPI().getBaseExperience();
+        double tradeMultiplier = v.isaEteEchange() ? 1.5 : 1;
         double luckyEgg = 1; //TODO 1.5 si tient un lucky egg
         double amitie = v.getFriendship() >= 220 ? 1.2 : 1;
-        return (int) ((sortant.getXp() * level / 5.0)
-                        * (1.0 / s)
-                        * (Math.pow((double) (2 * level + 10) / (level + v.getLevel() + 10), 2.5) + 1)
-                        * tradeMultiplier
-                        * luckyEgg
-                        * amitie);
+        return (int) ((xpValue * level / 5.0)
+                * (1.0 / s)
+                * (Math.pow((double) (2 * level + 10) / (level + v.getLevel() + 10), 2.5) + 1)
+                * tradeMultiplier
+                * luckyEgg
+                * amitie);
     }
 
 
@@ -1499,10 +1499,11 @@ public class Combat implements Serializable {
     }
 
     public void updateImageCombat() throws IOException {
+        game.getChannel().sendTyping().queue();
         List<ElementUI> elementUIS = new ArrayList<>();
         Font font = new Font("Arial", Font.PLAIN, 10);
-        Map<TextAttribute, Object> attributes = new HashMap<TextAttribute, Object>();
-//        attributes.put(TextAttribute.TRACKING, -0.1);
+        Map<TextAttribute, Object> attributes = new HashMap<>();
+        attributes.put(TextAttribute.TRACKING, -0.1);
         font = font.deriveFont(attributes);
         Font fontGender = new Font("Arial", Font.PLAIN, 9);
         Font fontHp = new Font("Arial", Font.PLAIN, 11);
@@ -1512,7 +1513,7 @@ public class Combat implements Serializable {
         if (typeCombat.equals(TypeCombat.SIMPLE)) {
 
             //pokemon allié
-            if (blanc.getPokemonActif().estEnVie() && !typeCombatResultat.equals(TypeCombatResultat.FUITE_JOUEUR) && !blanc.getPokemonActif().hasStatut(AlterationEtat.SEMI_INVULNERABLE)) {
+            if (blanc.getPokemonActif() != null && blanc.getPokemonActif().estEnVie() && !typeCombatResultat.equals(TypeCombatResultat.FUITE_JOUEUR) && !blanc.getPokemonActif().hasStatut(AlterationEtat.SEMI_INVULNERABLE)) {
                 elementUIS.add(new ImageUI(-5, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
             }
             TextUI nomPokemonBlanc = new TextUI(91, 90, blanc.getPokemonActif().getNomPresentation(), font, Color.BLACK);
@@ -1530,7 +1531,6 @@ public class Combat implements Serializable {
 
             TextUI levelBlanc = new TextUI(166, 90, "Lv." + blanc.getPokemonActif().getLevel(), font, Color.BLACK);
             elementUIS.add(levelBlanc);
-            blanc.getPokemonActif().setXp(48);
             int currentXpBar = (int) ((MAX_X_XP_BAR - MIN_X_XP_BAR) * ((double) blanc.getPokemonActif().getXp() / 155));
             RectangleUI xpBar = new RectangleUI(MIN_X_XP_BAR, MIN_Y_XP_BAR, Color.CYAN, currentXpBar, MAX_Y_XP_BAR - MIN_Y_XP_BAR);
             elementUIS.add(xpBar);
@@ -1558,7 +1558,7 @@ public class Combat implements Serializable {
             if (blanc.getPokemonActif().isShiny()) {
                 elementUIS.add(new ImageUI(genrePokemonBlanc.getX() + (int) (font.getStringBounds(genrePokemonBlanc.getText(), frc).getWidth()) + 5, 82, ImageIO.read(new File(game.getFileManager().getFullPathToImage(PropertiesManager.getInstance().getImage("shiny"))))));
             }
-            if (noir.getPokemonActif().estEnVie() && !noir.getPokemonActif().hasStatut(AlterationEtat.SEMI_INVULNERABLE) && !typeCombatResultat.equals(TypeCombatResultat.FUITE_ADVERSAIRE) && !typeCombatResultat.equals(TypeCombatResultat.CAPTURE)) {
+            if (noir.getPokemonActif() != null && noir.getPokemonActif().estEnVie() && !noir.getPokemonActif().hasStatut(AlterationEtat.SEMI_INVULNERABLE) && !typeCombatResultat.equals(TypeCombatResultat.FUITE_ADVERSAIRE) && !typeCombatResultat.equals(TypeCombatResultat.CAPTURE)) {
                 elementUIS.add(new ImageUI(100, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
             }
             TextUI nomPokemonNoir = new TextUI(16, 19, noir.getPokemonActif().getNomPresentation(), font, Color.BLACK);
@@ -1584,7 +1584,7 @@ public class Combat implements Serializable {
             imageCombat = game.getImageManager().composeImageCombat(backImage, elementUIS, LARGEUR, HAUTEUR);
         } else if (typeCombat.equals(TypeCombat.DOUBLE)) {
             //pokemon allié
-            if (blanc.getPokemonActif().estEnVie()) {
+            if (blanc.getPokemonActif() != null && blanc.getPokemonActif().estEnVie()) {
                 elementUIS.add(new ImageUI(-20, 50, ImageIO.read(new URL(blanc.getPokemonActif().getBackSprite()))));
             }
             TextUI nomPokemonBlanc = new TextUI(95, 90, blanc.getPokemonActif().getNomPresentation(), font, Color.BLACK);
@@ -1626,7 +1626,7 @@ public class Combat implements Serializable {
             }
 
             //blanc bis
-            if (blanc.getPokemonActifBis().estEnVie()) {
+            if (blanc.getPokemonActifBis() != null && blanc.getPokemonActifBis().estEnVie()) {
                 elementUIS.add(new ImageUI(10, 50, ImageIO.read(new URL(blanc.getPokemonActifBis().getBackSprite()))));
             }
             TextUI nomPokemonBlancBis = new TextUI(95, 110, blanc.getPokemonActifBis().getNomPresentation(), font, Color.BLACK);
@@ -1648,7 +1648,7 @@ public class Combat implements Serializable {
             }
 
             //noir actif
-            if (noir.getPokemonActif().estEnVie()) {
+            if (noir.getPokemonActif() != null && noir.getPokemonActif().estEnVie()) {
                 elementUIS.add(new ImageUI(90, 0, ImageIO.read(new URL(noir.getPokemonActif().getFrontSprite()))));
             }
             TextUI nomPokemonNoir = new TextUI(3, 11, noir.getPokemonActif().getNomPresentation(), font, Color.BLACK);
@@ -1670,7 +1670,7 @@ public class Combat implements Serializable {
             }
 
             //noir actif bis
-            if (noir.getPokemonActifBis().estEnVie()) {
+            if (noir.getPokemonActifBis() != null && noir.getPokemonActifBis().estEnVie()) {
                 elementUIS.add(new ImageUI(115, 0, ImageIO.read(new URL(noir.getPokemonActifBis().getFrontSprite()))));
             }
             TextUI nomPokemonNoirBis = new TextUI(3, 31, noir.getPokemonActifBis().getNomPresentation(), font, Color.BLACK);

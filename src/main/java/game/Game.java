@@ -824,6 +824,8 @@ public class Game {
                                     //structure sélectionnée
                                     if (e.getComponentId().startsWith("s")) {
                                         save.getCampaign().setCurrentStructure(Structure.getById(e.getComponentId().split("s")[1]));
+                                        //pas d'évenement météo dans une structure !
+                                        save.getCampaign().setCurrentMeteo(Meteo.NEUTRE);
                                         //zone sélectionnée
                                     } else {
                                         save.getCampaign().setCurrentZone(Zones.getById(e.getComponentId().split("z")[1]));
