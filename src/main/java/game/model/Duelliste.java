@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Duelliste implements Serializable {
 
@@ -201,6 +202,15 @@ public class Duelliste implements Serializable {
             enVie.add(pokemonActifBis);
         }
         return enVie;
+    }
+
+    public List<Pokemon> getPokemonsEnVie() {
+        return equipe.stream().filter(Pokemon::estEnVie).collect(Collectors.toList());
+
+    }
+
+    public boolean aPerdu() {
+        return equipe.stream().noneMatch(Pokemon::estEnVie);
     }
 
     public long racketter() {

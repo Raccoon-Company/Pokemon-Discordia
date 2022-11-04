@@ -232,7 +232,7 @@ public class Combat implements Serializable {
                                         roundPhase1();
                                     } else {
                                         //changer de pokes
-                                        selectionPokemon(false);
+                                        selectionPokemon(blanc.getPokemonChoixCourant(turnCount), false, "phase2");
                                     }
                                 } else if (e.getComponentId().equals("ball")) {
                                     //pokeball
@@ -411,12 +411,12 @@ public class Combat implements Serializable {
     }
 
     /**
-     * @param force si le chgt est forcé par la mort du poke actif, ou bien par choix
+     * @param force  si le chgt est forcé par la mort du poke actif, ou bien par choix
+     * @param retour
      */
-    public void selectionPokemon(boolean force) {
-        Pokemon choixCourant = blanc.getPokemonChoixCourant(turnCount);
+    public void selectionPokemon(Pokemon aRemplacer, boolean force, String retour) {
         List<Pokemon> dispos = new ArrayList<>(blanc.getEquipe());
-        dispos.remove(choixCourant);
+        dispos.remove(aRemplacer);
         dispos.removeIf(p -> p.getCurrentHp() <= 0);
         if (dispos.size() == 0) {
             game.getChannel().sendMessage("Vous n'avez pas d'autres pokémons en état de se battre").queue();
@@ -456,7 +456,7 @@ public class Combat implements Serializable {
                             } else {
                                 //switch active pokemno
                                 Pokemon incoming = blanc.getEquipe().stream().filter(a -> String.valueOf(a.getId()).equals(e.getComponentId())).findAny().orElseThrow(IllegalStateException::new);
-                                changerPokemonActifAction(choixCourant, incoming);
+                                changerPokemonActifAction(aRemplacer, incoming, retour);
                             }
                         },
                         1, TimeUnit.MINUTES,
@@ -470,9 +470,16 @@ public class Combat implements Serializable {
         game.getChannel().sendMessage("Mais cela échoue !").queue();
     }
 
-    private void changerPokemonActifAction(Pokemon sortant, Pokemon entrant) {
+    private void changerPokemonActifAction(Pokemon sortant, Pokemon entrant, String retour) {
         changerPokemonActif(blanc, sortant, entrant);
-        roundPhase2();
+        if (retour.equals("phase2")) {
+            roundPhase2();
+        } else if (retour.equals("phase3")) {
+            roundPhase3();
+        } else {
+            throw new IllegalStateException("Retour invalide sélection pokémon : " + retour);
+        }
+
     }
 
     public void changerPokemonActif(Duelliste duelliste, Pokemon sortant, Pokemon entrant) {
@@ -753,10 +760,38 @@ public class Combat implements Serializable {
         effetsDeFinDeTour();
         turnCount++;
 
-        //TODO remplacer pokemons ko
+        roundPhase3();
+    }
+
+    /**
+     * Cette phase consiste en le remplacement des pokémons actifs KO du joueur
+     */
+    private void roundPhase3() {
+        if (!blanc.aPerdu()) {
+            if (!blanc.getPokemonActif().estEnVie()) {
+                game.getChannel().sendMessage("Remplacez votre pokémon actif").queue();
+                selectionPokemon(blanc.getPokemonActif(), true, "phase3");
+            } else if (typeCombat.equals(TypeCombat.DOUBLE) && !blanc.getPokemonActifBis().estEnVie()) {
+                game.getChannel().sendMessage("Remplacez votre second pokémon actif").queue();
+                selectionPokemon(blanc.getPokemonActifBis(), true, "phase3");
+            } else {
+                roundPhase4();
+            }
+        } else {
+            roundPhase4();
+        }
+    }
+
+    /**
+     * Cette dernière phase consiste à vérifier si le combat est terminé et à agir en conséquence
+     */
+    private void roundPhase4() {
+        if (!noir.aPerdu()) {
+            remplacementPokemonAuto();
+        }
 
         //vérif combat terminé
-        if (!blanc.getPokemonsActifsEnVie().isEmpty() && !noir.getPokemonsActifsEnVie().isEmpty()) {
+        if (!blanc.aPerdu() && !noir.aPerdu()) {
             if (typeCombatResultat.equals(TypeCombatResultat.EN_COURS)) {
                 //tour suivant
                 roundPhase0();
@@ -772,6 +807,78 @@ public class Combat implements Serializable {
             game.apresCombat(this);
         }
     }
+
+    private void remplacementPokemonAuto() {
+        if (noir.getPokemonActif() != null && !noir.getPokemonActif().estEnVie()) {
+            noir.setPokemonActif(choixAutoBestPokemon(noir.getPokemonActif()));
+        }
+
+        if (typeCombat.equals(TypeCombat.DOUBLE) && noir.getPokemonActifBis() != null && !noir.getPokemonActifBis().estEnVie()) {
+            noir.setPokemonActifBis(choixAutoBestPokemon(noir.getPokemonActifBis()));
+        }
+    }
+
+    private Pokemon choixAutoBestPokemon(Pokemon sortant) {
+        sortant.soinLegerApresCombat();
+        game.getChannel().sendMessage(noir.getPokemonActif().getNomPresentation() + " est K.O ! Vos pokémons gagnent de l'expérience !").queue();
+        blanc.getPokemonsEnVie().forEach(v -> v.gainXp(calculerXp(v, sortant, blanc.getPokemonsActifsEnVie().contains(v)), true, game));
+
+        List<Pokemon> disponibles = noir.getEquipe().stream().filter(p -> p.estEnVie() && !noir.getPokemonsActifsEnVie().contains(p)).collect(Collectors.toList());
+        if (disponibles.isEmpty()) {
+            return null;
+        } else if (disponibles.size() == 1) {
+            game.getChannel().sendMessage(noir.getNom() + " envoie " + disponibles.get(0).getNomPresentation() + " !").queue();
+            return disponibles.get(0);
+        } else {
+            Pokemon choisi;
+            if (noir.getNiveauIA().equals(NiveauIA.PRO) || noir.getNiveauIA().equals(NiveauIA.AVANCE)) {
+                //choix réfléchi
+                HashMap<Pokemon, Integer> map = new HashMap<>();
+                disponibles.forEach(m -> {
+                    map.put(m, advantageCoeff(m, blanc) - dangerCoeff(m, blanc));
+                });
+                choisi = (Collections.max(map.entrySet(), Comparator.comparingDouble(Map.Entry::getValue))).getKey();
+                //random pour les ai basic et dumb
+            } else {
+                choisi = disponibles.get(Utils.getRandom().nextInt(disponibles.size()));
+            }
+            game.getChannel().sendMessage(noir.getNom() + " envoie " + choisi.getNomPresentation() + " !").queue();
+            return choisi;
+        }
+    }
+
+    private int dangerCoeff(Pokemon pokemon, Duelliste opponent) {
+        List<Type> typesAdversaires = opponent.getPokemonsActifsEnVie().stream().map(Pokemon::getTypes).flatMap(Collection::stream).collect(Collectors.toList());
+        return typesAdversaires.stream().max(t -> t.pourcentageDegatsAttaque(pokemon.getPokemonAPI().getTypes()));
+    }
+
+    private int advantageCoeff(Pokemon pokemon, Duelliste opponent) {
+        int advRatio = 0;
+        List<Type> typeAv = pokemon.getMoveset().stream().filter(m -> m.getMoveAPI().getDamageClass() != 1).map(m -> m.getMoveAPI().getType()).collect(Collectors.toList());
+        if (typeAv.isEmpty()) {
+            typeAv.add(Type.NORMAL);
+        }
+        for (Type type : typeAv) {
+            advRatio = Math.max(type.pourcentageDegatsAttaque(pokemon.getPokemonAPI().getTypes()), advRatio);
+        }
+        return advRatio;
+    }
+
+    private int calculerXp(Pokemon v, Pokemon sortant, boolean aParticipe) {
+        //TODO calculer xp du
+        int s = aParticipe ? 1 : 2;
+        int level = sortant.getLevel();
+        double tradeMultiplier = v.aEteTrade() ? 1.5 : 1;
+        double luckyEgg = 1; //TODO 1.5 si tient un lucky egg
+        double amitie = v.getFriendship() >= 220 ? 1.2 : 1;
+        return (int) ((sortant.getXp() * level / 5.0)
+                        * (1.0 / s)
+                        * (Math.pow((double) (2 * level + 10) / (level + v.getLevel() + 10), 2.5) + 1)
+                        * tradeMultiplier
+                        * luckyEgg
+                        * amitie);
+    }
+
 
     @JsonIgnore
     public Combat getCopy() {

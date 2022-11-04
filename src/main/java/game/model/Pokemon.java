@@ -54,6 +54,8 @@ public class Pokemon implements Serializable {
     //0-255
     private int friendship;
 
+    private boolean aEteEchange;
+
     private List<AlterationInstance> alterations;
 
     private List<Attaque> moveset;
@@ -134,6 +136,7 @@ public class Pokemon implements Serializable {
         this.dernierMontantDePVsPerdus = 0;
         this.aDejaAttaque = false;
         this.friendship = 0;
+        this.aEteEchange = false;
 
         this.gender = Gender.getById(getPokemonSpeciesAPI().getGenderRate() == -1 ? 3 : Utils.getRandom().nextInt(8) > getPokemonSpeciesAPI().getGenderRate() ? 2 : 1);
         //détermination des IVs
@@ -181,7 +184,7 @@ public class Pokemon implements Serializable {
     public Pokemon() {
     }
 
-    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, int dernierMontantDePVsPerdus, boolean aDejaAttaque, HashMap<Integer, ActionCombat> actionsCombat, boolean itemAutorise, List<PokemonMove> allMovesAPI, com.github.oscar0812.pokeapi.models.pokemon.Pokemon pokemonAPI, PokemonSpecies pokemonSpeciesAPI) {
+    public Pokemon(long id, Gender gender, int idSpecie, int idAbility, boolean shiny, int idItemTenu, String surnom, int level, int xp, int friendship, boolean aEteEchange, List<AlterationInstance> alterations, List<Attaque> moveset, Type type1, Type type2, Nature nature, int currentHp, int critChanceStage, int hpIV, int hpEV, int currentAtkSpe, int atkSpeIV, int atkSpeEV, double atkSpeStage, int currentAtkPhy, int atkPhyIV, int atkPhyEV, double atkPhyStage, int currentDefSpe, int defSpeIV, int defSpeEV, double defSpeStage, int currentDefPhy, int defPhyIV, int defPhyEV, double defPhyStage, int currentSpeed, int speedIV, int speedEV, double speedStage, double accuracyStage, double evasivenessStage, int dernierMontantDePVsPerdus, boolean aDejaAttaque, HashMap<Integer, ActionCombat> actionsCombat, boolean itemAutorise, List<PokemonMove> allMovesAPI, com.github.oscar0812.pokeapi.models.pokemon.Pokemon pokemonAPI, PokemonSpecies pokemonSpeciesAPI) {
         this.id = id;
         this.gender = gender;
         this.idSpecie = idSpecie;
@@ -192,6 +195,7 @@ public class Pokemon implements Serializable {
         this.level = level;
         this.xp = xp;
         this.friendship = friendship;
+        this.aEteEchange = aEteEchange;
         this.alterations = alterations;
         this.moveset = moveset;
         this.type1 = type1;
@@ -917,6 +921,15 @@ public class Pokemon implements Serializable {
         this.alterations = alterations;
     }
 
+    public List<Type> getTypes(){
+        List<Type> types = new ArrayList<>();
+        types.add(type1);
+        if(type2!=null){
+            types.add(type2);
+        }
+        return types;
+    }
+
     public Type getType1() {
         return type1;
     }
@@ -1550,5 +1563,13 @@ public class Pokemon implements Serializable {
         pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 * random / 100);
 
         return (int) pointsDeViePerdusPart3;
+    }
+
+    public boolean isaEteEchange() {
+        return aEteEchange;
+    }
+
+    public void setaEteEchange(boolean aEteEchange) {
+        this.aEteEchange = aEteEchange;
     }
 }
