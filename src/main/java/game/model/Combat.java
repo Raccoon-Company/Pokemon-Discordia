@@ -876,6 +876,7 @@ public class Combat implements Serializable {
                 * (Math.pow((double) (2 * level + 10) / (level + v.getLevel() + 10), 2.5) + 1)
                 * tradeMultiplier
                 * luckyEgg
+                * Game.XP_MULTIPLIER_CUSTOM
                 * amitie);
     }
 

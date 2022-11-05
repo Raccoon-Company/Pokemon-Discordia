@@ -132,7 +132,7 @@ public class Pokemon implements Serializable {
         this.id = Long.parseLong(idSpecie + "" + new Date().getTime());
         this.level = 0;
         this.xp = 0;
-        this.shiny = Utils.getRandom().nextInt(1) == 0;
+        this.shiny = Utils.getRandom().nextInt(4096) == 0;
         this.dernierMontantDePVsPerdus = 0;
         this.aDejaAttaque = false;
         this.friendship = 0;
@@ -279,21 +279,35 @@ public class Pokemon implements Serializable {
             return false;
         }
         //TODO debugger ici
-        if (e.getKnownMove() != null && moveset.stream().anyMatch(m -> m.getIdMoveAPI() == e.getKnownMove().getId())) {
-            return false;
+        try {
+            if (e.getKnownMoveType() != null && moveset.stream().anyMatch(m -> m.getIdMoveAPI() == e.getKnownMove().getId())) {
+                return false;
+            }
+            if (e.getKnownMoveType() != null && moveset.stream().anyMatch(m -> m.getMoveAPI().getType().getId() == e.getKnownMoveType().getId())) {
+                return false;
+            }
+            if (e.getItem() != null && e.getItem().getId() != idItem) {
+                return false;
+            }
+            if (e.getHeldItem() != null && getIdItemTenu() != e.getHeldItem().getId()) {
+                return false;
+            }
+            if (e.getLocation() != null && e.getLocation().getId() != game.getSave().getCampaign().getCurrentZone().getIdZone()) {
+                return false;
+            }
+            if (e.getPartyType() != null && game.getSave().getCampaign().getEquipe().stream().noneMatch(p -> p.hasType(Type.getById(e.getPartyType().getId())))) {
+                return false;
+            }
+            if (e.getPartySpecies() != null && game.getSave().getCampaign().getEquipe().stream().noneMatch(p -> p.getIdSpecie() == e.getPartySpecies().getId())) {
+                return false;
+            }
+            if (e.getTradeSpecies() != null && e.getTradeSpecies().getId() != idTraded) {
+                return false;
+            }
+        } catch (NullPointerException ignored) {
+
         }
-        if (e.getKnownMoveType() != null && moveset.stream().anyMatch(m -> m.getMoveAPI().getType().getId() == e.getKnownMoveType().getId())) {
-            return false;
-        }
-        if (e.getItem() != null && e.getItem().getId() != idItem) {
-            return false;
-        }
-        if (e.getHeldItem() != null && getIdItemTenu() != e.getHeldItem().getId()) {
-            return false;
-        }
-        if (e.getLocation() != null && e.getLocation().getId() != game.getSave().getCampaign().getCurrentZone().getIdZone()) {
-            return false;
-        }
+
         if ((e.getMinAffection() > 0 && friendship < e.getMinHappiness())) {
             return false;
         }
@@ -302,12 +316,6 @@ public class Pokemon implements Serializable {
         }
         //beauté pas prévue pour être implémentée atm
         if (e.getMinBeauty() > 0) {
-            return false;
-        }
-        if (e.getPartyType() != null && game.getSave().getCampaign().getEquipe().stream().noneMatch(p -> p.hasType(Type.getById(e.getPartyType().getId())))) {
-            return false;
-        }
-        if (e.getPartySpecies() != null && game.getSave().getCampaign().getEquipe().stream().noneMatch(p -> p.getIdSpecie() == e.getPartySpecies().getId())) {
             return false;
         }
         if (e.getMinLevel() > 0 && level < e.getMinLevel()) {
@@ -326,9 +334,7 @@ public class Pokemon implements Serializable {
                 return false;
             }
         }
-        if (e.getTradeSpecies() != null && e.getTradeSpecies().getId() != idTraded) {
-            return false;
-        }
+
         return true;
     }
 
@@ -435,7 +441,7 @@ public class Pokemon implements Serializable {
 
     @JsonIgnore
     private int getXpNeededToLevelUp() {
-        return getPokemonAPI().getSpecies().getGrowthRate().getLevels().stream().map(GrowthRateExperienceLevel::getLevel).filter(sLevel -> sLevel == level + 1).findAny().orElse(0);
+        return getPokemonAPI().getSpecies().getGrowthRate().getLevels().stream().filter(x -> x.getLevel() == level + 1).map(GrowthRateExperienceLevel::getExperience).findAny().orElse(0);
     }
 
     public void changeLevel(int newLevel) {
@@ -882,7 +888,6 @@ public class Pokemon implements Serializable {
     }
 
 
-
     public boolean isItemAutorise() {
         return itemAutorise;
     }
@@ -923,10 +928,10 @@ public class Pokemon implements Serializable {
         this.alterations = alterations;
     }
 
-    public List<Type> getTypes(){
+    public List<Type> getTypes() {
         List<Type> types = new ArrayList<>();
         types.add(type1);
-        if(type2!=null){
+        if (type2 != null) {
             types.add(type2);
         }
         return types;
@@ -1051,12 +1056,14 @@ public class Pokemon implements Serializable {
         if (atkSpeStage > 6) {
             atkSpeStage = 6;
             if (!simulation) {
-                channel.sendMessage("L'attaque spéciale de "+getNomPresentation()+" n'ira pas plus haut !").queue();            }
+                channel.sendMessage("L'attaque spéciale de " + getNomPresentation() + " n'ira pas plus haut !").queue();
+            }
         }
         if (atkSpeStage < -6) {
             atkSpeStage = -6;
             if (!simulation) {
-                channel.sendMessage("L'attaque spéciale de "+getNomPresentation()+" n'ira pas plus bas !").queue();            }
+                channel.sendMessage("L'attaque spéciale de " + getNomPresentation() + " n'ira pas plus bas !").queue();
+            }
         }
     }
 
@@ -1064,23 +1071,26 @@ public class Pokemon implements Serializable {
         this.atkPhyStage += val;
         if (!simulation) {
             if (val == 1) {
-                channel.sendMessage("L'attaque de "+getNomPresentation()+" augmente.").queue();
+                channel.sendMessage("L'attaque de " + getNomPresentation() + " augmente.").queue();
             } else if (val > 1) {
-                channel.sendMessage("L'attaque de "+getNomPresentation()+" augmente fortement !").queue();
+                channel.sendMessage("L'attaque de " + getNomPresentation() + " augmente fortement !").queue();
             } else if (val == -1) {
-                channel.sendMessage("L'attaque de "+getNomPresentation()+" baisse.").queue();
+                channel.sendMessage("L'attaque de " + getNomPresentation() + " baisse.").queue();
             } else if (val < -1) {
-                channel.sendMessage("L'attaque de "+getNomPresentation()+" diminue fortement !").queue();            }
+                channel.sendMessage("L'attaque de " + getNomPresentation() + " diminue fortement !").queue();
+            }
         }
         if (atkPhyStage > 6) {
             atkPhyStage = 6;
             if (!simulation) {
-                channel.sendMessage("L'attaque de "+getNomPresentation()+" n'ira pas plus haut !").queue();            }
+                channel.sendMessage("L'attaque de " + getNomPresentation() + " n'ira pas plus haut !").queue();
+            }
         }
         if (atkPhyStage < -6) {
             atkPhyStage = -6;
             if (!simulation) {
-                channel.sendMessage("L'attaque de "+getNomPresentation()+" n'ira pas plus bas !").queue();            }
+                channel.sendMessage("L'attaque de " + getNomPresentation() + " n'ira pas plus bas !").queue();
+            }
         }
     }
 
@@ -1088,25 +1098,25 @@ public class Pokemon implements Serializable {
         this.defSpeStage += val;
         if (!simulation) {
             if (val == 1) {
-                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" augmente .").queue();
+                channel.sendMessage("La défense spéciale de " + getNomPresentation() + " augmente .").queue();
             } else if (val > 1) {
-                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" augmente beaucoup !").queue();
+                channel.sendMessage("La défense spéciale de " + getNomPresentation() + " augmente beaucoup !").queue();
             } else if (val == -1) {
-                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" baisse.").queue();
+                channel.sendMessage("La défense spéciale de " + getNomPresentation() + " baisse.").queue();
             } else if (val < -1) {
-                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" diminue fortement !").queue();
+                channel.sendMessage("La défense spéciale de " + getNomPresentation() + " diminue fortement !").queue();
             }
         }
         if (defSpeStage > 6) {
             defSpeStage = 6;
             if (!simulation) {
-                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+                channel.sendMessage("La défense spéciale de " + getNomPresentation() + " n'ira pas plus haut !").queue();
             }
         }
         if (defSpeStage < -6) {
             defSpeStage = -6;
             if (!simulation) {
-                channel.sendMessage("La défense spéciale de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+                channel.sendMessage("La défense spéciale de " + getNomPresentation() + " n'ira pas plus bas !").queue();
             }
         }
     }
@@ -1115,25 +1125,25 @@ public class Pokemon implements Serializable {
         this.defPhyStage += val;
         if (!simulation) {
             if (val == 1) {
-                channel.sendMessage("La défense de "+getNomPresentation()+" augmente .").queue();
+                channel.sendMessage("La défense de " + getNomPresentation() + " augmente .").queue();
             } else if (val > 1) {
-                channel.sendMessage("La défense de "+getNomPresentation()+" augmente beaucoup !").queue();
+                channel.sendMessage("La défense de " + getNomPresentation() + " augmente beaucoup !").queue();
             } else if (val == -1) {
-                channel.sendMessage("La défense de "+getNomPresentation()+" baisse.").queue();
+                channel.sendMessage("La défense de " + getNomPresentation() + " baisse.").queue();
             } else if (val < -1) {
-                channel.sendMessage("La défense de "+getNomPresentation()+" diminue fortement !").queue();
+                channel.sendMessage("La défense de " + getNomPresentation() + " diminue fortement !").queue();
             }
         }
         if (defPhyStage > 6) {
             defPhyStage = 6;
             if (!simulation) {
-                channel.sendMessage("La défense de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+                channel.sendMessage("La défense de " + getNomPresentation() + " n'ira pas plus haut !").queue();
             }
         }
         if (defPhyStage < -6) {
             defPhyStage = -6;
             if (!simulation) {
-                channel.sendMessage("La défense de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+                channel.sendMessage("La défense de " + getNomPresentation() + " n'ira pas plus bas !").queue();
             }
         }
     }
@@ -1142,25 +1152,25 @@ public class Pokemon implements Serializable {
         this.speedStage += val;
         if (!simulation) {
             if (val == 1) {
-                channel.sendMessage("La vitesse de "+getNomPresentation()+" augmente.").queue();
+                channel.sendMessage("La vitesse de " + getNomPresentation() + " augmente.").queue();
             } else if (val > 1) {
-                channel.sendMessage("La vitesse de "+getNomPresentation()+" augmente fortement !").queue();
+                channel.sendMessage("La vitesse de " + getNomPresentation() + " augmente fortement !").queue();
             } else if (val == -1) {
-                channel.sendMessage("La vitesse de "+getNomPresentation()+" diminue.").queue();
+                channel.sendMessage("La vitesse de " + getNomPresentation() + " diminue.").queue();
             } else if (val < -1) {
-                channel.sendMessage("La vitesse de "+getNomPresentation()+" baisse beaucoup !").queue();
+                channel.sendMessage("La vitesse de " + getNomPresentation() + " baisse beaucoup !").queue();
             }
         }
         if (speedStage > 6) {
             speedStage = 6;
             if (!simulation) {
-                channel.sendMessage("La vitesse de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+                channel.sendMessage("La vitesse de " + getNomPresentation() + " n'ira pas plus haut !").queue();
             }
         }
         if (speedStage < -6) {
             speedStage = -6;
             if (!simulation) {
-                channel.sendMessage("La vitesse de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+                channel.sendMessage("La vitesse de " + getNomPresentation() + " n'ira pas plus bas !").queue();
             }
         }
     }
@@ -1169,25 +1179,25 @@ public class Pokemon implements Serializable {
         this.accuracyStage += val;
         if (!simulation) {
             if (val == 1) {
-                channel.sendMessage("La précision de "+getNomPresentation()+" augmente.").queue();
+                channel.sendMessage("La précision de " + getNomPresentation() + " augmente.").queue();
             } else if (val > 1) {
-                channel.sendMessage("La précision de "+getNomPresentation()+" augmente fortement !").queue();
+                channel.sendMessage("La précision de " + getNomPresentation() + " augmente fortement !").queue();
             } else if (val == -1) {
-                channel.sendMessage("La précision de "+getNomPresentation()+" baisse.").queue();
+                channel.sendMessage("La précision de " + getNomPresentation() + " baisse.").queue();
             } else if (val < -1) {
-                channel.sendMessage("La précision de "+getNomPresentation()+" diminue fortement !").queue();
+                channel.sendMessage("La précision de " + getNomPresentation() + " diminue fortement !").queue();
             }
         }
         if (accuracyStage > 6) {
             accuracyStage = 6;
             if (!simulation) {
-                channel.sendMessage("La précision de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+                channel.sendMessage("La précision de " + getNomPresentation() + " n'ira pas plus haut !").queue();
             }
         }
         if (accuracyStage < -6) {
             accuracyStage = -6;
             if (!simulation) {
-                channel.sendMessage("La précision de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+                channel.sendMessage("La précision de " + getNomPresentation() + " n'ira pas plus bas !").queue();
             }
         }
     }
@@ -1196,25 +1206,25 @@ public class Pokemon implements Serializable {
         this.evasivenessStage += val;
         if (!simulation) {
             if (val == 1) {
-                channel.sendMessage("L'esquive de "+getNomPresentation()+" augmente.").queue();
+                channel.sendMessage("L'esquive de " + getNomPresentation() + " augmente.").queue();
             } else if (val > 1) {
-                channel.sendMessage("L'esquive de "+getNomPresentation()+" augmente beaucoup !").queue();
+                channel.sendMessage("L'esquive de " + getNomPresentation() + " augmente beaucoup !").queue();
             } else if (val == -1) {
-                channel.sendMessage("L'esquive de "+getNomPresentation()+" baisse.").queue();
+                channel.sendMessage("L'esquive de " + getNomPresentation() + " baisse.").queue();
             } else if (val < -1) {
-                channel.sendMessage("L'esquive de "+getNomPresentation()+" baisse fortement !").queue();
+                channel.sendMessage("L'esquive de " + getNomPresentation() + " baisse fortement !").queue();
             }
         }
         if (evasivenessStage > 6) {
             evasivenessStage = 6;
             if (!simulation) {
-                channel.sendMessage("L'esquive de "+getNomPresentation()+" n'ira pas plus haut !").queue();
+                channel.sendMessage("L'esquive de " + getNomPresentation() + " n'ira pas plus haut !").queue();
             }
         }
         if (evasivenessStage < -6) {
             evasivenessStage = -6;
             if (!simulation) {
-                channel.sendMessage("L'esquive de "+getNomPresentation()+" n'ira pas plus bas !").queue();
+                channel.sendMessage("L'esquive de " + getNomPresentation() + " n'ira pas plus bas !").queue();
             }
         }
     }
@@ -1297,7 +1307,7 @@ public class Pokemon implements Serializable {
             return 0;
         }
 
-        if(valeur <= 0){
+        if (valeur <= 0) {
             return 0;
         }
 
@@ -1414,8 +1424,8 @@ public class Pokemon implements Serializable {
 //        }
 
         alterations.add(new AlterationInstance(alterationEtat, source, duree));
-        if(!simulation){
-            game.getChannel().sendMessage(getNomPresentation()+alterationEtat.getApplicationText()).queue();
+        if (!simulation) {
+            game.getChannel().sendMessage(getNomPresentation() + alterationEtat.getApplicationText()).queue();
         }
 
 //        //DESTINY KNOT
@@ -1461,7 +1471,7 @@ public class Pokemon implements Serializable {
                                         choixSurnom(game, origine);
                                     } else {
                                         this.surnom = StringUtils.isEmpty(choix) ? null : choix;
-                                        if(StringUtils.isNotEmpty(surnom)){
+                                        if (StringUtils.isNotEmpty(surnom)) {
                                             surnom = StringUtils.capitalize(surnom.toLowerCase());
                                         }
                                         //en fonction d'où on vient, renvoie au bon endroit
@@ -1488,7 +1498,7 @@ public class Pokemon implements Serializable {
     }
 
     @JsonIgnore
-    public int getDenominateurCritChance(){
+    public int getDenominateurCritChance() {
         //crit
         int critRate = critChanceStage;
         int denominateur;
@@ -1506,7 +1516,7 @@ public class Pokemon implements Serializable {
 
     public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, boolean simulation, double modificateurPuissance) {
         Move move = actionCombat.getAttaque().getMoveAPI();
-        return calculerDegatsAttaque(actionCombat,combat,simulation,modificateurPuissance, move.getPower());
+        return calculerDegatsAttaque(actionCombat, combat, simulation, modificateurPuissance, move.getPower());
     }
 
     public int calculerDegatsAttaque(ActionCombat actionCombat, Combat combat, boolean simulation, double modificateurPuissance, int puissanceBase) {
@@ -1529,13 +1539,13 @@ public class Pokemon implements Serializable {
         //ratio type
         if (move.getType() != null) {
             int ratio = Type.getById(move.getType().getId()).pourcentageDegatsAttaque(getPokemonAPI().getTypes());
-            pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 *  ratio / 100);
-            if(!simulation){
-                if(ratio == 50){
+            pointsDeViePerdusPart3 = Math.floor(pointsDeViePerdusPart3 * ratio / 100);
+            if (!simulation) {
+                if (ratio == 50) {
                     combat.getGame().getChannel().sendMessage("Ce n'est pas très efficace...").queue();
-                }else if(ratio == 200){
+                } else if (ratio == 200) {
                     combat.getGame().getChannel().sendMessage("C'est super efficace !").queue();
-                }else if(ratio == 0){
+                } else if (ratio == 0) {
                     combat.getGame().getChannel().sendMessage("Cela n'a aucun effet.").queue();
                 }
             }
@@ -1548,7 +1558,7 @@ public class Pokemon implements Serializable {
 
         if (crit) {
             //TODO talent sniper
-            if(!simulation){
+            if (!simulation) {
                 combat.getGame().getChannel().sendMessage("Coup critique !").queue();
             }
             pointsDeViePerdusPart3 = pointsDeViePerdusPart3 * BASE_CRIT_MODIFIER;
