@@ -1,6 +1,7 @@
 package game.model.enums;
 
 import game.Game;
+import game.model.Boutique;
 import game.model.Pokemon;
 import game.model.SessionPC;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
@@ -89,6 +90,10 @@ public enum PNJ {
         switch (this) {
             case ORDINATEUR:
                 new SessionPC(game).ouvrir();
+                game.gameMenu();
+                break;
+            case VENDEUSE:
+                new Boutique(game).entrer();
                 game.gameMenu();
                 break;
             case INFIRMIERE:
