@@ -2,10 +2,13 @@ package game.model;
 
 import game.model.enums.Item;
 import game.model.enums.ItemCategorie;
+import game.model.enums.Pokeball;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Inventaire {
 
@@ -52,5 +55,9 @@ public class Inventaire {
 
     public boolean hasPokeballs() {
         return items.entrySet().stream().anyMatch((k) -> k.getKey().getCategorie().equals(ItemCategorie.STANDARD_BALLS) && k.getValue() > 0);
+    }
+
+    public List<Pokeball> getAllPokeballsTypes(){
+        return items.entrySet().stream().filter((k) -> (k.getKey().getCategorie().equals(ItemCategorie.STANDARD_BALLS) || k.getKey().getCategorie().equals(ItemCategorie.SPECIAL_BALLS)) && k.getValue() > 0).map(p -> Pokeball.getById(p.getKey().getIdApi())).collect(Collectors.toList());
     }
 }

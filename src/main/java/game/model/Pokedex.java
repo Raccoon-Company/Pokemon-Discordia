@@ -27,6 +27,10 @@ public class Pokedex {
         this.avancement = avancement;
     }
 
+    public boolean hasCaptured(int idPokemonSpecie){
+        return avancement.get(idPokemonSpecie) > 0;
+    }
+
     public void captured(int idPokemonSpecie) {
         avancement.replace(idPokemonSpecie, 2);
     }

@@ -401,7 +401,6 @@ public class Pokemon implements Serializable {
                 }
             });
         }
-        //TODO eventuellement filtrer certains moves en doublons dans es nivaux éléeves hyperbeam etc
 
         //ne garder que les moves pas déjà appris
         List<Integer> alreadyLearned = getMoveset().stream().map(Attaque::getIdMoveAPI).collect(Collectors.toList());
@@ -979,7 +978,7 @@ public class Pokemon implements Serializable {
         if (allMovesAPI == null || allMovesAPI.isEmpty()) {
             allMovesAPI = getPokemonAPI().getMoves();
         }
-        return allMovesAPI.stream().filter(m -> m.getMove().getId() <= Game.MAX_MOVE_ID_IMPLEMENTED).collect(Collectors.toList());
+        return allMovesAPI.stream().filter(m -> m.getMove().getId() <= Game.MAX_MOVE_ID_IMPLEMENTED && !Game.EXCLUDED_MOVES.contains(m.getMove().getId())).collect(Collectors.toList());
     }
 
     public HashMap<Integer, ActionCombat> getActionsCombat() {

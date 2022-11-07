@@ -1,5 +1,6 @@
 package game;
 
+import com.fasterxml.jackson.databind.util.LinkedNode;
 import com.github.oscar0812.pokeapi.models.locations.LocationArea;
 import com.github.oscar0812.pokeapi.models.locations.PokemonEncounter;
 import com.github.oscar0812.pokeapi.models.moves.Move;
@@ -58,6 +59,11 @@ public class Game {
 
 
     public final static int MAX_MOVE_ID_IMPLEMENTED = 100;//TODO changer le chiffre au fur et à mesure d el'implémentation des nouvelles attaques
+    /**
+     * ids des attaques spécifiques non implémentées (trop complexes en général pour peu d'intéret)
+     * Substitute
+     */
+    public static final List<Integer> EXCLUDED_MOVES = Arrays.asList(164) ;
 
     private User user;
 
@@ -193,7 +199,7 @@ public class Game {
                                     } else if (e.getComponentId().equals("bag")) {
                                         bagMenu();
                                     } else if (e.getComponentId().equals("grass")) {
-                                        combatPokemonSauvage();
+                                        combatPokemonSauvage(1);//TODO 2,3,4 pour peche, 5 pour surf
                                     }
                                 },
                                 1,
@@ -231,11 +237,11 @@ public class Game {
         }
 
         //le combat emmène à la méthode apresCombat(combat);
-        Combat combat = new Combat(this, blanc, noir, dresseur.getTypeCombat(), true);
+        Combat combat = new Combat(this, blanc, noir, dresseur.getTypeCombat(), true,1);
         combat.resolve();
     }
 
-    private void combatPokemonSauvage() {
+    private void combatPokemonSauvage(int methodeRencontre) {
 
         channel.sendTyping().queue();
 
@@ -258,7 +264,7 @@ public class Game {
         PokemonEncounter selected = null;
         for (PokemonEncounter e : encounters) {
             VersionEncounterDetail ved = e.getVersionDetails().stream().filter(f -> f.getVersion().getId() == save.getCampaign().getCurrentZone().getRegion().getVersionGroupId()).findAny().get();
-            if (ved.getEncounterDetails().stream().anyMatch(ed -> ed.getMethod().getId() == 1)) {
+            if (ved.getEncounterDetails().stream().anyMatch(ed -> ed.getMethod().getId() == methodeRencontre)) {
                 num += ved.getMaxChance();
                 if (num >= ran) {
                     selected = e;
@@ -301,7 +307,7 @@ public class Game {
         Duelliste noir = new Duelliste(pokemon);
 
         //le combat emmène à la méthode apresCombat(combat);
-        Combat combat = new Combat(this, blanc, noir, TypeCombat.SIMPLE, true);
+        Combat combat = new Combat(this, blanc, noir, TypeCombat.SIMPLE, true,1);
         combat.resolve();
     }
 
