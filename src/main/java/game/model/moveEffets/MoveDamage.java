@@ -238,6 +238,11 @@ public class MoveDamage {
                     actionCombat.getPokemonCible().blesser(degatsRage, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
                 break;
+            case 101://night shade
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false, false)) {
+                    actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getLevel(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
+                }
+                break;
             case 1://pound
             case 2://karate chop
             case 5: //ultimapoing

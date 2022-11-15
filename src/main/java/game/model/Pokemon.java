@@ -21,6 +21,7 @@ import utils.Utils;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -985,6 +986,10 @@ public class Pokemon implements Serializable {
         return actionsCombat;
     }
 
+    public ActionCombat getLastActionCombat() {
+        return (Collections.max(this.actionsCombat.entrySet(), Comparator.comparingDouble(Map.Entry::getKey))).getValue();
+    }
+
     public void setActionsCombat(HashMap<Integer, ActionCombat> actionsCombat) {
         this.actionsCombat = actionsCombat;
     }
@@ -1265,12 +1270,14 @@ public class Pokemon implements Serializable {
         this.alterations.stream().filter(a -> a.getAlterationEtat().equals(AlterationEtat.POISON_GRAVE)).findAny().ifPresent(p -> {
             p.setToursRestants(1);
         });
+        resetStages();
         this.currentAtkPhy = getMaxAtkPhy();
         this.currentDefPhy = getMaxDefPhy();
         this.currentAtkSpe = getMaxAtkSpe();
         this.currentDefSpe = getMaxDefSpe();
         this.currentSpeed = getMaxSpeed();
         this.currentHp = getMaxHp();
+
     }
 
     public void soinLegerApresCombat() {
@@ -1279,6 +1286,7 @@ public class Pokemon implements Serializable {
             enleveStatut(AlterationEtat.POISON_GRAVE);
             applyStatus(AlterationEtat.POISON, new SourceDegats(TypeSourceDegats.ALTERATION_ETAT), 1, true, null);
         }
+        resetStages();
         this.currentAtkPhy = getMaxAtkPhy();
         this.currentDefPhy = getMaxDefPhy();
         this.currentAtkSpe = getMaxAtkSpe();
@@ -1582,5 +1590,16 @@ public class Pokemon implements Serializable {
 
     public void setaEteEchange(boolean aEteEchange) {
         this.aEteEchange = aEteEchange;
+    }
+
+    public void resetStages() {
+        this.accuracyStage = 0;
+        this.speedStage = 0;
+        this.atkPhyStage = 0;
+        this.atkSpeStage = 0;
+        this.defPhyStage = 0;
+        this.defSpeStage = 0;
+        this.critChanceStage = 0;
+        this.evasivenessStage = 0;
     }
 }

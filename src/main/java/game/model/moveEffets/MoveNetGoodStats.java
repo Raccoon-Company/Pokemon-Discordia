@@ -26,6 +26,14 @@ public class MoveNetGoodStats {
             case 81://secrétion
             case 96://yoga
             case 97://hâte
+            case 103://grincement
+            case 104://double team
+            case 106://armure
+            case 107://lilliput
+            case 108://brouillard
+            case 110://repli
+            case 111://boularmure
+            case 112://bouclier
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:

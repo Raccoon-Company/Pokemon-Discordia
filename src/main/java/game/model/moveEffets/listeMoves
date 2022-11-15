@@ -98,7 +98,6 @@
 98 : quick-attack : Vive-Attaque : damage
 99 : rage : Frénésie : damage
 100 : teleport : Téléport : unique
-
 101 : night-shade : Ombre Nocturne : damage
 102 : mimic : Copie : unique
 103 : screech : Grincement : net-good-stats
@@ -111,6 +110,7 @@
 110 : withdraw : Repli : net-good-stats
 111 : defense-curl : Boul’Armure : net-good-stats
 112 : barrier : Bouclier : net-good-stats
+
 113 : light-screen : Mur Lumière : field-effect
 114 : haze : Buée Noire : whole-field-effect
 115 : reflect : Protection : field-effect

@@ -54,6 +54,18 @@ public final class MoveUnique {
                 }
 
                 break;
+            case 102://copie mimic
+                //change l'id du move mimic par celui copié pour lancer l'attaque
+                ActionCombat derniereActionCible = actionCombat.getPokemonCible().getLastActionCombat();
+                if(derniereActionCible != null && derniereActionCible.getAttaque() != null){
+                    actionCombat.getAttaque().setIdMoveAPI(derniereActionCible.getAttaque().getIdMoveAPI());
+                    combat.effectuerAction(actionCombat.getLanceur(), simulation);
+                    actionCombat.getAttaque().setIdMoveAPI(102);
+                }else{
+                    combat.fail();
+                }
+
+                break;
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }

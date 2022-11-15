@@ -643,9 +643,9 @@ public class Combat implements Serializable {
                                 e -> {
                                     game.getBot().unlock(game.getUser());
                                     e.editButton(Button.of(ButtonStyle.SUCCESS, Objects.requireNonNull(e.getButton().getId()), e.getButton().getLabel(), e.getButton().getEmoji())).queue();
-                                    if(e.getComponentId().equals("back")){
+                                    if (e.getComponentId().equals("back")) {
                                         roundPhase1();
-                                    }else{
+                                    } else {
                                         launchPokeball(Pokeball.getById(e.getComponentId()));
                                     }
                                 },
@@ -711,37 +711,37 @@ public class Combat implements Serializable {
         double rate = cible.getPokemonAPI().getSpecies().getCaptureRate();
         double effPokeball = 1;
 
-        switch(pokeball){
+        switch (pokeball) {
             case NETBALL:
-                if(cible.hasType(Type.WATER) || cible.hasType(Type.BUG)){
+                if (cible.hasType(Type.WATER) || cible.hasType(Type.BUG)) {
                     effPokeball = 3;
                 }
                 break;
             case DIVEBALL:
-                if(methodeRencontre > 1 && methodeRencontre < 6){
+                if (methodeRencontre > 1 && methodeRencontre < 6) {
                     effPokeball = 3.5;
                 }
                 break;
             case NESTBALL:
-                if(cible.getLevel() > 30){
+                if (cible.getLevel() > 30) {
                     effPokeball = 1;
-                }else{
-                    effPokeball = (double)(40 - cible.getLevel()) / 10;
+                } else {
+                    effPokeball = (double) (40 - cible.getLevel()) / 10;
                 }
                 break;
             case REPEATBALL:
-                if(game.getSave().getCampaign().getPokedex().hasCaptured(cible.getIdSpecie())){
+                if (game.getSave().getCampaign().getPokedex().hasCaptured(cible.getIdSpecie())) {
                     effPokeball = 3;
                 }
                 break;
             case TIMERBALL:
-                effPokeball = turnCount * 0.1 > 4 ? 4 : turnCount*0.1;
+                effPokeball = turnCount * 0.1 > 4 ? 4 : turnCount * 0.1;
                 break;
             case DUSKBALL:
                 //TODO 3.5 at night and caves
                 break;
             case QUICKBALL:
-                if(turnCount == 1){
+                if (turnCount == 1) {
                     effPokeball = 4;
                 }
                 break;
@@ -1051,7 +1051,7 @@ public class Combat implements Serializable {
         }
     }
 
-    private void effectuerAction(Pokemon lanceur, boolean simulation) {
+    public void effectuerAction(Pokemon lanceur, boolean simulation) {
         lanceur.setaDejaAttaque(true);
 
         ActionCombat actionCombat = lanceur.getActionsCombat().get(turnCount);
@@ -1970,4 +1970,10 @@ public class Combat implements Serializable {
         return note * ratio;
     }
 
+    public List<Pokemon> getPokemonsActifs() {
+        List<Pokemon> pokemons = new ArrayList<>();
+        pokemons.addAll(blanc.getPokemonsActifsEnVie());
+        pokemons.addAll(noir.getPokemonsActifsEnVie());
+        return pokemons;
+    }
 }

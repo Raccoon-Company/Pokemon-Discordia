@@ -20,6 +20,18 @@ public class MoveFieldEffect {
                     combat.getGame().getChannel().sendMessage("Les pokémons de "+ combat.getDuellisteAllie(actionCombat.getLanceur()).getNom()+ " sont protégés par la brume !").queue();
                 }
                 break;
+            case 113://mur lumlière
+                actionCombat.getTerrainCible().ajoutStatut(StatutsTerrain.LIGHT_SCREEN, 5);//light clay item
+                if(!simulation){
+                    combat.getGame().getChannel().sendMessage("Mur Lumière augmente la défense spéciale de vos pokémons !").queue();
+                }
+                break;
+            case 115://reflect
+                actionCombat.getTerrainCible().ajoutStatut(StatutsTerrain.REFLECT, 5);//light clay item
+                if(!simulation){
+                    combat.getGame().getChannel().sendMessage("Mur Lumière augmente la défense de vos pokémons !").queue();
+                }
+                break;
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }

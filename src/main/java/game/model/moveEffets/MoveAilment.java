@@ -35,6 +35,8 @@ public class MoveAilment {
             case 78://paraspore
             case 86://cagéclair
             case 92://toxik
+            case 109://onde folie
+
                 attaqueParDefaut(combat, actionCombat, simulation, 1, false);
                 break;
             default:
