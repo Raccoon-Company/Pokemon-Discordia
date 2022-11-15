@@ -110,12 +110,12 @@
 110 : withdraw : Repli : net-good-stats
 111 : defense-curl : Boul’Armure : net-good-stats
 112 : barrier : Bouclier : net-good-stats
-
 113 : light-screen : Mur Lumière : field-effect
 114 : haze : Buée Noire : whole-field-effect
 115 : reflect : Protection : field-effect
 116 : focus-energy : Puissance : unique
 117 : bide : Patience : damage
+
 118 : metronome : Métronome : unique
 119 : mirror-move : Mimique : unique
 120 : self-destruct : Destruction : damage

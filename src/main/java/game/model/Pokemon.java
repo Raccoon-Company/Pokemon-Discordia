@@ -109,6 +109,12 @@ public class Pokemon implements Serializable {
 
     @JsonIgnore
     private int dernierMontantDePVsPerdus = 0;
+
+    @JsonIgnore
+    private int patienceTotal = 0;
+    @JsonIgnore
+    private int patienceTours = -1;
+
     @JsonIgnore
     private boolean aDejaAttaque;
     @JsonIgnore
@@ -916,6 +922,22 @@ public class Pokemon implements Serializable {
         this.aDejaAttaque = aDejaAttaque;
     }
 
+    public int getPatienceTotal() {
+        return patienceTotal;
+    }
+
+    public void setPatienceTotal(int patienceTotal) {
+        this.patienceTotal = patienceTotal;
+    }
+
+    public int getPatienceTours() {
+        return patienceTours;
+    }
+
+    public void setPatienceTours(int patienceTours) {
+        this.patienceTours = patienceTours;
+    }
+
     public void setId(long id) {
         this.id = id;
     }
@@ -1179,6 +1201,33 @@ public class Pokemon implements Serializable {
         }
     }
 
+    public void updateCritStage(int val, MessageChannelUnion channel, boolean simulation) {
+        this.critChanceStage += val;
+        if (!simulation) {
+            if (val == 1) {
+                channel.sendMessage("Le taux de critiques de " + getNomPresentation() + " augmente.").queue();
+            } else if (val > 1) {
+                channel.sendMessage("Le taux de critiques de " + getNomPresentation() + " augmente fortement !").queue();
+            } else if (val == -1) {
+                channel.sendMessage("Le taux de critiques de " + getNomPresentation() + " diminue.").queue();
+            } else if (val < -1) {
+                channel.sendMessage("Le taux de critiques de " + getNomPresentation() + " baisse beaucoup !").queue();
+            }
+        }
+        if (critChanceStage > 6) {
+            critChanceStage = 6;
+            if (!simulation) {
+                channel.sendMessage("Le taux de critiques de " + getNomPresentation() + " n'ira pas plus haut !").queue();
+            }
+        }
+        if (critChanceStage < 0) {
+            critChanceStage = 0;
+            if (!simulation) {
+                channel.sendMessage("Le taux de critiques de " + getNomPresentation() + " n'ira pas plus bas !").queue();
+            }
+        }
+    }
+
     private void updateAccuracyStage(int val, MessageChannelUnion channel, boolean simulation) {
         this.accuracyStage += val;
         if (!simulation) {
@@ -1304,6 +1353,8 @@ public class Pokemon implements Serializable {
         }
 
         //TODO notif degats
+
+        patienceTotal+=degatsFinaux;
 
         return degatsFinaux;
     }

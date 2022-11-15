@@ -58,7 +58,7 @@ public class Game {
     public static final double XP_MULTIPLIER_CUSTOM = 2.0;
 
 
-    public final static int MAX_MOVE_ID_IMPLEMENTED = 115;//TODO changer le chiffre au fur et à mesure d el'implémentation des nouvelles attaques
+    public final static int MAX_MOVE_ID_IMPLEMENTED = 117;//TODO changer le chiffre au fur et à mesure d el'implémentation des nouvelles attaques
     /**
      * ids des attaques spécifiques non implémentées (trop complexes en général pour peu d'intéret)
      * Substitute

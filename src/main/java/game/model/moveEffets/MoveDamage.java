@@ -243,6 +243,31 @@ public class MoveDamage {
                     actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getLevel(), new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                 }
                 break;
+            case 117://patience
+                if(actionCombat.getLanceur().getPatienceTours() == -1){
+                    //lancement de patience
+                    actionCombat.getLanceur().setPatienceTotal(0);
+                    actionCombat.getLanceur().setPatienceTours(2);
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.NO_ESCAPE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()),3, simulation, combat.getGame());
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.CHARGING_TURN, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()),3, simulation, combat.getGame());
+                }else if(actionCombat.getLanceur().getPatienceTours() == 0){
+                    List<Pokemon> adversaires = combat.getDuellisteAdverse(actionCombat.getLanceur()).getPokemonsActifsEnVie();
+                    Pokemon cible = adversaires.get(Utils.getRandom().nextInt(adversaires.size()));
+                    actionCombat.getLanceur().setPatienceTours(-1);
+                    if(!simulation){
+                        combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation()+" rend les coups !").queue();
+                    }
+                    if (combat.verificationsCibleIndividuelle(actionCombat, cible, false, false)) {
+                        actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getPatienceTotal() * 2, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
+                    }
+                }else{
+                    //patience;..
+                    if(!simulation){
+                        combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation()+" encaisse les coups...").queue();
+                    }
+                }
+                break;
+                break;
             case 1://pound
             case 2://karate chop
             case 5: //ultimapoing

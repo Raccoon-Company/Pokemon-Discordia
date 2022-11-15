@@ -1477,6 +1477,12 @@ public class Combat implements Serializable {
 
         decrementerEntraves();
 
+        for (Pokemon pokemonActif : getPokemonsActifs()) {
+            if(pokemonActif.getPatienceTours()>0){
+                pokemonActif.setPatienceTours(pokemonActif.getPatienceTours()-1);
+            }
+        }
+
         //decrementation des tours restants des altérations terrain
         terrainBlanc.finDeTourMajStatus();
         terrainNoir.finDeTourMajStatus();
