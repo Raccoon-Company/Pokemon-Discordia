@@ -34,6 +34,8 @@ public class MoveNetGoodStats {
             case 110://repli
             case 111://boularmure
             case 112://bouclier
+            case 133://amnésie
+            case 134://télékinésie
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:

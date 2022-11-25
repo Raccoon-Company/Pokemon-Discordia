@@ -28,7 +28,7 @@ public class MoveDamage {
             case 4: //poing comète
             case 31://fury attack
                 //TODO check interactions : focus sash focus band sturdyweak armor stamina rocky helmet
-                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false, false)) {
+                if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false, false)) {
                     //TODO clone, riposte, patience
                     int degats = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
                     int ran = Utils.getRandomNumber(1, 8);
@@ -48,6 +48,7 @@ public class MoveDamage {
                 }
                 break;
             case 42://dard nuée
+            case 131://picanon
                 //TODO check interactions : focus sash focus band sturdyweak armor stamina rocky helmet
                 //TODO clone, riposte, patience
                 int ran = Utils.getRandomNumber(1, 8);
@@ -175,11 +176,11 @@ public class MoveDamage {
                 }
                 break;
             case 68://riposte
-                if(actionCombat.getLanceur().getDernierMontantDePVsPerdus() > 0){
+                if (actionCombat.getLanceur().getDernierMontantDePVsPerdus() > 0) {
                     if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), simulation, false)) {
                         actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getDernierMontantDePVsPerdus() * 2, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                     }
-                }else{
+                } else {
                     combat.fail();
                     return;
                 }
@@ -194,10 +195,10 @@ public class MoveDamage {
                 Meteo meteo = combat.getTerrainAllie(actionCombat.getLanceur()).getMeteo();
                 if (actionCombat.getLanceur().hasStatut(AlterationEtat.CHARGING_TURN) || meteo.equals(Meteo.FORT_SOLEIL)) { // TODO ou si power herb est tenu
                     //attaque
-                    if(meteo.equals(Meteo.PLUIE) ||meteo.equals(Meteo.BROUILLARD) ||meteo.equals(Meteo.GRELE) ||meteo.equals(Meteo.TEMPETE_DE_SABLE)){
+                    if (meteo.equals(Meteo.PLUIE) || meteo.equals(Meteo.BROUILLARD) || meteo.equals(Meteo.GRELE) || meteo.equals(Meteo.TEMPETE_DE_SABLE)) {
 //                        SolarBeam will also have its power halved if used during hail, fog or when a rain, sandstorm is raging.
                         attaqueParDefaut(combat, actionCombat, simulation, 0.5, false);
-                    }else{
+                    } else {
                         attaqueParDefaut(combat, actionCombat, simulation, 1, false);
                     }
                     actionCombat.getLanceur().enleveStatut(AlterationEtat.CHARGING_TURN);
@@ -227,9 +228,9 @@ public class MoveDamage {
                 break;
             case 99://rage
                 int rageCounter = 0;
-                for(int i = combat.getTurnCount(); i >= 0;i--){
+                for (int i = combat.getTurnCount(); i >= 0; i--) {
                     ActionCombat ac = actionCombat.getPokemonCible().getActionsCombat().get(i);
-                    if(ac.getAttaque().getIdMoveAPI() == 99){
+                    if (ac.getAttaque().getIdMoveAPI() == 99) {
                         rageCounter++;
                     }
                 }
@@ -244,29 +245,46 @@ public class MoveDamage {
                 }
                 break;
             case 117://patience
-                if(actionCombat.getLanceur().getPatienceTours() == -1){
+                if (actionCombat.getLanceur().getPatienceTours() == -1) {
                     //lancement de patience
                     actionCombat.getLanceur().setPatienceTotal(0);
                     actionCombat.getLanceur().setPatienceTours(2);
-                    actionCombat.getLanceur().applyStatus(AlterationEtat.NO_ESCAPE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()),3, simulation, combat.getGame());
-                    actionCombat.getLanceur().applyStatus(AlterationEtat.CHARGING_TURN, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()),3, simulation, combat.getGame());
-                }else if(actionCombat.getLanceur().getPatienceTours() == 0){
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.NO_ESCAPE, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 3, simulation, combat.getGame());
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.CHARGING_TURN, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 3, simulation, combat.getGame());
+                } else if (actionCombat.getLanceur().getPatienceTours() == 0) {
                     List<Pokemon> adversaires = combat.getDuellisteAdverse(actionCombat.getLanceur()).getPokemonsActifsEnVie();
                     Pokemon cible = adversaires.get(Utils.getRandom().nextInt(adversaires.size()));
                     actionCombat.getLanceur().setPatienceTours(-1);
-                    if(!simulation){
-                        combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation()+" rend les coups !").queue();
+                    if (!simulation) {
+                        combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " rend les coups !").queue();
                     }
                     if (combat.verificationsCibleIndividuelle(actionCombat, cible, false, false)) {
                         actionCombat.getPokemonCible().blesser(actionCombat.getLanceur().getPatienceTotal() * 2, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
                     }
-                }else{
+                } else {
                     //patience;..
-                    if(!simulation){
-                        combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation()+" encaisse les coups...").queue();
+                    if (!simulation) {
+                        combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " encaisse les coups...").queue();
                     }
                 }
                 break;
+            break;
+            case 120:
+                actionCombat.getLanceur().setCurrentHp(0);
+                attaqueParDefaut(combat, actionCombat, simulation, 2, false);
+                break;
+            case 130://koudkrane
+                if (actionCombat.getLanceur().hasStatut(AlterationEtat.CHARGING_TURN)) {
+                    //attaque
+                    attaqueParDefaut(combat, actionCombat, simulation, 1, false);
+                    actionCombat.getLanceur().enleveStatut(AlterationEtat.CHARGING_TURN);
+                } else {
+                    //charge attaque
+                    combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " prépare son attaque !").queue();
+                    actionCombat.getLanceur().applyStatus(AlterationEtat.CHARGING_TURN, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()), 2, simulation, combat.getGame());
+                    actionCombat.getLanceur().updateStage(combat.getGame().getChannel(), Stats.DEFENSE, 1, simulation);
+                    actionCombat.getLanceur().getActionsCombat().put(combat.getTurnCount() + 1, new ActionCombat(actionCombat));
+                }
                 break;
             case 1://pound
             case 2://karate chop
@@ -294,15 +312,20 @@ public class MoveDamage {
             case 88://jet pierres
             case 89://séisme
             case 98://quick attack
+            case 121://egg bomb
+            case 125://massdos
+            case 127://cascade
+            case 129://météores
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
+
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }
     }
 
     private static void attaqueRecul(Combat combat, ActionCombat actionCombat, boolean simulation, int denominateur) {
-        if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(),false, false)) {
+        if (combat.verificationsCibleIndividuelle(actionCombat, actionCombat.getPokemonCible(), false, false)) {
             int degatsTakeDown = actionCombat.getPokemonCible().calculerDegatsAttaque(actionCombat, combat, simulation, 1);
             actionCombat.getPokemonCible().blesser(degatsTakeDown, new SourceDegats(TypeSourceDegats.POKEMON, actionCombat.getLanceur()));
             combat.getGame().getChannel().sendMessage(actionCombat.getLanceur().getNomPresentation() + " subit le contrecoup de son attaque !").queue();
@@ -375,7 +398,7 @@ public class MoveDamage {
         }
 
         cibles = cibles.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c,alwaysHit, false));
+        cibles.removeIf(c -> combat.verificationsCibleIndividuelle(actionCombat, c, alwaysHit, false));
         return cibles;
     }
 

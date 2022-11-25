@@ -76,6 +76,10 @@ public class MoveDamageAilment {
             case 85://tonnerre
             case 87://fatal foudre
             case 93://choc mental
+            case 122://lechouille
+            case 123://smog
+            case 124://détritus
+                case 126://déflagration;
                 attaqueParDefaut(combat, actionCombat, simulation);
                 break;
             default:

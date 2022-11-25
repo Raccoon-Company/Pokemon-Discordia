@@ -63,7 +63,7 @@ public class Game {
      * ids des attaques spécifiques non implémentées (trop complexes en général pour peu d'intéret)
      * Substitute
      */
-    public static final List<Integer> EXCLUDED_MOVES = Arrays.asList(164) ;
+    public static final List<Integer> EXCLUDED_MOVES = Arrays.asList(164, 119,128) ;
 
     private User user;
 

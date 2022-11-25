@@ -5,6 +5,10 @@ import game.model.*;
 import game.model.enums.TypeActionCombat;
 import game.model.enums.TypeCombatResultat;
 import game.model.enums.TypeDuelliste;
+import utils.Utils;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public final class MoveUnique {
     public static void utiliser(Combat combat, ActionCombat actionCombat, boolean simulation) {
@@ -69,6 +73,15 @@ public final class MoveUnique {
             case 116://focus energy
                 actionCombat.getLanceur().updateCritStage(2,combat.getGame().getChannel(), simulation);
                 break;
+            case 118://metronome
+                   List<Moves> allMovesAPI = getAllMoves();
+                allMovesAPI = allMovesAPI.stream().filter(m -> m.getMove().getId() <= Game.MAX_MOVE_ID_IMPLEMENTED && !Game.EXCLUDED_MOVES.contains(m.getMove().getId())).collect(Collectors.toList());
+                Moves moveSelected = allMovesAPI.get(Utils.getRandom().nextInt(allMovesAPI.size()));
+                actionCombat.getAttaque().setIdMoveAPI(moveSelected.getId());
+                combat.effectuerAction(actionCombat.getLanceur(), simulation);
+                actionCombat.getAttaque().setIdMoveAPI(118);
+
+
             default:
                 combat.getGame().getChannel().sendMessage("L'attaque " + actionCombat.getNomAttaque() + " n'a pas encore été implémentée. C'est un taf monstrueux et le dev a la flemme. cheh.").queue();
         }

@@ -13,6 +13,7 @@ public class MoveHeal {
 
         switch (actionCombat.getAttaque().getIdMoveAPI()) {
             case 105://recover
+            case 135://softboiled
                 attaqueParDefaut(combat.getGame(), actionCombat);
                 break;
             default:

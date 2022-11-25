@@ -24,6 +24,7 @@ public class MoveDamageLower {
             case 61://bulles d'o
             case 62://onde boréale
             case 94://psyko
+            case 132://constriction
                 attaqueParDefaut(combat,actionCombat,simulation);
                 break;
             default:

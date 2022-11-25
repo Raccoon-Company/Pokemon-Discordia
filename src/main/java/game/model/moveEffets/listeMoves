@@ -115,9 +115,8 @@
 115 : reflect : Protection : field-effect
 116 : focus-energy : Puissance : unique
 117 : bide : Patience : damage
-
 118 : metronome : Métronome : unique
-119 : mirror-move : Mimique : unique
+119 : mirror-move : Mimique : unique//
 120 : self-destruct : Destruction : damage
 121 : egg-bomb : Bombe Œuf : damage
 122 : lick : Léchouille : damage+ailment
@@ -126,7 +125,7 @@
 125 : bone-club : Massd’Os : damage
 126 : fire-blast : Déflagration : damage+ailment
 127 : waterfall : Cascade : damage
-128 : clamp : Claquoir : damage+ailment
+128 : clamp : Claquoir : damage+ailment//
 129 : swift : Météores : damage
 130 : skull-bash : Coud’Krâne : damage
 131 : spike-cannon : Picanon : damage
@@ -134,6 +133,7 @@
 133 : amnesia : Amnésie : net-good-stats
 134 : kinesis : Télékinésie : net-good-stats
 135 : soft-boiled : E-Coque : heal
+
 136 : high-jump-kick : Pied Voltige : damage
 137 : glare : Regard Médusant : ailment
 138 : dream-eater : Dévorêve : damage+heal
